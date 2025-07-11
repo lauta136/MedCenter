@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace MedCenter.Models;
 
-public partial class Turnos
+public partial class Turno
 {
     public int id { get; set; }
 
@@ -23,13 +23,13 @@ public partial class Turnos
 
     public int? slot_id { get; set; }
 
-    public virtual ICollection<EntradasClinicas> entradasClinicas { get; set; } = new List<EntradasClinicas>();
+    public virtual ICollection<EntradaClinica> entradasClinicas { get; set; } = new List<EntradaClinica>();
 
-    public virtual Medicos? medico { get; set; }
+    public virtual Medico? medico { get; set; }
 
-    public virtual Pacientes? paciente { get; set; }
+    public virtual Paciente? paciente { get; set; }
 
-    public virtual Secretarias? secretaria { get; set; }
+    public virtual Secretaria? secretaria { get; set; }
 
-    public virtual SlotsAgenda? slot { get; set; }
+    public virtual SlotAgenda? slot { get; set; }
 }

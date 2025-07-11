@@ -21,7 +21,7 @@ namespace MedCenter.Controllers
 
         // GET: api/medicos
         [HttpGet]
-        public ActionResult<IEnumerable<Medicos>> GetAll()
+        public ActionResult<IEnumerable<MedicoViewDTO>> GetAll()
         {
             var medicos = _context.medicos
              .Include(m => m.idNavigation)
@@ -29,42 +29,46 @@ namespace MedCenter.Controllers
                  .ThenInclude(me => me.especialidad)
              .Select(m => new
              {
-                 Id = m.id,
                  Nombre = m.idNavigation.nombre,
                  Email = m.idNavigation.email,
                  Matricula = m.matricula,
-                 Especialidades = m.medicoEspecialidades.Select(me => me.especialidad.nombre).ToList()
+                 Especialidades = m.medicoEspecialidades
+                    .Select(me => me.especialidad.nombre ?? "Sin nombre")
+                    .ToList()
              })
-             .ToList();
+                .ToList();
 
             return Ok(medicos);
         }
 
 
-        public ActionResult<Medicos> GetById(int id)
+        public ActionResult<MedicoViewDTO> GetById(int id)
         {
-          var medico = _context.medicos
-            .Include(m => m.idNavigation)
-            .Include(m => m.medicoEspecialidades)
-                .ThenInclude(me => me.especialidad)
-            .FirstOrDefault(m => m.id == id);
-
-            if (medico == null)
-                return NotFound();
-
-            return Ok(new
+            var medicoDTO = _context.medicos
+            .Where(m => m.id == id)
+            .Select(m => new MedicoViewDTO
             {
-                Id = medico.id,
-                Nombre = medico.idNavigation.nombre,
-                Email = medico.idNavigation.email,
-                Matricula = medico.matricula,
-                Especialidades = medico.medicoEspecialidades.Select(me => me.especialidad.nombre).ToList()
-            });
+                Matricula = m.matricula,
+                Nombre = m.idNavigation.nombre,
+                Email = m.idNavigation.email,
+                Especialidades = m.medicoEspecialidades.Select(me => me.especialidad.nombre!).ToList(),
+                //TurnosIds = m.turnos.Select(t => t.id).ToList()
+            })
+            .FirstOrDefault();
+
+
+
+            if (medicoDTO == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(medicoDTO);
         }
 
         // POST: api/medicos
         [HttpPost]
-        public ActionResult<Medicos> Create([FromBody] Medicos newMedico)
+        public ActionResult<Medico> Create([FromBody] Medico newMedico)
         {
             if (newMedico == null)
             {
@@ -77,7 +81,7 @@ namespace MedCenter.Controllers
 
         // PUT: api/medicos/{id}
         [HttpPut("{id}")]
-        public ActionResult Update(int id, [FromBody] Medicos updatedMedico)
+        public ActionResult Update(int id, [FromBody] Medico updatedMedico)
         {
             var medico = _context.medicos
             .Include(m => m.idNavigation)
@@ -118,38 +122,40 @@ namespace MedCenter.Controllers
             return NoContent();
         }
 
-        // POST: api/medicos
-    [HttpPost]
-    public IActionResult Create([FromBody] UpdateMedicoDto dto)
-    {
-        var persona = new Personas
+        /* POST: api/medicos
+        [HttpPost]
+        public IActionResult Create([FromBody] MedicoViewDTO dto)
         {
-            nombre = dto.Nombre,
-            email = dto.Email,
-            contraseña = "temporal" // podés ajustar esto
-        };
-
-        var medico = new Medicos
-        {
-            matricula = dto.Matricula,
-            idNavigation = persona
-        };
-
-        _context.medicos.Add(medico);
-        _context.SaveChanges(); // guardamos primero para obtener el ID
-
-        foreach (var espId in dto.EspecialidadesIds)
-        {
-            _context.medicoEspecialidades.Add(new MedicoEspecialidad
+            var persona = new Persona
             {
-                medicoId = medico.id,
-                especialidadId = espId
-            });
-        }
+                nombre = dto.Nombre,
+                email = dto.Email,
+                contraseña = "temporal" // podés ajustar esto
+            };
 
-        _context.SaveChanges();
-        return CreatedAtAction(nameof(GetById), new { id = medico.id }, null);
+            var medico = new Medico
+            {
+                matricula = dto.Matricula,
+                idNavigation = persona
+            };
+
+            _context.medicos.Add(medico);
+            _context.SaveChanges(); // guardamos primero para obtener el ID
+
+            foreach (var espId in dto.Especialidades)
+            {
+                _context.medicoEspecialidades.Add(new MedicoEspecialidad
+                {
+                    medicoId = medico.id,
+                    especialidad = espId
+                });
+            }
+
+            _context.SaveChanges();
+            return CreatedAtAction(nameof(GetById), new { id = medico.id }, null);
+        }
+        */
     }
+
     
-    }
 }

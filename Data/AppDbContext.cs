@@ -16,25 +16,25 @@ public partial class AppDbContext : DbContext
     {
     }
 
-    public virtual DbSet<EntradasClinicas> entradasclinicas { get; set; }
+    public virtual DbSet<EntradaClinica> entradasclinicas { get; set; }
 
-    public virtual DbSet<Especialidades> especialidades { get; set; }
+    public virtual DbSet<Especialidad> especialidades { get; set; }
 
-    public virtual DbSet<HistoriasClinicas> historiasclinicas { get; set; }
+    public virtual DbSet<HistoriaClinica> historiasclinicas { get; set; }
 
-    public virtual DbSet<Medicos> medicos { get; set; }
+    public virtual DbSet<Medico> medicos { get; set; }
 
-    public virtual DbSet<Pacientes> pacientes { get; set; }
+    public virtual DbSet<Paciente> pacientes { get; set; }
 
-    public virtual DbSet<Personas> personas { get; set; }
+    public virtual DbSet<Persona> personas { get; set; }
 
-    public virtual DbSet<ReportesEstadisticos> reportesestadisticos { get; set; }
+    public virtual DbSet<ReporteEstadistico> reportesestadisticos { get; set; }
 
-    public virtual DbSet<Secretarias> secretarias { get; set; }
+    public virtual DbSet<Secretaria> secretarias { get; set; }
 
-    public virtual DbSet<SlotsAgenda> slotsagenda { get; set; }
+    public virtual DbSet<SlotAgenda> slotsagenda { get; set; }
 
-    public virtual DbSet<Turnos> turnos { get; set; }
+    public virtual DbSet<Turno> turnos { get; set; }
 
     public virtual DbSet<MedicoEspecialidad> medicoEspecialidades { get; set; }
 
@@ -45,7 +45,7 @@ public partial class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<EntradasClinicas>(entity =>
+        modelBuilder.Entity<EntradaClinica>(entity =>
         {
             entity.HasKey(e => e.id).HasName("entradasclinicas_pkey");
 
@@ -67,7 +67,7 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("entradasclinicas_turno_id_fkey");
         });
 
-        modelBuilder.Entity<Especialidades>(entity =>
+        modelBuilder.Entity<Especialidad>(entity =>
         {
             entity.HasKey(e => e.id).HasName("especialidades_pkey");
 
@@ -75,7 +75,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.nombre).HasMaxLength(50);
         });
 
-        modelBuilder.Entity<HistoriasClinicas>(entity =>
+        modelBuilder.Entity<HistoriaClinica>(entity =>
         {
             entity.HasKey(e => e.id).HasName("historiasclinicas_pkey");
 
@@ -84,11 +84,11 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.id).UseIdentityAlwaysColumn();
 
             entity.HasOne(d => d.paciente).WithOne(p => p.historiasclinicas)
-                .HasForeignKey<HistoriasClinicas>(d => d.paciente_id)
+                .HasForeignKey<HistoriaClinica>(d => d.paciente_id)
                 .HasConstraintName("historiasclinicas_paciente_id_fkey");
         });
 
-        modelBuilder.Entity<Medicos>(entity =>
+        modelBuilder.Entity<Medico>(entity =>
         {
             entity.HasKey(e => e.id).HasName("medicos_pkey");
 
@@ -96,12 +96,12 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.matricula).HasMaxLength(20);
 
             entity.HasOne(d => d.idNavigation).WithOne(p => p.medicos)
-                .HasForeignKey<Medicos>(d => d.id)
+                .HasForeignKey<Medico>(d => d.id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("medicos_id_fkey");
         });
 
-        modelBuilder.Entity<Pacientes>(entity =>
+        modelBuilder.Entity<Paciente>(entity =>
         {
             entity.HasKey(e => e.id).HasName("pacientes_pkey");
 
@@ -110,12 +110,12 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.telefono).HasMaxLength(30);
 
             entity.HasOne(d => d.idNavigation).WithOne(p => p.pacientes)
-                .HasForeignKey<Pacientes>(d => d.id)
+                .HasForeignKey<Paciente>(d => d.id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("pacientes_id_fkey");
         });
 
-        modelBuilder.Entity<Personas>(entity =>
+        modelBuilder.Entity<Persona>(entity =>
         {
             entity.HasKey(e => e.id).HasName("personas_pkey");
 
@@ -125,7 +125,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.nombre).HasMaxLength(100);
         });
 
-        modelBuilder.Entity<ReportesEstadisticos>(entity =>
+        modelBuilder.Entity<ReporteEstadistico>(entity =>
         {
             entity.HasKey(e => e.id).HasName("reportesestadisticos_pkey");
 
@@ -137,7 +137,7 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("reportesestadisticos_consultor_id_fkey");
         });
 
-        modelBuilder.Entity<Secretarias>(entity =>
+        modelBuilder.Entity<Secretaria>(entity =>
         {
             entity.HasKey(e => e.id).HasName("secretarias_pkey");
 
@@ -145,12 +145,12 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.legajo).HasMaxLength(20);
 
             entity.HasOne(d => d.idNavigation).WithOne(p => p.secretarias)
-                .HasForeignKey<Secretarias>(d => d.id)
+                .HasForeignKey<Secretaria>(d => d.id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("secretarias_id_fkey");
         });
 
-        modelBuilder.Entity<SlotsAgenda>(entity =>
+        modelBuilder.Entity<SlotAgenda>(entity =>
         {
             entity.HasKey(e => e.id).HasName("slotsagenda_pkey");
 
@@ -161,7 +161,7 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("slotsagenda_medico_id_fkey");
         });
 
-        modelBuilder.Entity<Turnos>(entity =>
+        modelBuilder.Entity<Turno>(entity =>
         {
             entity.HasKey(e => e.id).HasName("turnos_pkey");
 

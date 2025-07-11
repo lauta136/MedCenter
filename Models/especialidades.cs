@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace MedCenter.Models;
 
-public partial class Especialidades
+public partial class Especialidad
 {
     public int id { get; set; }
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace MedCenter.Models;
 
-public partial class SlotsAgenda
+public partial class SlotAgenda
 {
     public int id { get; set; }
 
@@ -17,7 +17,7 @@ public partial class SlotsAgenda
 
     public int? medico_id { get; set; }
 
-    public virtual Medicos? medico { get; set; }
+    public virtual Medico? medico { get; set; }
 
-    public virtual ICollection<Turnos> turnos { get; set; } = new List<Turnos>();
+    public virtual ICollection<Turno> turnos { get; set; } = new List<Turno>();
 }

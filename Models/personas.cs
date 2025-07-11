@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace MedCenter.Models;
 
-public partial class Personas
+public partial class Persona
 {
     public int id { get; set; }
 
@@ -13,11 +13,11 @@ public partial class Personas
 
     public string? contraseña { get; set; }
 
-    public virtual Medicos? medicos { get; set; }
+    public virtual Medico? medicos { get; set; }
 
-    public virtual Pacientes? pacientes { get; set; }
+    public virtual Paciente? pacientes { get; set; }
 
-    public virtual ICollection<ReportesEstadisticos> reportesestadisticos { get; set; } = new List<ReportesEstadisticos>();
+    public virtual ICollection<ReporteEstadistico> reportesestadisticos { get; set; } = new List<ReporteEstadistico>();
 
-    public virtual Secretarias? secretarias { get; set; }
+    public virtual Secretaria? secretarias { get; set; }
 }

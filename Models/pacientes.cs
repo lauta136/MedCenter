@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace MedCenter.Models;
 
-public partial class Pacientes
+public partial class Paciente
 {
     public int id { get; set; }
 
@@ -11,9 +11,9 @@ public partial class Pacientes
 
     public string? telefono { get; set; }
 
-    public virtual HistoriasClinicas? historiasclinicas { get; set; }
+    public virtual HistoriaClinica? historiasclinicas { get; set; }
 
-    public virtual Personas idNavigation { get; set; } = null!;
+    public virtual Persona idNavigation { get; set; } = null!;
 
-    public virtual ICollection<Turnos> turnos { get; set; } = new List<Turnos>();
+    public virtual ICollection<Turno> turnos { get; set; } = new List<Turno>();
 }

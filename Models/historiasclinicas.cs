@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 namespace MedCenter.Models;
 
-public partial class HistoriasClinicas
+public partial class HistoriaClinica
 {
     public int id { get; set; }
 
     public int? paciente_id { get; set; }
 
-    public virtual ICollection<EntradasClinicas> EntradasClinicas { get; set; } = new List<EntradasClinicas>();
+    public virtual ICollection<EntradaClinica> EntradasClinicas { get; set; } = new List<EntradaClinica>();
 
-    public virtual Pacientes? paciente { get; set; }
+    public virtual Paciente? paciente { get; set; }
 }

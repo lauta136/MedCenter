@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace MedCenter.Models;
 
-public partial class ReportesEstadisticos
+public partial class ReporteEstadistico
 {
     public int id { get; set; }
 
@@ -15,5 +15,5 @@ public partial class ReportesEstadisticos
 
     public DateOnly? fechahasta { get; set; }
 
-    public virtual Personas? consultor { get; set; }
+    public virtual Persona? consultor { get; set; }
 }
