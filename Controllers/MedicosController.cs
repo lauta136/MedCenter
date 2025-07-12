@@ -10,11 +10,11 @@ using MedCenter.DTOs; // Assuming you have a DTO for creating/updating Medicos
 namespace MedCenter.Controllers
 {
 
-    public class MedicosController : ControllerBase
+    public class MedicoController : ControllerBase
     {
         private readonly AppDbContext _context;
 
-        public MedicosController(AppDbContext context)
+        public MedicoController(AppDbContext context)
         {
             _context = context;
         }
@@ -48,6 +48,7 @@ namespace MedCenter.Controllers
             .Where(m => m.id == id)
             .Select(m => new MedicoViewDTO
             {
+                Id = m.id,
                 Matricula = m.matricula,
                 Nombre = m.idNavigation.nombre,
                 Email = m.idNavigation.email,

@@ -1,0 +1,51 @@
+﻿@using MedCenter.DTOs
+@model IEnumerable<TurnoViewDTO>
+
+@{
+    ViewData["Title"] = "Lista de Turnos";
+}
+
+<h2>Lista de Turnos</h2>
+
+@* ✅ AÑADÍ ESTA VERIFICACIÓN *@
+@if (Model != null && Model.Any())
+{
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Estado</th>
+                <th>Paciente</th>
+                <th>Médico</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var turno in Model)
+        {
+            <tr>
+                <td>@turno.Id</td>
+                <td>@turno.Fecha</td>
+                <td>@turno.Hora</td>
+                <td>@turno.Estado</td>
+                <td>@turno.PacienteNombre</td>
+                <td>@turno.MedicoNombre</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@turno.Id" class="btn btn-sm btn-info">Ver</a>
+                    <a asp-action="Edit" asp-route-id="@turno.Id" class="btn btn-sm btn-warning">Editar</a>
+                    <a asp-action="Delete" asp-route-id="@turno.Id" class="btn btn-sm btn-danger">Eliminar</a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+else
+{
+    @* ✅ Y ESTE MENSAJE PARA CUANDO NO HAY DATOS *@
+    <div class="alert alert-info">
+        <p>No hay turnos registrados por el momento.</p>
+    </div>
+}
