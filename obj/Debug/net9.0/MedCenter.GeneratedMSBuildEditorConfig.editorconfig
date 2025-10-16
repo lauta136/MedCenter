@@ -28,16 +28,124 @@ build_property._RazorSourceGeneratorDebug =
 build_property.EffectiveAnalysisLevelStyle = 9.0
 build_property.EnableCodeStyleSeverity = 
 
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Auth/Login.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQXV0aC9Mb2dpbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Auth/Register.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQXV0aC9SZWdpc3Rlci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Home/Privacy.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvSG9tZS9Qcml2YWN5LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Medico/Dashboard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvTWVkaWNvL0Rhc2hib2FyZC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Medico/HistoriasClinicas.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvTWVkaWNvL0hpc3Rvcmlhc0NsaW5pY2FzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Medico/MisPacientes.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvTWVkaWNvL01pc1BhY2llbnRlcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Medico/NuevaEntrada.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvTWVkaWNvL051ZXZhRW50cmFkYS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Medico/Reportes.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvTWVkaWNvL1JlcG9ydGVzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Medico/VerHistoria.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvTWVkaWNvL1Zlckhpc3RvcmlhLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Paciente/ConfirmarCancelacion.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvUGFjaWVudGUvQ29uZmlybWFyQ2FuY2VsYWNpb24uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Paciente/Dashboard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvUGFjaWVudGUvRGFzaGJvYXJkLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Paciente/HistoriaClinica.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvUGFjaWVudGUvSGlzdG9yaWFDbGluaWNhLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Paciente/Perfil.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvUGFjaWVudGUvUGVyZmlsLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Paciente/ReprogramarTurno.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvUGFjaWVudGUvUmVwcm9ncmFtYXJUdXJuby5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Paciente/SeleccionarTurnoCancelar.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvUGFjaWVudGUvU2VsZWNjaW9uYXJUdXJub0NhbmNlbGFyLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Paciente/SolicitarTurno.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvUGFjaWVudGUvU29saWNpdGFyVHVybm8uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Secretaria/ConfirmarCancelacion.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2VjcmV0YXJpYS9Db25maXJtYXJDYW5jZWxhY2lvbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Secretaria/Dashboard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2VjcmV0YXJpYS9EYXNoYm9hcmQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Secretaria/NuevoPaciente.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2VjcmV0YXJpYS9OdWV2b1BhY2llbnRlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Secretaria/Pacientes.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2VjcmV0YXJpYS9QYWNpZW50ZXMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Secretaria/Reportes.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2VjcmV0YXJpYS9SZXBvcnRlcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Secretaria/SeleccionarTurnoCancelar.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2VjcmV0YXJpYS9TZWxlY2Npb25hclR1cm5vQ2FuY2VsYXIuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Shared/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2hhcmVkL0Vycm9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Shared/_MedicoLayout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2hhcmVkL19NZWRpY29MYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Shared/_PacienteLayout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2hhcmVkL19QYWNpZW50ZUxheW91dC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Shared/_SecretariaLayout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2hhcmVkL19TZWNyZXRhcmlhTGF5b3V0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Shared/_ValidationScriptsPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2hhcmVkL19WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Turno/Cancel.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvVHVybm8vQ2FuY2VsLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Turno/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvVHVybm8vQ3JlYXRlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Turno/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvVHVybm8vRWRpdC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Turno/Index.cshtml]

@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MedCenter.Models;
 
 public partial class Paciente
 {
+    [Key]
+    [ForeignKey(nameof(idNavigation))]
     public int id { get; set; }
 
     public string? dni { get; set; }

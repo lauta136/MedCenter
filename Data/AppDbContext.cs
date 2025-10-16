@@ -2,18 +2,22 @@
 using System.Collections.Generic;
 using MedCenter.Models;
 using Microsoft.EntityFrameworkCore;
+using MedCenter.Services.Authentication.Components;
 
 namespace MedCenter.Data;
 
 public partial class AppDbContext : DbContext
 {
+    private readonly IConfiguration _configuration;
+
     public AppDbContext()
     {
     }
 
-    public AppDbContext(DbContextOptions<AppDbContext> options)
+    public AppDbContext(DbContextOptions<AppDbContext> options, IConfiguration configuration)
         : base(options)
     {
+        _configuration = configuration;
     }
 
     public virtual DbSet<EntradaClinica> entradasclinicas { get; set; }
@@ -38,8 +42,8 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<MedicoEspecialidad> medicoEspecialidades { get; set; }
 
+    public DbSet<RoleKey> role_keys { get; set; }
 
-    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<EntradaClinica>(entity =>
@@ -92,7 +96,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.id).ValueGeneratedNever();
             entity.Property(e => e.matricula).HasMaxLength(20);
 
-            entity.HasOne(d => d.idNavigation).WithOne(p => p.medicos)
+            entity.HasOne(d => d.idNavigation).WithOne(p => p.Medico)
                 .HasForeignKey<Medico>(d => d.id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("medicos_id_fkey");
@@ -106,7 +110,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.dni).HasMaxLength(20);
             entity.Property(e => e.telefono).HasMaxLength(30);
 
-            entity.HasOne(d => d.idNavigation).WithOne(p => p.pacientes)
+            entity.HasOne(d => d.idNavigation).WithOne(p => p.Paciente)
                 .HasForeignKey<Paciente>(d => d.id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("pacientes_id_fkey");
@@ -141,7 +145,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.id).ValueGeneratedNever();
             entity.Property(e => e.legajo).HasMaxLength(20);
 
-            entity.HasOne(d => d.idNavigation).WithOne(p => p.secretarias)
+            entity.HasOne(d => d.idNavigation).WithOne(p => p.Secretaria)
                 .HasForeignKey<Secretaria>(d => d.id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("secretarias_id_fkey");
@@ -174,6 +178,10 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey(d => d.paciente_id)
                 .HasConstraintName("turnos_paciente_id_fkey");
 
+            entity.HasOne(d => d.especialidad).WithMany(p => p.turnos)
+           .HasForeignKey(d => d.especialidad_id)
+           .HasConstraintName("turnos_especialidad_id_fkey"); // Es una buena práctica darle un nombre
+
             entity.HasOne(d => d.secretaria).WithMany(p => p.turnos)
                 .HasForeignKey(d => d.secretaria_id)
                 .HasConstraintName("turnos_secretaria_id_fkey");
@@ -183,21 +191,51 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("turnos_slot_id_fkey");
         });
 
-        modelBuilder.Entity<MedicoEspecialidad>()
-            .HasKey(me => new { me.medicoId, me.especialidadId });
+        modelBuilder.Entity<MedicoEspecialidad>(entity =>
+        {
+            // Le decimos el nombre correcto de la tabla en la base de datos
+            entity.ToTable("medico_especialidad");
 
-        modelBuilder.Entity<MedicoEspecialidad>()
-            .HasOne(me => me.medico)
+            // Definimos la clave primaria compuesta
+            entity.HasKey(me => new { me.medicoId, me.especialidadId });
+
+            // 3. ✅ MAPEAMOS LOS NOMBRES DE LAS COLUMNAS
+            entity.Property(me => me.medicoId).HasColumnName("medico_id");
+            entity.Property(me => me.especialidadId).HasColumnName("especialidad_id");
+
+            // Configuramos la relación con Medico
+            entity.HasOne(me => me.medico)
             .WithMany(m => m.medicoEspecialidades)
             .HasForeignKey(me => me.medicoId);
 
-        modelBuilder.Entity<MedicoEspecialidad>()
-            .HasOne(me => me.especialidad)
+            // Configuramos la relación con Especialidad
+            entity.HasOne(me => me.especialidad)
             .WithMany(e => e.medicoEspecialidades)
             .HasForeignKey(me => me.especialidadId);
+        });
 
+        modelBuilder.Entity<RoleKey>(entity =>
+        {
+            entity.ToTable("role_keys");
+            entity.HasKey(r => r.Id);
+            entity.Property(e => e.Id).UseIdentityAlwaysColumn();
+            entity.Property(r => r.HashedKey).HasColumnName("hashed_key");
+            entity.Property(r => r.Role).HasColumnName("role");
+        });
 
-        OnModelCreatingPartial(modelBuilder);
+        // Sembrar datos después de configurar la entidad
+        var passwordHasher = new PasswordHashService();
+        var medicoPlainKey = _configuration["RoleKeys:Medico"];
+        var secretariaPlainKey = _configuration["RoleKeys:Secretaria"];
+
+        var medicoKey = passwordHasher.HashPassword(medicoPlainKey);
+        var secretariaKey = passwordHasher.HashPassword(secretariaPlainKey);
+
+        /* modelBuilder.Entity<RoleKey>().HasData(
+             new RoleKey { Id = 1, Role = "Medico", HashedKey = medicoKey },
+             new RoleKey { Id = 2, Role = "Secretaria", HashedKey = secretariaKey });
+         OnModelCreatingPartial(modelBuilder);
+         */
     }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);

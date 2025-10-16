@@ -1,0 +1,31 @@
+@model MedCenter.Models.Paciente
+@{
+    ViewData["Title"] = "Mi Perfil";
+    Layout = "~/Views/Shared/_PacienteLayout.cshtml";
+}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Información Personal</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="text-muted small">Nombre</label>
+                <p class="fw-semibold">@Model.idNavigation.nombre</p>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="text-muted small">Email</label>
+                <p class="fw-semibold">@Model.idNavigation.email</p>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="text-muted small">DNI</label>
+                <p class="fw-semibold">@Model.dni</p>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="text-muted small">Teléfono</label>
+                <p class="fw-semibold">@Model.telefono</p>
+            </div>
+        </div>
+    </div>
+</div>

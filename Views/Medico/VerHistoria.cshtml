@@ -1,0 +1,161 @@
+@model MedCenter.Models.HistoriaClinica
+@{
+    ViewData["Title"] = "Historia Clínica";
+    Layout = "~/Views/Shared/_MedicoLayout.cshtml";
+}
+
+<div class="row">
+    <div class="col-12">
+        <!-- Patient Info -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">
+                            <i class="fas fa-user me-2"></i>
+                            @Model.paciente.idNavigation.nombre
+                        </h5>
+                    </div>
+                    <a asp-action="NuevaEntrada" asp-route-pacienteId="@Model.paciente_id" class="btn btn-light btn-sm">
+                        <i class="fas fa-plus me-2"></i>
+                        Nueva Entrada
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <p class="mb-1 text-muted small">DNI</p>
+                        <p class="mb-3"><strong>@Model.paciente.dni</strong></p>
+                    </div>
+                    <div class="col-md-4">
+                        <p class="mb-1 text-muted small">Email</p>
+                        <p class="mb-3"><strong>@Model.paciente.idNavigation.email</strong></p>
+                    </div>
+                    <div class="col-md-4">
+                        <p class="mb-1 text-muted small">Teléfono</p>
+                        <p class="mb-3"><strong>@Model.paciente.telefono</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clinical Entries -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0 fw-semibold">
+                    <i class="fas fa-notes-medical me-2 text-success"></i>
+                    Entradas Clínicas
+                </h5>
+            </div>
+            <div class="card-body">
+                @if (Model.EntradasClinicas.Any())
+                {
+                    <div class="timeline">
+                        @foreach (var entrada in Model.EntradasClinicas.OrderByDescending(e => e.fecha))
+                        {
+                            <div class="timeline-item mb-4">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <div class="card border-start border-primary border-3">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                                <div>
+                                                    <h6 class="mb-1">@entrada.fecha?.ToString("dd/MM/yyyy")</h6>
+                                                    <p class="text-muted small mb-0">
+                                                        <i class="fas fa-user-md me-1"></i>
+                                                        @entrada.medico.idNavigation.nombre
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            
+                                            @if (!string.IsNullOrEmpty(entrada.diagnostico))
+                                            {
+                                                <div class="mb-3">
+                                                    <p class="mb-1 fw-semibold text-primary">Diagnóstico:</p>
+                                                    <p class="mb-0">@entrada.diagnostico</p>
+                                                </div>
+                                            }
+                                            
+                                            @if (!string.IsNullOrEmpty(entrada.tratamiento))
+                                            {
+                                                <div class="mb-3">
+                                                    <p class="mb-1 fw-semibold text-success">Tratamiento:</p>
+                                                    <p class="mb-0">@entrada.tratamiento</p>
+                                                </div>
+                                            }
+                                            
+                                            @if (!string.IsNullOrEmpty(entrada.observaciones))
+                                            {
+                                                <div>
+                                                    <p class="mb-1 fw-semibold text-info">Observaciones:</p>
+                                                    <p class="mb-0">@entrada.observaciones</p>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="fas fa-notes-medical fa-4x text-muted opacity-50 mb-3"></i>
+                        <h5 class="text-muted">No hay entradas clínicas registradas</h5>
+                        <p class="text-muted mb-4">Comienza agregando la primera entrada médica</p>
+                        <a asp-action="NuevaEntrada" asp-route-pacienteId="@Model.paciente_id" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>
+                            Nueva Entrada
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <a asp-action="HistoriasClinicas" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>
+                Volver
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, #3b82f6, #e5e7eb);
+    }
+    
+    .timeline-item {
+        position: relative;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -35px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #3b82f6;
+        border: 3px solid white;
+        box-shadow: 0 0 0 2px #3b82f6;
+    }
+    
+    .timeline-content {
+        margin-left: 10px;
+    }
+</style>

@@ -1,0 +1,336 @@
+@model MedCenter.DTOs.RegisterDTO
+@{
+    ViewData["Title"] = "Registrarse";
+    Layout = "_Layout";
+}
+
+<div class="container mt-4 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-lg">
+                <div class="card-body p-5">
+                    <!-- Header -->
+                   <div class="text-center mb-4">
+                        <h2 class="font-weight-light mb-2 text-dark">Crear Nueva Cuenta</h2>
+                        <p class="text-muted">Completa los datos para registrarte en MedCenter</p>
+                    </div>
+
+
+                    <form asp-action="Register" method="post" id="registerForm">
+                        <div asp-validation-summary="All" class="alert alert-danger" id="validationErrors" style="display: none;"></div>
+
+                        <!-- Información básica -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Nombre" class="form-label">Nombre Completo <span class="text-danger">*</span></label>
+                                    <input asp-for="Nombre" class="form-control" placeholder="Ingresa tu nombre completo" />
+                                    <span asp-validation-for="Nombre" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Email" class="form-label">Email <span class="text-danger">*</span></label>
+                                    <input asp-for="Email" class="form-control" placeholder="tu@email.com" />
+                                    <span asp-validation-for="Email" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Password" class="form-label">Contraseña <span class="text-danger">*</span></label>
+                                    <input asp-for="Password" type="password" class="form-control" placeholder="Mínimo 6 caracteres" />
+                                    <span asp-validation-for="Password" class="text-danger small"></span>
+                                </div>
+                            </div>
+                             <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="ConfirmPassword" class="form-label">Confirmar Contraseña <span class="text-danger">*</span></label>
+                                    <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Repite la contraseña" />
+                                    <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Role" class="form-label">Tipo de Usuario <span class="text-danger">*</span></label>
+                                    <select asp-for="Role" class="form-select" id="roleSelect">
+                                        <option value="">Seleccionar tipo</option>
+                                        <option value="Paciente">Paciente</option>
+                                        <option value="Medico">Médico</option>
+                                        <option value="Secretaria">Secretaria</option>
+                                    </select>
+                                    <span asp-validation-for="Role" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos específicos por rol -->
+                        
+                        <!-- Campos para Paciente -->
+                        <div id="pacienteFields" class="role-fields" style="display: none;">
+                            <div class="card bg-light border-0 mb-4">
+                                <div class="card-body">
+                                    <h5 class="card-title text-primary mb-3">
+                                        <i class="fas fa-user-injured me-2"></i>Información del Paciente
+                                    </h5>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label asp-for="DNI" class="form-label">DNI</label>
+                                                <input asp-for="DNI" class="form-control" placeholder="12345678" />
+                                                <span asp-validation-for="DNI" class="text-danger small"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label asp-for="Telefono" class="form-label">Teléfono</label>
+                                                <input asp-for="Telefono" class="form-control" placeholder="(341) 123-4567" />
+                                                <span asp-validation-for="Telefono" class="text-danger small"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos para Médico -->
+                        <div id="medicoFields" class="role-fields" style="display: none;">
+                            <div class="card bg-light border-0 mb-4">
+                                <div class="card-body">
+                                    <h5 class="card-title text-success mb-3">
+                                        <i class="fas fa-user-md me-2"></i>Información del Médico
+                                    </h5>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label asp-for="Matricula" class="form-label">Matrícula Profesional</label>
+                                                <input asp-for="Matricula" class="form-control" placeholder="MP 12345" />
+                                                <span asp-validation-for="Matricula" class="text-danger small"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label asp-for="ClaveMedico" class="form-label">Clave de Autorización</label>
+                                                <input asp-for="ClaveMedico" type="password" class="form-control" placeholder="Clave institucional" />
+                                                <small class="form-text text-muted">Requerida para verificar credenciales médicas</small>
+                                                <span asp-validation-for="ClaveMedico" class="text-danger small"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Especialidades</label>
+                                        <div id="especialidadesContainer" class="border p-3 rounded bg-white">
+                                            <p class="text-muted text-center">Cargando especialidades...</p>
+                                        </div>
+                                        <small class="form-text text-muted">Selecciona al menos una especialidad</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos para Secretaria -->
+                        <div id="secretariaFields" class="role-fields" style="display: none;">
+                            <div class="card bg-light border-0 mb-4">
+                                <div class="card-body">
+                                    <h5 class="card-title text-warning mb-3">
+                                        <i class="fas fa-user-tie me-2"></i>Información de Secretaria
+                                    </h5>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label asp-for="Legajo" class="form-label">Legajo</label>
+                                                <input asp-for="Legajo" class="form-control" placeholder="Número de legajo" />
+                                                <span asp-validation-for="Legajo" class="text-danger small"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label asp-for="ClaveSecretaria" class="form-label">Clave de Autorización</label>
+                                                <input asp-for="ClaveSecretaria" type="password" class="form-control" placeholder="Clave institucional" />
+                                                <small class="form-text text-muted">Requerida para personal administrativo</small>
+                                                <span asp-validation-for="ClaveSecretaria" class="text-danger small"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <button type="submit" class="btn btn-primary btn-lg w-100" id="submitBtn" disabled>
+                                    <i class="fas fa-user-plus me-2"></i>
+                                    Crear Cuenta
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <a asp-action="Login" class="btn btn-outline-secondary btn-lg w-100">
+                                    <i class="fas fa-arrow-left me-2"></i>
+                                    Volver al Login
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 1rem;
+    }
+    
+    .shadow-lg {
+        box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175) !important;
+    }
+    
+    .form-control, .form-select {
+        border: 1px solid #e9ecef;
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+        background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-primary:disabled {
+        background: #6c757d;
+        opacity: 0.65;
+        transform: none;
+    }
+    
+    .role-fields {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+    
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .form-check-input:checked {
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+
+    /* Forzar fondo blanco y texto negro en todos los inputs y selects dentro del form */
+form#registerForm input.form-control,
+form#registerForm select.form-select {
+    background-color: #ffffff; /* fondo blanco */
+    color: #000000;            /* texto negro */
+}
+
+/* Opcional: mantener el foco con sombra azul */
+form#registerForm input.form-control:focus,
+form#registerForm select.form-select:focus {
+    background-color: #ffffff; /* fondo blanco incluso al enfocar */
+    color: #000000;
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const roleSelect = document.getElementById('roleSelect');
+            const submitBtn = document.getElementById('submitBtn');
+            const validationErrors = document.getElementById('validationErrors');
+            
+            // Mostrar errores de validación si existen
+            if (validationErrors && validationErrors.textContent.trim()) {
+                validationErrors.style.display = 'block';
+            }
+            
+            // Manejo del cambio de rol
+            roleSelect.addEventListener('change', function() {
+                const selectedRole = this.value;
+                
+                // Ocultar todos los campos específicos
+                document.querySelectorAll('.role-fields').forEach(field => {
+                    field.style.display = 'none';
+                });
+                
+                // Mostrar campos específicos del rol seleccionado
+                if (selectedRole === 'Paciente') {
+                    document.getElementById('pacienteFields').style.display = 'block';
+                    submitBtn.disabled = false;
+                } else if (selectedRole === 'Medico') {
+                    document.getElementById('medicoFields').style.display = 'block';
+                    loadEspecialidades();
+                    submitBtn.disabled = false;
+                } else if (selectedRole === 'Secretaria') {
+                    document.getElementById('secretariaFields').style.display = 'block';
+                    submitBtn.disabled = false;
+                } else {
+                    submitBtn.disabled = true;
+                }
+            });
+            
+            // Cargar especialidades para médicos
+            function loadEspecialidades() {
+                const container = document.getElementById('especialidadesContainer');
+                container.innerHTML = '<p class="text-muted text-center">Cargando especialidades...</p>';
+                
+                fetch('/Especialidad/GetEspecialidades') // Necesitarás crear este endpoint
+                    .then(response => response.json())
+                    .then(data => {
+                        let html = '<div class="row">';
+                        data.forEach((especialidad, index) => {
+                            html += `
+                                <div class="col-md-6 mb-2">
+                                    <div class="form-check">
+                                        <input type="checkbox" name="EspecialidadIds" value="${especialidad.id}" 
+                                               class="form-check-input" id="esp_${especialidad.id}">
+                                        <label class="form-check-label" for="esp_${especialidad.id}">
+                                            ${especialidad.nombre}
+                                        </label>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        html += '</div>';
+                        container.innerHTML = html;
+                    })
+                    .catch(error => {
+                        container.innerHTML = '<p class="text-danger text-center">Error al cargar especialidades</p>';
+                    });
+            }
+            
+            // Si ya hay un rol seleccionado (en caso de errores de validación), mostrar los campos correspondientes
+            if (roleSelect.value) {
+                roleSelect.dispatchEvent(new Event('change'));
+            }
+        });
+    </script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+}
+
+<!-- Campo oculto para especialidades seleccionadas -->
+@for (int i = 0; i < Model.EspecialidadIds.Count; i++)
+{
+    <input type="hidden" asp-for="EspecialidadIds[i]" />
+}

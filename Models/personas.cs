@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace MedCenter.Models;
 
 public partial class Persona
 {
+    [Key]
     public int id { get; set; }
 
     public string? nombre { get; set; }
@@ -13,11 +15,11 @@ public partial class Persona
 
     public string? contraseña { get; set; }
 
-    public virtual Medico? medicos { get; set; }
+    public virtual Medico? Medico { get; set; }
 
-    public virtual Paciente? pacientes { get; set; }
+    public virtual Paciente? Paciente { get; set; }
 
     public virtual ICollection<ReporteEstadistico> reportesestadisticos { get; set; } = new List<ReporteEstadistico>();
 
-    public virtual Secretaria? secretarias { get; set; }
+    public virtual Secretaria? Secretaria { get; set; }
 }

@@ -1,0 +1,198 @@
+@model MedCenter.DTOs.LoginDTO
+@{
+    ViewData["Title"] = "Iniciar Sesión";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid vh-100">
+    <div class="row h-100">
+        <!-- Panel izquierdo con información -->
+        <div class="col-lg-6 d-none d-lg-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="text-center text-white">
+                <div class="mb-4">
+                    <i class="fas fa-hospital-user fa-5x mb-3"></i>
+                </div>
+                <h2 class="mb-3">MedCenter Gestión</h2>
+                <p class="lead mb-4">Sistema integral de gestión médica</p>
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="mb-2">
+                            <i class="fas fa-user-md fa-2x"></i>
+                        </div>
+                        <small>Médicos</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="mb-2">
+                            <i class="fas fa-user-tie fa-2x"></i>
+                        </div>
+                        <small>Secretarías</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="mb-2">
+                            <i class="fas fa-user-injured fa-2x"></i>
+                        </div>
+                        <small>Pacientes</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel derecho con formulario -->
+        <div class="col-lg-6 d-flex align-items-center justify-content-center">
+            <div class="w-100" style="max-width: 400px;">
+                <div class="card border-0 shadow-lg">
+                    <div class="card-body p-5">
+                        <div class="text-center mb-4">
+                            <h3 class="font-weight-light">Iniciar Sesión</h3>
+                            <p class="text-muted">Accede a tu cuenta de MedCenter</p>
+                        </div>
+
+                        <form asp-action="Login" method="post">
+                            <div asp-validation-summary="All" class="alert alert-danger" role="alert" style="display: none;"></div>
+                            
+                            <div class="form-group mb-4">
+                                <label asp-for="Username" class="form-label text-muted small text-uppercase font-weight-bold">Email</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0">
+                                        <i class="fas fa-envelope text-muted"></i>
+                                    </span>
+                                    <input asp-for="Username" class="form-control border-start-0" placeholder="tu@email.com" />
+                                </div>
+                                <span asp-validation-for="Username" class="text-danger small"></span>
+                            </div>
+
+                            <div class="form-group mb-4">
+                                <label asp-for="Password" class="form-label text-muted small text-uppercase font-weight-bold">Contraseña</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0">
+                                        <i class="fas fa-lock text-muted"></i>
+                                    </span>
+                                    <input asp-for="Password" type="password" class="form-control border-start-0" placeholder="Ingresa tu contraseña" />
+                                    <button class="btn btn-outline-secondary border-start-0" type="button" id="togglePassword">
+                                        <i class="fas fa-eye" id="toggleIcon"></i>
+                                    </button>
+                                </div>
+                                <span asp-validation-for="Password" class="text-danger small"></span>
+                            </div>
+
+                            <div class="form-group mb-4">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="rememberMe">
+                                    <label class="form-check-label text-muted" for="rememberMe">
+                                        Recordarme
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-sign-in-alt me-2"></i>
+                                    Iniciar Sesión
+                                </button>
+                            </div>
+                        </form>
+
+                        <hr class="my-4">
+
+                        <div class="text-center">
+                            <p class="text-muted mb-3">¿No tienes cuenta?</p>
+                            <a asp-action="Register" class="btn btn-outline-primary">
+                                <i class="fas fa-user-plus me-2"></i>
+                                Registrarse
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+    
+    .input-group-text {
+        border: 1px solid #e9ecef;
+        background-color: #f8f9fa;
+    }
+    
+    .form-control {
+        border: 1px solid #e9ecef;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        background-color: #ffffff !important;
+        color: #495057 !important;
+    }
+    
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        background-color: #ffffff !important;
+        color: #495057 !important;
+    }
+    
+    .form-control::placeholder {
+        color: #6c757d !important;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        padding: 0.75rem 1.5rem;
+    }
+    
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-outline-primary {
+        border-color: #667eea;
+        color: #667eea;
+    }
+    
+    .btn-outline-primary:hover {
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+    
+    .card {
+        border-radius: 1rem;
+    }
+    
+    .shadow-lg {
+        box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175) !important;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        // Toggle password visibility
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const password = document.querySelector('input[name="Password"]');
+            const icon = document.getElementById('toggleIcon');
+            
+            if (password.type === 'password') {
+                password.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                password.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+
+        // Show validation summary if there are errors
+        const validationSummary = document.querySelector('[asp-validation-summary]');
+        if (validationSummary && validationSummary.textContent.trim()) {
+            validationSummary.style.display = 'block';
+        }
+    </script>
+    
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+}

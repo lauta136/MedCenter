@@ -1,0 +1,58 @@
+@model MedCenter.DTOs.TurnoEditDTO
+
+@{
+    ViewData["Title"] = "Reprogramar Turno";
+}
+
+<h2>@ViewData["Title"]</h2>
+<hr />
+
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Edit" method="post"> <!--Indica que controladora va a usar -->
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="EspecialidadId" />
+            <input type="hidden" asp-for="PacienteId" /> 
+
+             <div class="form-group">
+                <label asp-for="Fecha" class="control-label"></label> <!--Indica con que propiedad de TurnoEditDTO esta linkeada-->
+                <input asp-for="Fecha" class="form-control" type="date" /> <!--Indica el tipo de control a usar, en este caso un selector de fecha-->
+                <span asp-validation-for="Fecha" class="text-danger"></span><!--Muestra los errores de validacion que tira el modelo, los puestos en DTO como attributes o Los que hagas que salten en los catch con ModelState.AddModelError()-->
+            </div>
+
+            <div class="form-group mt-3">
+                <label asp-for="Hora" class="control-label"></label>
+                <input asp-for="Hora" class="form-control" type="time" />
+                <span asp-validation-for="Hora" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mt-3">
+                <label class="control-label">Especialidad</label>
+                <input asp-for="EspecialidadNombre" class="form-control" readonly />
+            </div>
+
+            
+            <div class="form-group mt-3">
+                <label class="control-label">Paciente</label>
+                <input asp-for="PacienteNombre" class="form-control" readonly />
+            </div>
+
+            <div class="form-group mt-3">
+                <label asp-for="MedicoId" class="control-label">Médico</label>
+                <select asp-for="MedicoId" class="form-control" asp-items="@(ViewData["MedicoId"] as SelectList)"></select>
+                <span asp-validation-for="MedicoId" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mt-4">
+                <input type="submit" value="Guardar Cambios" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

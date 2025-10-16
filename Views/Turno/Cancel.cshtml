@@ -1,0 +1,41 @@
+@model MedCenter.DTOs.TurnoCancelDTO 
+@{
+    ViewData["Title"] = "Cancelar Turno";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<h3>¿Estás seguro de que deseas cancelar este turno?</h3>
+<div>
+    <h4>Detalles del Turno</h4>
+    <hr />
+    <dl class="row">
+        
+        <dt class = "col-sm-4">Fecha</dt>
+        <dd class = "col-sm-8">@Model.Fecha</dd>
+        
+        <dt class = "col-sm-4">Hora</dt>
+        <dd class = "col-sm-8">@Model.Hora</dd>
+        
+        <dt class = "col-sm-4">Paciente</dt>
+        <dd class = "col-sm-8">@Model.PacienteNombre</dd>
+        
+        <dt class = "col-sm-4">Médico</dt>
+        <dd class = "col-sm-8">@Model.MedicoNombre</dd>
+    </dl>
+    
+    <form asp-action="Cancel" method="post">
+        <input type="hidden" asp-for="Id" /> 
+        
+        <div class="form-group mt-3">
+            <label asp-for="MotivoCancelacion" class="control-label">Motivo de Cancelación</label>
+            <textarea asp-for="MotivoCancelacion" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="MotivoCancelacion" class="text-danger"></span>
+        </div>
+        
+        <div class="form-group mt-4">
+            <input type="submit" value="Confirmar Cancelación" class="btn btn-danger" /> |
+            <a asp-action="Index" class="btn btn-secondary">Volver a la Lista</a>
+        </div>
+    </form>
+</div>
