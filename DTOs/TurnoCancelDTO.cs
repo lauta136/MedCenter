@@ -2,6 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Data;
 using MedCenter.Models;
+using MedCenter.Attributes;
 
 namespace MedCenter.DTOs // <-- Asegurate de que esta línea sea correcta
 {

@@ -43,7 +43,9 @@ public partial class AppDbContext : DbContext
     public virtual DbSet<MedicoEspecialidad> medicoEspecialidades { get; set; }
 
     public DbSet<RoleKey> role_keys { get; set; }
-
+    public DbSet<ObraSocial> obras_sociales { get; set; }
+    public DbSet<MedicoObraSocial> medico_obrasocial { get; set; }
+    public DbSet<PacienteObraSocial> paciente_obrasocial { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<EntradaClinica>(entity =>
@@ -100,6 +102,11 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey<Medico>(d => d.id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("medicos_id_fkey");
+
+            entity.HasMany(o => o.medicosObraSociales).WithOne(o => o.medico)
+                  .HasForeignKey(o => o.medico_id)
+                  .OnDelete(DeleteBehavior.Restrict)
+                  .HasConstraintName("medico_obrasocial_medico_fkey");
         });
 
         modelBuilder.Entity<Paciente>(entity =>
@@ -114,6 +121,12 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey<Paciente>(d => d.id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("pacientes_id_fkey");
+
+            entity.HasMany(p => p.pacientesObrasSociales)
+                  .WithOne(po => po.Paciente)
+                  .HasForeignKey(po => po.paciente_id)
+                  .HasConstraintName("paciente_obrasocial_paciente_fkey")
+                  .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Persona>(entity =>
@@ -176,7 +189,8 @@ public partial class AppDbContext : DbContext
 
             entity.HasOne(d => d.paciente).WithMany(p => p.turnos)
                 .HasForeignKey(d => d.paciente_id)
-                .HasConstraintName("turnos_paciente_id_fkey");
+                .HasConstraintName("turnos_paciente_id_fkey")
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(d => d.especialidad).WithMany(p => p.turnos)
            .HasForeignKey(d => d.especialidad_id)
@@ -189,6 +203,13 @@ public partial class AppDbContext : DbContext
             entity.HasOne(d => d.slot).WithMany(p => p.turnos)
                 .HasForeignKey(d => d.slot_id)
                 .HasConstraintName("turnos_slot_id_fkey");
+
+            entity.HasOne(t => t.paciente_obrasocial)
+                  .WithMany(po => po.turnos)
+                  .HasForeignKey(t => t.pacienteobrasocial_id)
+                  .HasConstraintName("turno_paciente_obrasocial_fkey")
+                  .OnDelete(DeleteBehavior.Restrict);
+
         });
 
         modelBuilder.Entity<MedicoEspecialidad>(entity =>
@@ -230,6 +251,71 @@ public partial class AppDbContext : DbContext
 
         var medicoKey = passwordHasher.HashPassword(medicoPlainKey);
         var secretariaKey = passwordHasher.HashPassword(secretariaPlainKey);
+
+        modelBuilder.Entity<ObraSocial>(entity =>
+        {
+            entity.ToTable("obrassociales");
+
+            entity.HasKey(os => os.id).HasName("obra_social_pkey");
+            entity.Property(os => os.id).UseIdentityAlwaysColumn();
+
+            entity.Property(os => os.nombre).HasMaxLength(100).IsRequired();
+            entity.Property(os => os.sigla).HasMaxLength(20);
+            entity.Property(os => os.activa).HasDefaultValue(true); //por defecto en la creacion esta activa
+
+            entity.HasMany(os => os.pacientesObrasSociales)
+                  .WithOne(po => po.obrasocial)
+                  .HasForeignKey(po => po.obrasocial_id)
+                  .HasConstraintName("paciente_obrasocial_obrasocial_fkey")
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasMany(os => os.medicosObrasSociales)
+                  .WithOne(mo => mo.obrasocial)
+                  .HasForeignKey(mo => mo.obrasocial_id)
+                  .HasConstraintName("medico_obrasocial_obrasocial_fkey")
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<PacienteObraSocial>(entity =>
+        {
+            entity.ToTable("paciente_obrasocial");
+
+            entity.HasKey(po => po.id);
+            entity.Property(po => po.id).UseIdentityAlwaysColumn();
+
+            entity.Property(po => po.numeroAfiliado).HasMaxLength(50).IsRequired();
+            entity.Property(po => po.fecha_afiliacion).IsRequired();
+            entity.Property(po => po.activa).HasDefaultValue(true);
+            entity.Property(po => po.plan).HasMaxLength(100);
+
+            entity.HasIndex(po => new
+            {
+                po.paciente_id,
+                po.obrasocial_id,
+                po.activa
+
+            }).IsUnique().HasFilter("activa = TRUE");
+
+        });
+
+        modelBuilder.Entity<MedicoObraSocial>(entity =>
+        {
+            entity.ToTable("medico_obrasocial");
+
+            entity.HasKey(mo => mo.id);
+            entity.Property(mo => mo.id).UseIdentityAlwaysColumn();
+
+            entity.Property(mo => mo.fecha_desde).IsRequired();
+            entity.Property(mo => mo.activo).HasDefaultValue(true);
+
+            entity.HasIndex(mo => new
+            {
+                mo.medico_id,
+                mo.obrasocial_id,
+                mo.activo
+            }).IsUnique().HasFilter("activo = true");
+        });
+
 
         /* modelBuilder.Entity<RoleKey>().HasData(
              new RoleKey { Id = 1, Role = "Medico", HashedKey = medicoKey },

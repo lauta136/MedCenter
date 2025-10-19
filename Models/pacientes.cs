@@ -20,4 +20,6 @@ public partial class Paciente
     public virtual Persona idNavigation { get; set; } = null!;
 
     public virtual ICollection<Turno> turnos { get; set; } = new List<Turno>();
+
+    public ICollection<PacienteObraSocial> pacientesObrasSociales { get; set; } = new List<PacienteObraSocial>();
 }

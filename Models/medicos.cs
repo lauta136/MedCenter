@@ -19,4 +19,6 @@ public partial class Medico
 
     public virtual ICollection<MedicoEspecialidad> medicoEspecialidades { get; set; } = new List<MedicoEspecialidad>();
 
+    public ICollection<MedicoObraSocial> medicosObraSociales { get; set; } = new List<MedicoObraSocial>();
+
 }
