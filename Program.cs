@@ -2,6 +2,7 @@
 using MedCenter.Data;
 using Microsoft.EntityFrameworkCore;
 using MedCenter.Services.TurnoStates;
+using MedCenter.Services.DisponibilidadMedico;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +21,7 @@ builder.Services.AddSession(options =>
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<DisponibilidadService>();
 
 builder.Services.AddAuthentication("Cookies")
     .AddCookie("Cookies", options =>

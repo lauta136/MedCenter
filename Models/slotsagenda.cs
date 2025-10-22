@@ -7,7 +7,7 @@ public partial class SlotAgenda
 {
     public int id { get; set; }
 
-    public DateOnly? fecha { get; set; }
+    public DateOnly? fecha { get; set; } //no deberia ser nullable
 
     public TimeOnly? horainicio { get; set; }
 

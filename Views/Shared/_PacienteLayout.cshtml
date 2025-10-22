@@ -242,8 +242,8 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "SolicitarTurno" ? "active" : "")" 
-                       asp-controller="Paciente" asp-action="SolicitarTurno">
+                    <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Reservar" ? "active" : "")" 
+                       asp-controller="Turno" asp-action="Reservar">
                         <i class="fas fa-calendar-plus"></i>
                         Solicitar Turno
                     </a>
