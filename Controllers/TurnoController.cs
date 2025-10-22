@@ -12,6 +12,7 @@ using AspNetCoreGeneratedDocument;
 using System.Net.WebSockets;
 using MedCenter.Controllers;
 using MedCenter.Services.DisponibilidadMedico;
+using MedCenter.Services.EspecialidadService;
 
 
 // Heredamos de Controller para poder trabajar con Vistas Razor
@@ -20,11 +21,13 @@ public class TurnoController : BaseController
     private readonly AppDbContext _context;
     private TurnoStateService _stateService;
     private DisponibilidadService _disponibilidadService;
-    public TurnoController(AppDbContext context, TurnoStateService turnoStateService, DisponibilidadService disponibilidadService)
+    private EspecialidadService _especialidadService;
+    public TurnoController(AppDbContext context, TurnoStateService turnoStateService, DisponibilidadService disponibilidadService, EspecialidadService especialidadService)
     {
         _context = context;
         _stateService = turnoStateService;
         _disponibilidadService = disponibilidadService;
+        _especialidadService = especialidadService;
     }
 
     // GET: Turno/Details/5
@@ -114,25 +117,15 @@ public class TurnoController : BaseController
         return Json(especialidades);
     }
 
-     [HttpGet]
     public async Task<JsonResult> GetMedicosPorEspecialidad(int especialidadId)
     {
-        var medicos = await _context.medicoEspecialidades
-                                           .Where(me => me.especialidad.id == especialidadId && me.medico != null)
-                                           .Include(me => me.medico) // Incluimos los datos de la especialidad
-                                           .ThenInclude(me => me.idNavigation)
-                                           .Select(me => new {  me.medico.idNavigation.nombre, me.medico.id, me.medico.matricula })
-                                           .ToListAsync();
+        var medicos = await _especialidadService.GetMedicosPorEspecialidad(especialidadId);
 
         return Json(medicos);
     }
+    
 
-    public async Task<List<Especialidad>> GetEspecialidadesCargadas() //especialidades que tienen asociado algun medico que esta cargado en el sistema 
-    {
-        var especialidades = await _context.especialidades.ToListAsync();
-
-        return especialidades;
-    }
+    
 
     // POST: Turno/Create
     [HttpPost]
@@ -170,7 +163,7 @@ public class TurnoController : BaseController
 
     public async Task<IActionResult> Reservar()
     {
-        var especialidades = await GetEspecialidadesCargadas();
+        var especialidades = await _especialidadService.GetEspecialidadesCargadas();
         ViewBag.UserName = UserName;
         ViewBag.EsSecretaria = User.IsInRole("Secretaria");
 

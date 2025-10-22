@@ -9,9 +9,9 @@ namespace MedCenter.DTOs
         public string? Matricula { get; set; }
         public string? Nombre { get; set; }
         public string? Email { get; set; }
-        public List<string> Especialidades { get; set; } = new();
+        public List<string>? Especialidades { get; set; } = new();
 
-        public List<int> TurnosIds { get; set; } = new();
+        public List<int>? TurnosIds { get; set; } = new();
 
         public MedicoViewDTO() { } //Creado para usar en controlador a la hora de hacer VIEWS, para poder usar SELECTS de SQL y no usar INCLUDES que traen mas informacion de la necesaria
 
