@@ -92,6 +92,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvUGFjaWVudGUvU29saWNpdGFyVHVybm8uY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Secretaria/AgendaMedico.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2VjcmV0YXJpYS9BZ2VuZGFNZWRpY28uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Secretaria/ConfirmarCancelacion.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2VjcmV0YXJpYS9Db25maXJtYXJDYW5jZWxhY2lvbi5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 

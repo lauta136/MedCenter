@@ -134,20 +134,20 @@ namespace MedCenter.Controllers
                 .Include(m => m.idNavigation)
                 .Include(m => m.medicoEspecialidades)
                     .ThenInclude(me => me.especialidad)
-                .Select(m => new MedicoViewDTO
-                {
-                    Id = m.id,
-                    Nombre = m.idNavigation.nombre,
-                    Matricula = m.matricula,
-                    Especialidades = m.medicoEspecialidades
-                        .Select(me => me.especialidad.nombre ?? "Sin especialidad")
-                        .ToList()
-                })
+                    .Include(m => m.slotsAgenda)
+                .Select(m => new MedicoAgendaDTO(
+                    m.id,
+                    m.idNavigation.nombre!,
+                    m.matricula!,
+                    m.slotsAgenda
+                ))
                 .ToListAsync();
 
             ViewBag.SecretariaNombre = UserName;
             return View(medicos);
         }
+
+
 
         // GET: Secretaria/Reportes
         public async Task<IActionResult> Reportes()

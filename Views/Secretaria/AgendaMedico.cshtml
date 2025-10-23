@@ -1,0 +1,74 @@
+@* Views/Agenda/Index.cshtml *@
+@model List<MedCenter.DTOs.MedicoAgendaDTO>
+@{
+    ViewData["Title"] = "Gestión de Agendas";
+    Layout = "~/Views/Shared/_SecretariaLayout.cshtml";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestión de Agendas Médicas</h2>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Médico</th>
+                        <th>Especialidad</th>
+                        <th>Matrícula</th>
+                        <th>Días configurados</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var medico in Model)
+                    {
+                        <tr>
+                            <td>@medico.Nombre</td>
+                            <td>@medico.Matricula</td>
+                            <td>
+                                @if (medico.SlotsAgenda.Any())
+                                {
+                                    var dias = medico.DiasDisponibles
+                                        .Select(d => ObtenerNombreDia(d.dia_semana))
+                                        .Distinct()
+                                        .OrderBy(d => d);
+                                    <span class="badge bg-success">@string.Join(", ", dias)</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Sin agenda</span>
+                                }
+                            </td>
+                            <td>
+                                <a asp-action="Gestionar" asp-route-id="@medico.Id" 
+                                   class="btn btn-primary btn-sm">
+                                    <i class="fas fa-calendar-alt"></i> Gestionar Agenda
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string ObtenerNombreDia(DayOfWeek dia)
+    {
+        return dia switch
+        {
+            DayOfWeek.Monday => "Lun",
+            DayOfWeek.Tuesday => "Mar",
+            DayOfWeek.Wednesday => "Mié",
+            DayOfWeek.Thursday => "Jue",
+            DayOfWeek.Friday => "Vie",
+            DayOfWeek.Saturday => "Sáb",
+            DayOfWeek.Sunday => "Dom",
+            _ => ""
+        };
+    }
+}

@@ -41,11 +41,12 @@ public partial class AppDbContext : DbContext
     public virtual DbSet<Turno> turnos { get; set; }
 
     public virtual DbSet<MedicoEspecialidad> medicoEspecialidades { get; set; }
-
     public DbSet<RoleKey> role_keys { get; set; }
     public DbSet<ObraSocial> obras_sociales { get; set; }
     public DbSet<MedicoObraSocial> medico_obrasocial { get; set; }
     public DbSet<PacienteObraSocial> paciente_obrasocial { get; set; }
+
+    public DbSet<DiaDisponibilidadMedico> disponibilidad_medico { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<EntradaClinica>(entity =>
@@ -316,6 +317,19 @@ public partial class AppDbContext : DbContext
             }).IsUnique().HasFilter("activo = true");
         });
 
+        modelBuilder.Entity<DiaDisponibilidadMedico>(e =>
+        {
+            e.ToTable("diasdisponibilidadmedico");
+
+            e.HasKey(e => e.id);
+            e.Property(e => e.id).UseIdentityAlwaysColumn();
+
+            e.HasOne(e => e.medico).WithMany(m => m.diasDisponibliesMedico)
+            .HasForeignKey(e => e.medico_id).HasConstraintName("diadisponibilidadmedico_medico_fkey");
+
+            e.Property(e => e.duracion_turno_minutos).HasDefaultValue(30);
+            e.Property(e => e.activa).HasDefaultValue(true);
+        });
 
         /* modelBuilder.Entity<RoleKey>().HasData(
              new RoleKey { Id = 1, Role = "Medico", HashedKey = medicoKey },
