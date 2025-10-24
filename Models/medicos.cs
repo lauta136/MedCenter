@@ -21,6 +21,6 @@ public partial class Medico
 
     public ICollection<MedicoObraSocial> medicosObraSociales { get; set; } = new List<MedicoObraSocial>();
 
-    public ICollection<DiaDisponibilidadMedico> diasDisponibliesMedico { get; set; } = new List<DiaDisponibilidadMedico>();
+    public ICollection<DisponibilidadMedico> disponibilidadesMedico { get; set; } = new List<DisponibilidadMedico>(); //Lista con los bloques de tiempo que atiende en el consultorio, asociado a dias
 
 }

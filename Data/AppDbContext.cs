@@ -46,7 +46,7 @@ public partial class AppDbContext : DbContext
     public DbSet<MedicoObraSocial> medico_obrasocial { get; set; }
     public DbSet<PacienteObraSocial> paciente_obrasocial { get; set; }
 
-    public DbSet<DiaDisponibilidadMedico> disponibilidad_medico { get; set; }
+    public DbSet<DisponibilidadMedico> disponibilidad_medico { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<EntradaClinica>(entity =>
@@ -317,15 +317,15 @@ public partial class AppDbContext : DbContext
             }).IsUnique().HasFilter("activo = true");
         });
 
-        modelBuilder.Entity<DiaDisponibilidadMedico>(e =>
+        modelBuilder.Entity<DisponibilidadMedico>(e =>
         {
-            e.ToTable("diasdisponibilidadmedico");
+            e.ToTable("disponibilidadesmedico");
 
             e.HasKey(e => e.id);
             e.Property(e => e.id).UseIdentityAlwaysColumn();
 
-            e.HasOne(e => e.medico).WithMany(m => m.diasDisponibliesMedico)
-            .HasForeignKey(e => e.medico_id).HasConstraintName("diadisponibilidadmedico_medico_fkey");
+            e.HasOne(e => e.medico).WithMany(m => m.disponibilidadesMedico)
+            .HasForeignKey(e => e.medico_id).HasConstraintName("disponibilidades_medico_fkey");
 
             e.Property(e => e.duracion_turno_minutos).HasDefaultValue(30);
             e.Property(e => e.activa).HasDefaultValue(true);

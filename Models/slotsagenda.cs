@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace MedCenter.Models;
 
-public partial class SlotAgenda
+public partial class SlotAgenda //Adentro de cada bloque (DisponibilidadMedico) se encuentran los slots de la agenda
 {
     public int id { get; set; }
 

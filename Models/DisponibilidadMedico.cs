@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MedCenter.Models;
 
-public partial class DiaDisponibilidadMedico
+public partial class DisponibilidadMedico //cada bloque de trabajo, puede haber 2 en el mismo dia del mismo medico en caso de que trabaje en momentos diferenetes y no de corrido
 {
     public int id { get; set; }
     
@@ -20,7 +20,7 @@ public partial class DiaDisponibilidadMedico
     [Required]
     public TimeOnly hora_fin { get; set; }
     
-    [Required]
+    
     [Range(5, 120)]
     public int duracion_turno_minutos { get; set; } //predefinido en 30 en context
     

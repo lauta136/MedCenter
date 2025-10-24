@@ -16,9 +16,8 @@
                 <thead>
                     <tr>
                         <th>Médico</th>
-                        <th>Especialidad</th>
                         <th>Matrícula</th>
-                        <th>Días configurados</th>
+                        <th>Días que atiende</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -29,7 +28,7 @@
                             <td>@medico.Nombre</td>
                             <td>@medico.Matricula</td>
                             <td>
-                                @if (medico.SlotsAgenda.Any())
+                                @if (medico.DiasDisponibles.Any())
                                 {
                                     var dias = medico.DiasDisponibles
                                         .Select(d => ObtenerNombreDia(d.dia_semana))

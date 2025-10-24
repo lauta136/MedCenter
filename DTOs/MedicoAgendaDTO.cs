@@ -11,7 +11,7 @@ namespace MedCenter.DTOs
         public string? Email { get; set; }
         public List<int>? TurnosIds { get; set; } = new();
         public ICollection<SlotAgenda> SlotsAgenda = new List<SlotAgenda>();
-        public ICollection<DiaDisponibilidadMedico> DiasDisponibles = new List<DiaDisponibilidadMedico>();
+        public ICollection<DisponibilidadMedico> DiasDisponibles = new List<DisponibilidadMedico>();
 
 
         //para Hacer por ejemplo UPDATES ahi si usar Include.
