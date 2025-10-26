@@ -19,5 +19,5 @@ public partial class SlotAgenda //Adentro de cada bloque (DisponibilidadMedico) 
 
     public virtual Medico? medico { get; set; }
 
-    public virtual ICollection<Turno> turnos { get; set; } = new List<Turno>();
-}
+    public virtual ICollection<Turno> turnos { get; set; } = new List<Turno>(); //creo deberia cambiar a un solo turno?, no coleccion
+} 

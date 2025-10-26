@@ -290,7 +290,53 @@ namespace MedCenter.Controllers
 
         public async Task<IActionResult> GenerarSlotsAgenda(int medico_id)
         {
-            return Ok();
+            var bloques = await _context.disponibilidad_medico.Where(dm => dm.medico_id == medico_id && dm.activa == true).ToListAsync();
+
+            if (bloques == null) return Json(new { success = false, message = "El medico no tiene bloques de disponibilidad activos" });
+
+            foreach (var bloque in bloques)
+            {
+                int cantSlots = bloque.hora_fin.Minute - bloque.hora_inicio.Minute / bloque.duracion_turno_minutos;
+
+                TimeOnly horaInicioSlot = bloque.hora_inicio;
+                TimeOnly horaFinSlot = bloque.hora_inicio.AddMinutes(bloque.duracion_turno_minutos);
+
+                DateOnly fechaSlot = DateOnly.FromDateTime(DateTime.Now);
+
+                for (int i = 0; i < cantSlots; i++)
+                {
+                    if (horaFinSlot == bloque.hora_fin)
+                    {
+                        horaInicioSlot = bloque.hora_inicio;
+                        horaFinSlot = bloque.hora_inicio.AddMinutes(bloque.duracion_turno_minutos);
+
+                        // logica de salto de fecha
+                        for (int j = 0; j < 7; j++)
+                        {
+                            if (fechaSlot.DayOfWeek != bloque.dia_semana)
+                            {
+                                fechaSlot.AddDays(1);
+                            }
+                        }
+                    }
+
+                    _context.slotsagenda.Add(new SlotAgenda
+                    {
+                        fecha = fechaSlot,
+                        horainicio = horaInicioSlot,
+                        horafin = horaFinSlot,
+                        disponible = true,
+                        medico_id = medico_id
+                    });
+
+                    await _context.SaveChangesAsync();
+
+                    horaInicioSlot = horaFinSlot;
+                    horaFinSlot.AddMinutes(bloque.duracion_turno_minutos);
+                }
+            }
+
+            return Json(new { success = true, message = "Los slots se generaron exitosamente" });
         }
         
         // GET: Secretaria/Reportes
