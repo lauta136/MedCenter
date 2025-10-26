@@ -329,6 +329,10 @@ public partial class AppDbContext : DbContext
 
             e.Property(e => e.duracion_turno_minutos).HasDefaultValue(30);
             e.Property(e => e.activa).HasDefaultValue(true);
+
+            e.HasIndex(e => new { e.dia_semana, e.hora_inicio, e.hora_fin, e.medico_id, e.activa })
+             .HasFilter("activa = true")
+             .IsUnique();
         });
 
         /* modelBuilder.Entity<RoleKey>().HasData(

@@ -104,6 +104,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2VjcmV0YXJpYS9EYXNoYm9hcmQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Secretaria/GestionarDisponibilidad.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2VjcmV0YXJpYS9HZXN0aW9uYXJEaXNwb25pYmlsaWRhZC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [/Users/lauta136/Documents/Facultad/tercerAnio/MedCenter/Views/Secretaria/NuevoPaciente.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2VjcmV0YXJpYS9OdWV2b1BhY2llbnRlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 

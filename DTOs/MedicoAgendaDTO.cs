@@ -15,12 +15,13 @@ namespace MedCenter.DTOs
 
 
         //para Hacer por ejemplo UPDATES ahi si usar Include.
-        public MedicoAgendaDTO(int id,  string nombre,string matricula,ICollection<SlotAgenda> slotAgendas)
+        public MedicoAgendaDTO(int id,  string nombre,string matricula,ICollection<SlotAgenda> slotAgendas, ICollection<DisponibilidadMedico> disponibilidadMedicos)
         {
             Id = id;
             Matricula = matricula;
             Nombre = nombre;
             SlotsAgenda = slotAgendas;
+            DiasDisponibles = disponibilidadMedicos;
             //Especialidades = especialidades;
             //TurnosIds = turnosIds;
         }

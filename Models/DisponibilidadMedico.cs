@@ -29,7 +29,7 @@ public partial class DisponibilidadMedico //cada bloque de trabajo, puede haber 
     
     public DateOnly? vigencia_hasta { get; set; }
     
-    public bool activa { get; set; } //predefinida true en context
+    public bool? activa { get; set; } //predefinida true en context, el ? es crucial ya que sino, al agregar un nuevo DisponibilidadMedico, se pone activa como false, ya que bool no acepta null en c# y su valor predefinido es false
     
     // Navigation
     public Medico medico { get; set; } = null!;

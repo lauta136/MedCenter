@@ -14,5 +14,7 @@ public class ManipularDisponibilidadDTO
     [Required]
     public TimeOnly Hora_fin { get; set; }
 
+    public int Duracion_turno_minutos { get; set; }
+
 
 }
