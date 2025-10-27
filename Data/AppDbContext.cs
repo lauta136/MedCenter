@@ -330,6 +330,13 @@ public partial class AppDbContext : DbContext
             e.Property(e => e.duracion_turno_minutos).HasDefaultValue(30);
             e.Property(e => e.activa).HasDefaultValue(true);
 
+            e.Property(e => e.vigencia_hasta).HasDefaultValue(DateOnly.FromDateTime(DateTime.Now).AddDays(60));
+
+            e.HasMany(e => e.slotsAgenda).WithOne(sa => sa.bloqueDisponibilidad)
+                                         .HasForeignKey(sa => sa.bloqueDisponibilidadId)
+                                         .OnDelete(DeleteBehavior.Restrict)
+                                         .HasConstraintName("slotsagenda_disponibilidadmedico_fkey");
+
             e.HasIndex(e => new { e.dia_semana, e.hora_inicio, e.hora_fin, e.medico_id, e.activa })
              .HasFilter("activa = true")
              .IsUnique();

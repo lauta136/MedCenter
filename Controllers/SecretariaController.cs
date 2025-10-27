@@ -294,49 +294,42 @@ namespace MedCenter.Controllers
 
             if (bloques == null) return Json(new { success = false, message = "El medico no tiene bloques de disponibilidad activos" });
 
+            List<SlotAgenda> slotsAAgregar = new List<SlotAgenda>();
+
             foreach (var bloque in bloques)
             {
-                int cantSlots = bloque.hora_fin.Minute - bloque.hora_inicio.Minute / bloque.duracion_turno_minutos;
+                var span = bloque.hora_fin - bloque.hora_inicio; //TimeOnly se convierte a TimeSpan, TimeSpan tiene la propiedad TotalMinutes,TimeOnly no la tiene , solo tiene Minutes que no es lo que queres, solo agarra la parte minutos, no convierte todo a minutos
+                int cantSlots = (int)(span.TotalMinutes / bloque.duracion_turno_minutos);
 
-                TimeOnly horaInicioSlot = bloque.hora_inicio;
-                TimeOnly horaFinSlot = bloque.hora_inicio.AddMinutes(bloque.duracion_turno_minutos);
-
-                DateOnly fechaSlot = DateOnly.FromDateTime(DateTime.Now);
-
-                for (int i = 0; i < cantSlots; i++)
+                DateOnly fechaSlotInicio = DateOnly.FromDateTime(DateTime.Now);
+                for (int j = 0; j < 7; j++)
                 {
-                    if (horaFinSlot == bloque.hora_fin)
+                    if (fechaSlotInicio.DayOfWeek != bloque.dia_semana)
                     {
-                        horaInicioSlot = bloque.hora_inicio;
-                        horaFinSlot = bloque.hora_inicio.AddMinutes(bloque.duracion_turno_minutos);
-
-                        // logica de salto de fecha
-                        for (int j = 0; j < 7; j++)
-                        {
-                            if (fechaSlot.DayOfWeek != bloque.dia_semana)
-                            {
-                                fechaSlot.AddDays(1);
-                            }
-                        }
+                        fechaSlotInicio = fechaSlotInicio.AddDays(1);
                     }
+                }
 
-                    _context.slotsagenda.Add(new SlotAgenda
-                    {
-                        fecha = fechaSlot,
-                        horainicio = horaInicioSlot,
-                        horafin = horaFinSlot,
-                        disponible = true,
-                        medico_id = medico_id
-                    });
+                for (var Fecha = fechaSlotInicio; Fecha.CompareTo(bloque.vigencia_hasta) == 0; Fecha.AddDays(6))
+                {
 
-                    await _context.SaveChangesAsync();
-
-                    horaInicioSlot = horaFinSlot;
-                    horaFinSlot.AddMinutes(bloque.duracion_turno_minutos);
+                    for (var Hora = bloque.hora_inicio; Hora.CompareTo(bloque.hora_fin) == 0; Hora.AddMinutes(bloque.duracion_turno_minutos))
+                    {     
+                        slotsAAgregar.Add(new SlotAgenda
+                        {
+                            fecha = Fecha,
+                            horainicio = Hora,
+                            horafin = Hora.AddMinutes(bloque.duracion_turno_minutos),
+                            disponible = true,
+                            medico_id = medico_id
+                        });
+                    }
                 }
             }
 
-            return Json(new { success = true, message = "Los slots se generaron exitosamente" });
+            await _context.slotsagenda.AddRangeAsync(slotsAAgregar);
+            await _context.SaveChangesAsync();
+            return Json(new { success = true, message = "Los slots se generaron exitosamente"});
         }
         
         // GET: Secretaria/Reportes

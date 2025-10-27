@@ -360,7 +360,7 @@
         }
 
         try {
-            const response = await fetch('/Secretaria/GenerarSlots?medico_id=@medicoId', {
+            const response = await fetch('/Secretaria/GenerarSlotsAgenda?medico_id=@medicoId', {
                 method: 'POST',
                 headers: {
                     'RequestVerificationToken': document.querySelector('[name="__RequestVerificationToken"]').value
