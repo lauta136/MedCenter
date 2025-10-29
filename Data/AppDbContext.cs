@@ -330,8 +330,6 @@ public partial class AppDbContext : DbContext
             e.Property(e => e.duracion_turno_minutos).HasDefaultValue(30);
             e.Property(e => e.activa).HasDefaultValue(true);
 
-            e.Property(e => e.vigencia_hasta).HasDefaultValue(DateOnly.FromDateTime(DateTime.Now).AddDays(60));
-
             e.HasMany(e => e.slotsAgenda).WithOne(sa => sa.bloqueDisponibilidad)
                                          .HasForeignKey(sa => sa.bloqueDisponibilidadId)
                                          .OnDelete(DeleteBehavior.Restrict)

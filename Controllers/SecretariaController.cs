@@ -7,6 +7,7 @@ using System.Security.Claims;
 using MedCenter.Migrations;
 using MedCenter.Models;
 using System.Runtime.InteropServices;
+using MedCenter.Services.DisponibilidadMedico;
 
 namespace MedCenter.Controllers
 {
@@ -17,10 +18,13 @@ namespace MedCenter.Controllers
         private AppDbContext _context;
         private AuthService _authService;
 
-        public SecretariaController(AppDbContext context, AuthService auth)
+        private DisponibilidadService _dispoService;
+
+        public SecretariaController(AppDbContext context, AuthService auth, DisponibilidadService disponibilidadService)
         {
             _context = context;
             _authService = auth;
+            _dispoService = disponibilidadService;
         }
 
        
@@ -181,28 +185,19 @@ namespace MedCenter.Controllers
             if (!ModelState.IsValid)
             {
                 TempData["ErrorMessage"] = "Datos inválidos. Verifique los campos.";
-                return RedirectToAction(nameof(GestionarDisponibilidad), new {medico_id = medico_id }); //agrega nombre de la vista al que lo mandas
+                return RedirectToAction(nameof(GestionarDisponibilidad), new { medico_id = medico_id }); //agrega nombre de la vista al que lo mandas
             }
 
-            if (await NuevaDisponibilidadCoherente(dto, medico_id))
-            {
-                _context.disponibilidad_medico.Add(new DisponibilidadMedico
-                {
-                    medico_id = medico_id,
-                    dia_semana = dto.Dia_semana,
-                    hora_inicio = dto.Hora_inicio,
-                    hora_fin = dto.Hora_fin,
-                    vigencia_desde = DateOnly.FromDateTime(DateTime.Now),
-                    duracion_turno_minutos = dto.Duracion_turno_minutos
-                });
-                await _context.SaveChangesAsync();
+            DisponibilidadResult result = await _dispoService.AgregarBloqueDisponibilidad(medico_id, dto);
 
-                TempData["SuccessMessage"] = "El bloque fue agregado exitosamente";
+            if(result.success)
+            {
+                TempData["SuccessMessage"] = result.message;
                 return RedirectToAction(nameof(GestionarDisponibilidad), new { medico_id = medico_id });
             }
             else
             {
-                TempData["ErrorMessage"] = "El nuevo horario ingresado se superpone con uno ya activo";
+                TempData["ErrorMessage"] = result.message;
                 return RedirectToAction(nameof(GestionarDisponibilidad), new { medico_id = medico_id});
             }
 
@@ -217,119 +212,48 @@ namespace MedCenter.Controllers
                 return RedirectToAction(nameof(GestionarDisponibilidad), new { medico_id });
             }
             
+            DisponibilidadResult result = await _dispoService.EditarBloqueDisponibilidad(dto, dispo_id, medico_id);
 
-            if (await NuevaDisponibilidadCoherente(dto, medico_id))
+            if (result.success)
             {
-                var dispo = await _context.disponibilidad_medico.FirstOrDefaultAsync(dm => dm.id == dispo_id);
-
-                if (dispo == null) return NotFound();
-
-                dispo.dia_semana = dto.Dia_semana;
-                dispo.hora_inicio = dto.Hora_inicio;
-                dispo.hora_fin = dto.Hora_fin;
-                dispo.duracion_turno_minutos = dto.Duracion_turno_minutos;
-
-                _context.Update(dispo);
-                await _context.SaveChangesAsync();
-
-                TempData["SuccessMessage"] = "El bloque fue actualizado exitosamente";
+                TempData["SuccessMessage"] = result.message;
                 return RedirectToAction(nameof(GestionarDisponibilidad), new { medico_id = medico_id });
             }
             else
             {
-                TempData["ErrorMessage"] = "El nuevo horario ingresado se superpone con uno ya activo";
+                TempData["ErrorMessage"] = result.message;
                 return RedirectToAction(nameof(GestionarDisponibilidad), new { medico_id = medico_id });
             }
             
         }
         
-         [HttpPost]
+        [HttpPost]
         public async Task<IActionResult> CancelarBloqueDisponibilidad(int medico_id, ManipularDisponibilidadDTO dto, int dispo_id)
         {
             if (!ModelState.IsValid)
             {
                 TempData["ErrorMessage"] = "Error inesperado al cancelar el bloque";
-                return RedirectToAction(nameof(GestionarDisponibilidad), new { medico_id = medico_id}); //agrega nombre de la vista al que lo mandas
+                return RedirectToAction(nameof(GestionarDisponibilidad), new { medico_id = medico_id }); //agrega nombre de la vista al que lo mandas
             }
 
+            DisponibilidadResult result = await _dispoService.CancelarBloqueDisponibilidad(medico_id, dto, dispo_id);
 
+            if (result.success)
+                TempData["SuccessMessage"] = "El bloque fue cancelado exitosamente";
 
-            var dispo = await _context.disponibilidad_medico.FirstOrDefaultAsync(dm => dm.id == dispo_id);
-            if (dispo == null) return NotFound();
-
-            dispo.activa = false;
-
-            _context.Update(dispo);
-
-             await _context.SaveChangesAsync();
-
-            TempData["SuccessMessage"] = "El bloque fue cancelado exitosamente";
+            TempData["ErrorMessage"] = result.message;
+            
             return RedirectToAction(nameof(GestionarDisponibilidad), new { medico_id = medico_id });
              
         }
 
-        public async Task<bool> NuevaDisponibilidadCoherente(ManipularDisponibilidadDTO dto, int medico_id) //Que la nueva insercion no se superponga con otra ya guardada
-        {
-            // bool flag = true;
-
-            if (dto.Hora_inicio >= dto.Hora_fin) return false;
-
-            if ((dto.Hora_fin - dto.Hora_inicio).Minutes < dto.Duracion_turno_minutos) return false;
-
-            var disponibilidadesPrecisas = await _context.disponibilidad_medico.Where(dm => dm.medico_id == medico_id && dm.activa == true && dm.dia_semana == dto.Dia_semana)
-                                                                               .ToListAsync();
-
-            foreach (var item in disponibilidadesPrecisas)
-            {
-                if (dto.Hora_inicio.IsBetween(item.hora_inicio, item.hora_fin) || dto.Hora_fin.IsBetween(item.hora_inicio, item.hora_fin))
-                    return false;
-            }
-
-            return true;
-        }
-
+       
+        
         public async Task<IActionResult> GenerarSlotsAgenda(int medico_id)
         {
-            var bloques = await _context.disponibilidad_medico.Where(dm => dm.medico_id == medico_id && dm.activa == true).ToListAsync();
+            DisponibilidadResult result = await _dispoService.GenerarSlotsAgenda(medico_id);
 
-            if (bloques == null) return Json(new { success = false, message = "El medico no tiene bloques de disponibilidad activos" });
-
-            List<SlotAgenda> slotsAAgregar = new List<SlotAgenda>();
-
-            foreach (var bloque in bloques)
-            {
-                var span = bloque.hora_fin - bloque.hora_inicio; //TimeOnly se convierte a TimeSpan, TimeSpan tiene la propiedad TotalMinutes,TimeOnly no la tiene , solo tiene Minutes que no es lo que queres, solo agarra la parte minutos, no convierte todo a minutos
-                int cantSlots = (int)(span.TotalMinutes / bloque.duracion_turno_minutos);
-
-                DateOnly fechaSlotInicio = DateOnly.FromDateTime(DateTime.Now);
-                for (int j = 0; j < 7; j++)
-                {
-                    if (fechaSlotInicio.DayOfWeek != bloque.dia_semana)
-                    {
-                        fechaSlotInicio = fechaSlotInicio.AddDays(1);
-                    }
-                }
-
-                for (var Fecha = fechaSlotInicio; Fecha.CompareTo(bloque.vigencia_hasta) == 0; Fecha.AddDays(6))
-                {
-
-                    for (var Hora = bloque.hora_inicio; Hora.CompareTo(bloque.hora_fin) == 0; Hora.AddMinutes(bloque.duracion_turno_minutos))
-                    {     
-                        slotsAAgregar.Add(new SlotAgenda
-                        {
-                            fecha = Fecha,
-                            horainicio = Hora,
-                            horafin = Hora.AddMinutes(bloque.duracion_turno_minutos),
-                            disponible = true,
-                            medico_id = medico_id
-                        });
-                    }
-                }
-            }
-
-            await _context.slotsagenda.AddRangeAsync(slotsAAgregar);
-            await _context.SaveChangesAsync();
-            return Json(new { success = true, message = "Los slots se generaron exitosamente"});
+            return Json(new {success = result.success, message = result.message});
         }
         
         // GET: Secretaria/Reportes
