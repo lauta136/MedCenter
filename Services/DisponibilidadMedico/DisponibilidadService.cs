@@ -61,7 +61,7 @@ namespace MedCenter.Services.DisponibilidadMedico
         }
 
 
-        public async Task<DisponibilidadResult> EditarBloqueDisponibilidad(ManipularDisponibilidadDTO dto, int dispo_id, int medico_id)
+        /*public async Task<DisponibilidadResult> EditarBloqueDisponibilidad(ManipularDisponibilidadDTO dto, int dispo_id, int medico_id)
         {
 
             if (await NuevaDisponibilidadCoherente(dto, medico_id))
@@ -86,7 +86,7 @@ namespace MedCenter.Services.DisponibilidadMedico
             }
 
         }
-        
+        */
         public async Task<DisponibilidadResult> CancelarBloqueDisponibilidad(int medico_id, ManipularDisponibilidadDTO dto, int dispo_id)
         {
         
@@ -94,10 +94,15 @@ namespace MedCenter.Services.DisponibilidadMedico
             if (dispo == null) return new DisponibilidadResult { success = true, message = "No se encintri el bloque a editar" };
 
             dispo.activa = false;
+            dispo.vigencia_hasta = DateOnly.FromDateTime(DateTime.Now);
 
             _context.Update(dispo);
 
-             await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
+
+            await _context.slotsagenda
+            .Include(sa => sa.turnos)
+            .Where(sa => sa.bloqueDisponibilidadId == dispo_id && sa.turnos == null).ExecuteDeleteAsync();
 
             return new DisponibilidadResult { success = true, message = "El bloque fue cancelado exitosamente"};
              

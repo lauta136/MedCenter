@@ -203,7 +203,7 @@ namespace MedCenter.Controllers
 
         }
 
-        [HttpPost]
+       /* [HttpPost]
         public async Task<IActionResult> EditarBloqueDisponibilidad(ManipularDisponibilidadDTO dto, int dispo_id, int medico_id)
         {
             if (!ModelState.IsValid)
@@ -226,7 +226,7 @@ namespace MedCenter.Controllers
             }
             
         }
-        
+        */
         [HttpPost]
         public async Task<IActionResult> CancelarBloqueDisponibilidad(int medico_id, ManipularDisponibilidadDTO dto, int dispo_id)
         {

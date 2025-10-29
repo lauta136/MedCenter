@@ -78,9 +78,7 @@
                             @foreach (var dispo in Model.OrderBy(d => d.dia_semana))
                             {
                                 <tr>
-                                    <td>
-                                        <strong>@ObtenerNombreDia(dispo.dia_semana)</strong>
-                                    </td>
+                                    <td><strong>@ObtenerNombreDia(dispo.dia_semana)</strong></td>
                                     <td>
                                         <i class="fas fa-clock text-muted me-1"></i>
                                         @dispo.hora_inicio.ToString(@"HH\:mm") - @dispo.hora_fin.ToString(@"HH\:mm")
@@ -88,15 +86,18 @@
                                     <td>
                                         <span class="badge bg-secondary">@dispo.duracion_turno_minutos min</span>
                                     </td>
-                                    <td>@dispo.vigencia_desde.ToString("dd/MM/yyyy")</td>
                                     <td>
-                                        <button class="btn btn-sm btn-warning me-1" 
-                                                onclick="editarBloque(@dispo.id, '@dispo.dia_semana', '@dispo.hora_inicio.ToString(@"HH\:mm")', '@dispo.hora_fin.ToString(@"HH\:mm")', @dispo.duracion_turno_minutos)">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
+                                        Desde @dispo.vigencia_desde.ToString("dd/MM/yyyy")
+                                        @if (dispo.vigencia_hasta.HasValue)
+                                        {
+                                            <span class="text-danger">hasta @dispo.vigencia_hasta.Value.ToString("dd/MM/yyyy")</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <!-- ✅ Solo botón de cancelar -->
                                         <button class="btn btn-sm btn-danger" 
-                                                onclick="confirmarEliminar(@dispo.id)">
-                                            <i class="fas fa-trash"></i>
+                                            onclick="confirmarEliminar(@dispo.id)">
+                                            <i class="fas fa-times"></i> Desactivar
                                         </button>
                                     </td>
                                 </tr>
@@ -200,71 +201,7 @@
     }
 </div>
 
-<!-- Modal para editar -->
-<div class="modal fade" id="modalEditar" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-warning text-white">
-                <h5 class="modal-title">
-                    <i class="fas fa-edit me-2"></i>
-                    Editar Bloque de Disponibilidad
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form asp-action="EditarBloqueDisponibilidad" method="post">
-                <input type="hidden" name="medico_id" value="@medicoId" />
-                <input type="hidden" name="dispo_id" id="editDispoId" />
-                
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Día de la semana</label>
-                        <select name="Dia_semana" id="editDia" class="form-select" required>
-                            <option value="1">Lunes</option>
-                            <option value="2">Martes</option>
-                            <option value="3">Miércoles</option>
-                            <option value="4">Jueves</option>
-                            <option value="5">Viernes</option>
-                            <option value="6">Sábado</option>
-                            <option value="0">Domingo</option>
-                        </select>
-                    </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Hora inicio</label>
-                            <input type="time" name="Hora_inicio" id="editHoraInicio" 
-                                   class="form-control" required />
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Hora fin</label>
-                            <input type="time" name="Hora_fin" id="editHoraFin" 
-                                   class="form-control" required />
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Duración de cada turno</label>
-                        <select name="Duracion_turno_minutos" id="editDuracion" class="form-select">
-                            <option value="15">15 minutos</option>
-                            <option value="20">20 minutos</option>
-                            <option value="30">30 minutos</option>
-                            <option value="45">45 minutos</option>
-                            <option value="60">60 minutos</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        Cancelar
-                    </button>
-                    <button type="submit" class="btn btn-warning">
-                        <i class="fas fa-save me-1"></i> Guardar Cambios
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 <!-- Modal para confirmar eliminación -->
 <div class="modal fade" id="modalEliminar" tabindex="-1">
@@ -282,10 +219,22 @@
                 <input type="hidden" name="dispo_id" id="deleteDispoId" />
                 
                 <div class="modal-body">
-                    <p>¿Está seguro que desea eliminar este bloque de disponibilidad?</p>
-                    <p class="text-danger">
-                        <strong>Advertencia:</strong> Los slots ya generados no se eliminarán automáticamente.
-                    </p>
+                    <p>¿Está seguro que desea desactivar este bloque de disponibilidad?</p>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>¿Qué sucederá?</strong>
+                        <ul class="mb-0">
+                            <li>El bloque se marcará como inactivo desde hoy</li>
+                            <li>Los turnos ya reservados se mantendrán</li>
+                            <li>Se eliminarán los horarios disponibles futuros</li>
+                            <li>No se podrán reservar nuevos turnos en estos horarios</li>
+                        </ul>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Sugerencia:</strong> Si necesita cambiar el horario, 
+                                desactive este bloque y cree uno nuevo con el horario actualizado.
+                        </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -299,6 +248,8 @@
         </div>
     </div>
 </div>
+
+
 
 @section Scripts {
 <script>
@@ -334,18 +285,7 @@
         }
     }
 
-    // Editar bloque
-    function editarBloque(id, dia, horaInicio, horaFin, duracion) {
-        document.getElementById('editDispoId').value = id;
-        document.getElementById('editDia').value = dia;
-        document.getElementById('editHoraInicio').value = horaInicio;
-        document.getElementById('editHoraFin').value = horaFin;
-        document.getElementById('editDuracion').value = duracion;
-        
-        const modal = new bootstrap.Modal(document.getElementById('modalEditar'));
-        modal.show();
-    }
-
+   
     // Confirmar eliminar
     function confirmarEliminar(id) {
         document.getElementById('deleteDispoId').value = id;
