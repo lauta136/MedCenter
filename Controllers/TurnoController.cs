@@ -11,6 +11,8 @@ using System.Security.Claims;
 using AspNetCoreGeneratedDocument;
 using System.Net.WebSockets;
 using MedCenter.Controllers;
+using MedCenter.Services.DisponibilidadMedico;
+using MedCenter.Services.EspecialidadService;
 
 
 // Heredamos de Controller para poder trabajar con Vistas Razor
@@ -18,11 +20,14 @@ public class TurnoController : BaseController
 {
     private readonly AppDbContext _context;
     private TurnoStateService _stateService;
-
-    public TurnoController(AppDbContext context, TurnoStateService turnoStateService)
+    private DisponibilidadService _disponibilidadService;
+    private EspecialidadService _especialidadService;
+    public TurnoController(AppDbContext context, TurnoStateService turnoStateService, DisponibilidadService disponibilidadService, EspecialidadService especialidadService)
     {
         _context = context;
         _stateService = turnoStateService;
+        _disponibilidadService = disponibilidadService;
+        _especialidadService = especialidadService;
     }
 
     // GET: Turno/Details/5
@@ -100,7 +105,7 @@ public class TurnoController : BaseController
     }
 
     // GET: Turno/GetEspecialidadesPorMedico/5
-    [HttpGet]
+    [HttpGet] //quizas borrar ya que ahora se usa el inverso, osea obtener medicos por la especialidad elegida, mejor para el dominio del problema
     public async Task<JsonResult> GetEspecialidadesPorMedico(int medicoId)
     {
         var especialidades = await _context.medicoEspecialidades
@@ -112,9 +117,15 @@ public class TurnoController : BaseController
         return Json(especialidades);
     }
 
+    public async Task<JsonResult> GetMedicosPorEspecialidad(int especialidadId)
+    {
+        var medicos = await _especialidadService.GetMedicosPorEspecialidad(especialidadId);
 
+        return Json(medicos);
+    }
+    
 
-
+    
 
     // POST: Turno/Create
     [HttpPost]
@@ -150,9 +161,173 @@ public class TurnoController : BaseController
         return View(turno);
     }
 
+    public async Task<IActionResult> Reservar()
+    {
+        var especialidades = await _especialidadService.GetEspecialidadesCargadas();
+        ViewBag.UserName = UserName;
+        ViewBag.EsSecretaria = User.IsInRole("Secretaria");
+
+        if (User.IsInRole("Secretaria"))
+        {
+            ViewBag.Pacientes = await _context.pacientes.Include(p => p.idNavigation)
+                                                        .Select(p => new { p.idNavigation.nombre, p.dni, p.id })
+                                                        .OrderBy(p => p.nombre)
+                                                        .ToListAsync();
+        }
+        return View("~/Views/Shared/Turnos/SolicitarTurno.cshtml",especialidades);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Reservar(ReservarTurnoDTO dto, int? pacienteElegidoId)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        if (!await _disponibilidadService.SlotEstaDisponible(dto.SlotId))
+            return Json(new { success = false, errormessage = "El horario ya no esta disponible" }); //Los Json se crean de forma dinamica
+
+        var slot = await _context.slotsagenda.FirstOrDefaultAsync(sa => sa.id == dto.SlotId);
+
+        if (slot == null)
+            return Json(new { success = false, errormessage = "No se encontro el horario" });
+
+        int pacienteFinalId;
+
+        if (UserRole == "Secretaria")
+        {
+            if (!pacienteElegidoId.HasValue)
+            {
+                return Json(new { success = false, message = "Debe elegir un paciente" });
+            }
+            pacienteFinalId = pacienteElegidoId.Value;
+        }
+        else
+        {
+            pacienteFinalId = UserId.Value;
+        }
+
+        var turno = new Turno
+        {
+            slot_id = dto.SlotId,
+            fecha = slot.fecha,
+            hora = slot.horainicio,
+            paciente_id = pacienteFinalId,
+            medico_id = dto.MedicoId,
+            especialidad_id = dto.EspecialidadId
+        };
+
+        if (UserRole == "Secretaria")
+            turno.secretaria_id = UserId;
+
+        _context.turnos.Add(turno);
+        _stateService.Reservar(turno);
+        _context.turnos.Update(turno);
+
+        slot.disponible = false;
+        _context.slotsagenda.Update(slot);
+
+        await _context.SaveChangesAsync();
+
+        return Json(new { success = true, message = "Turno creado exitosamente" });
+    }
+    
+    public async Task<IActionResult> Reprogramar(int? id)
+    {
+        if (id == null) return NotFound();
+
+        // Busca el turno, incluyendo la información de su especialidad y paciente
+        var turno = await _context.turnos
+                               .Include(t => t.especialidad)
+                               .Include(t => t.paciente)
+                                   .ThenInclude(p => p!.idNavigation)
+                               .FirstOrDefaultAsync(t => t.id == id);
 
 
-    // GET: Turno/Cancel/5
+        if (turno == null) return NotFound();
+
+        var turnoState = _stateService.GetEstadoActual(turno);
+
+        if (turnoState.PuedeReprogramar())
+        {
+            // Crea el DTO y lo llenamos con los datos del turno
+            var turnoDto = new TurnoEditDTO
+            {
+                Id = turno.id,
+                Fecha = turno.fecha,
+                Hora = turno.hora,
+                PacienteId = turno.paciente_id,
+                PacienteNombre = turno.paciente?.idNavigation?.nombre,
+                MedicoId = turno.medico_id,
+                EspecialidadId = turno.especialidad_id ?? 0,
+                EspecialidadNombre = turno.especialidad?.nombre
+            };
+
+
+            //Filtra los médicos por la especialidad del turno
+            ViewData["MedicoId"] = new SelectList( //Quizas vambiar por un Json para vista AJAX
+            _context.medicos
+                    .Where(m => m.medicoEspecialidades.Any(me => me.especialidadId == turno.especialidad_id))
+                    .Select(m => m.idNavigation), "id", "nombre", turnoDto.MedicoId);
+
+            // Información del estado actual
+            var estadoActual = _stateService.GetEstadoActual(turno);
+            ViewBag.EstadoActual = estadoActual.GetNombreEstado();
+            ViewBag.DescripcionEstado = estadoActual.GetDescripcion();
+
+            return View(turnoDto);
+        }
+
+        TempData["ErrorMessage"] = "El turno no es reprogramable." +
+        (turno.estado == "Reprogramado" ? "Ya fue reprogramado con anterioridad" : $"Estado actual:{turno.estado}");
+        return RedirectToAction(nameof(Index));
+    }
+
+
+    [HttpPost]
+    public async Task<IActionResult> Reprogramar(TurnoEditDTO dto, int nuevoSlotId)
+    {
+        var turno = await _context.turnos.FirstOrDefaultAsync(t => t.id == dto.Id);
+        var nuevoSlot = await _context.slotsagenda.FirstOrDefaultAsync(sa => sa.id == nuevoSlotId);
+
+        if (!await _disponibilidadService.SlotEstaDisponible(nuevoSlot!.id))
+            return Json(new { success = false, errormessage = "El horario ya no esta disponible" });
+
+        if (!_stateService.PuedeReprogramar(turno!))
+            return Json(new { success = false, errormessage = "El turno ya no puede reprogramarse" });
+
+        turno.slot_id = nuevoSlotId;
+        turno.fecha = nuevoSlot.fecha;
+        turno.hora = nuevoSlot.horainicio;
+        turno.medico_id = nuevoSlot.medico_id;
+        turno.medico = nuevoSlot.medico;
+        _stateService.Reprogramar(turno);
+
+        _context.Update(turno);
+        await _context.SaveChangesAsync();
+
+        return Json(new { success = true, message = "El turno fue reprogramado exitosamente" });
+        
+    }
+    public async Task<JsonResult> GetDiasDisponibles(int id_medico)
+    {
+        var dias = await _disponibilidadService.GetDiasDisponibles(id_medico);
+
+        return Json(dias.Select(d => d.ToString("yyyy-MM-dd")));
+    }
+
+    public async Task<JsonResult> GetSlotsDisponibles(int id_medico, DateOnly fecha)
+    {
+        var slots = await _disponibilidadService.GetSlotsDisponibles(id_medico, fecha);
+        var dtos = slots.Select(sa => new SlotAgendaViewDTO
+        {
+            Id = sa.id,
+            HoraInicio = sa.horainicio,
+            HoraFin = sa.horafin,
+        });
+        return Json(dtos);
+    }
+
+    //Eliminar
     public async Task<IActionResult> Cancel(int? id)
     {
         if (id == null)
@@ -196,7 +371,7 @@ public class TurnoController : BaseController
     }
 
 
-    // POST: Turno/Cancel/5
+    //Eliminar
     [HttpPost, ActionName("Cancel")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CancelConfirmed(TurnoCancelDTO dto)
@@ -248,7 +423,7 @@ public class TurnoController : BaseController
         return View("Cancel",dto);
     }
 
-    // GET: Turno/Edit/5
+    // Eliminar
     public async Task<IActionResult> Edit(int? id)
     {
         if (id == null) return NotFound();

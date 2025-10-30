@@ -22,6 +22,53 @@ namespace MedCenter.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("MedCenter.Models.DisponibilidadMedico", b =>
+                {
+                    b.Property<int>("id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("id"));
+
+                    b.Property<bool?>("activa")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<int>("dia_semana")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("duracion_turno_minutos")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(30);
+
+                    b.Property<TimeOnly>("hora_fin")
+                        .HasColumnType("time without time zone");
+
+                    b.Property<TimeOnly>("hora_inicio")
+                        .HasColumnType("time without time zone");
+
+                    b.Property<int>("medico_id")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("vigencia_desde")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("vigencia_hasta")
+                        .HasColumnType("date");
+
+                    b.HasKey("id");
+
+                    b.HasIndex("medico_id");
+
+                    b.HasIndex("dia_semana", "hora_inicio", "hora_fin", "medico_id", "activa")
+                        .IsUnique()
+                        .HasFilter("activa = true");
+
+                    b.ToTable("disponibilidadesmedico", (string)null);
+                });
+
             modelBuilder.Entity("MedCenter.Models.EntradaClinica", b =>
                 {
                     b.Property<int>("id")
@@ -136,6 +183,70 @@ namespace MedCenter.Migrations
                     b.ToTable("medico_especialidad", (string)null);
                 });
 
+            modelBuilder.Entity("MedCenter.Models.MedicoObraSocial", b =>
+                {
+                    b.Property<int>("id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("id"));
+
+                    b.Property<bool>("activo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateOnly>("fecha_desde")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("fecha_hasta")
+                        .HasColumnType("date");
+
+                    b.Property<int>("medico_id")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("obrasocial_id")
+                        .HasColumnType("integer");
+
+                    b.HasKey("id");
+
+                    b.HasIndex("obrasocial_id");
+
+                    b.HasIndex("medico_id", "obrasocial_id", "activo")
+                        .IsUnique()
+                        .HasFilter("activo = true");
+
+                    b.ToTable("medico_obrasocial", (string)null);
+                });
+
+            modelBuilder.Entity("MedCenter.Models.ObraSocial", b =>
+                {
+                    b.Property<int>("id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("id"));
+
+                    b.Property<bool>("activa")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("nombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("sigla")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("id")
+                        .HasName("obra_social_pkey");
+
+                    b.ToTable("obrassociales", (string)null);
+                });
+
             modelBuilder.Entity("MedCenter.Models.Paciente", b =>
                 {
                     b.Property<int>("id")
@@ -153,6 +264,50 @@ namespace MedCenter.Migrations
                         .HasName("pacientes_pkey");
 
                     b.ToTable("pacientes");
+                });
+
+            modelBuilder.Entity("MedCenter.Models.PacienteObraSocial", b =>
+                {
+                    b.Property<int>("id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("id"));
+
+                    b.Property<bool>("activa")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateOnly>("fecha_afiliacion")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("fecha_baja")
+                        .HasColumnType("date");
+
+                    b.Property<int>("numeroAfiliado")
+                        .HasMaxLength(50)
+                        .HasColumnType("integer");
+
+                    b.Property<int>("obrasocial_id")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("paciente_id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("plan")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("id");
+
+                    b.HasIndex("obrasocial_id");
+
+                    b.HasIndex("paciente_id", "obrasocial_id", "activa")
+                        .IsUnique()
+                        .HasFilter("activa = TRUE");
+
+                    b.ToTable("paciente_obrasocial", (string)null);
                 });
 
             modelBuilder.Entity("MedCenter.Models.Persona", b =>
@@ -233,6 +388,9 @@ namespace MedCenter.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("id"));
 
+                    b.Property<int>("bloqueDisponibilidadId")
+                        .HasColumnType("integer");
+
                     b.Property<bool?>("disponible")
                         .HasColumnType("boolean");
 
@@ -251,6 +409,8 @@ namespace MedCenter.Migrations
                     b.HasKey("id")
                         .HasName("slotsagenda_pkey");
 
+                    b.HasIndex("bloqueDisponibilidadId");
+
                     b.HasIndex("medico_id");
 
                     b.ToTable("slotsagenda");
@@ -263,6 +423,9 @@ namespace MedCenter.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("id"));
+
+                    b.Property<bool>("es_particular")
+                        .HasColumnType("boolean");
 
                     b.Property<int?>("especialidad_id")
                         .HasColumnType("integer");
@@ -287,6 +450,9 @@ namespace MedCenter.Migrations
                     b.Property<int>("paciente_id")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("pacienteobrasocial_id")
+                        .HasColumnType("integer");
+
                     b.Property<int?>("secretaria_id")
                         .HasColumnType("integer");
 
@@ -301,6 +467,8 @@ namespace MedCenter.Migrations
                     b.HasIndex("medico_id");
 
                     b.HasIndex("paciente_id");
+
+                    b.HasIndex("pacienteobrasocial_id");
 
                     b.HasIndex("secretaria_id");
 
@@ -330,6 +498,18 @@ namespace MedCenter.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("role_keys", (string)null);
+                });
+
+            modelBuilder.Entity("MedCenter.Models.DisponibilidadMedico", b =>
+                {
+                    b.HasOne("MedCenter.Models.Medico", "medico")
+                        .WithMany("disponibilidadesMedico")
+                        .HasForeignKey("medico_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("disponibilidades_medico_fkey");
+
+                    b.Navigation("medico");
                 });
 
             modelBuilder.Entity("MedCenter.Models.EntradaClinica", b =>
@@ -369,7 +549,7 @@ namespace MedCenter.Migrations
             modelBuilder.Entity("MedCenter.Models.Medico", b =>
                 {
                     b.HasOne("MedCenter.Models.Persona", "idNavigation")
-                        .WithOne("medicos")
+                        .WithOne("Medico")
                         .HasForeignKey("MedCenter.Models.Medico", "id")
                         .IsRequired()
                         .HasConstraintName("medicos_id_fkey");
@@ -396,15 +576,57 @@ namespace MedCenter.Migrations
                     b.Navigation("medico");
                 });
 
+            modelBuilder.Entity("MedCenter.Models.MedicoObraSocial", b =>
+                {
+                    b.HasOne("MedCenter.Models.Medico", "medico")
+                        .WithMany("medicosObraSociales")
+                        .HasForeignKey("medico_id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("medico_obrasocial_medico_fkey");
+
+                    b.HasOne("MedCenter.Models.ObraSocial", "obrasocial")
+                        .WithMany("medicosObrasSociales")
+                        .HasForeignKey("obrasocial_id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("medico_obrasocial_obrasocial_fkey");
+
+                    b.Navigation("medico");
+
+                    b.Navigation("obrasocial");
+                });
+
             modelBuilder.Entity("MedCenter.Models.Paciente", b =>
                 {
                     b.HasOne("MedCenter.Models.Persona", "idNavigation")
-                        .WithOne("pacientes")
+                        .WithOne("Paciente")
                         .HasForeignKey("MedCenter.Models.Paciente", "id")
                         .IsRequired()
                         .HasConstraintName("pacientes_id_fkey");
 
                     b.Navigation("idNavigation");
+                });
+
+            modelBuilder.Entity("MedCenter.Models.PacienteObraSocial", b =>
+                {
+                    b.HasOne("MedCenter.Models.ObraSocial", "obrasocial")
+                        .WithMany("pacientesObrasSociales")
+                        .HasForeignKey("obrasocial_id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("paciente_obrasocial_obrasocial_fkey");
+
+                    b.HasOne("MedCenter.Models.Paciente", "Paciente")
+                        .WithMany("pacientesObrasSociales")
+                        .HasForeignKey("paciente_id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("paciente_obrasocial_paciente_fkey");
+
+                    b.Navigation("Paciente");
+
+                    b.Navigation("obrasocial");
                 });
 
             modelBuilder.Entity("MedCenter.Models.ReporteEstadistico", b =>
@@ -420,7 +642,7 @@ namespace MedCenter.Migrations
             modelBuilder.Entity("MedCenter.Models.Secretaria", b =>
                 {
                     b.HasOne("MedCenter.Models.Persona", "idNavigation")
-                        .WithOne("secretarias")
+                        .WithOne("Secretaria")
                         .HasForeignKey("MedCenter.Models.Secretaria", "id")
                         .IsRequired()
                         .HasConstraintName("secretarias_id_fkey");
@@ -430,10 +652,19 @@ namespace MedCenter.Migrations
 
             modelBuilder.Entity("MedCenter.Models.SlotAgenda", b =>
                 {
+                    b.HasOne("MedCenter.Models.DisponibilidadMedico", "bloqueDisponibilidad")
+                        .WithMany("slotsAgenda")
+                        .HasForeignKey("bloqueDisponibilidadId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("slotsagenda_disponibilidadmedico_fkey");
+
                     b.HasOne("MedCenter.Models.Medico", "medico")
                         .WithMany("slotsAgenda")
                         .HasForeignKey("medico_id")
                         .HasConstraintName("slotsagenda_medico_id_fkey");
+
+                    b.Navigation("bloqueDisponibilidad");
 
                     b.Navigation("medico");
                 });
@@ -455,9 +686,15 @@ namespace MedCenter.Migrations
                     b.HasOne("MedCenter.Models.Paciente", "paciente")
                         .WithMany("turnos")
                         .HasForeignKey("paciente_id")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("turnos_paciente_id_fkey");
+
+                    b.HasOne("MedCenter.Models.PacienteObraSocial", "paciente_obrasocial")
+                        .WithMany("turnos")
+                        .HasForeignKey("pacienteobrasocial_id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("turno_paciente_obrasocial_fkey");
 
                     b.HasOne("MedCenter.Models.Secretaria", "secretaria")
                         .WithMany("turnos")
@@ -475,9 +712,16 @@ namespace MedCenter.Migrations
 
                     b.Navigation("paciente");
 
+                    b.Navigation("paciente_obrasocial");
+
                     b.Navigation("secretaria");
 
                     b.Navigation("slot");
+                });
+
+            modelBuilder.Entity("MedCenter.Models.DisponibilidadMedico", b =>
+                {
+                    b.Navigation("slotsAgenda");
                 });
 
             modelBuilder.Entity("MedCenter.Models.Especialidad", b =>
@@ -494,31 +738,49 @@ namespace MedCenter.Migrations
 
             modelBuilder.Entity("MedCenter.Models.Medico", b =>
                 {
+                    b.Navigation("disponibilidadesMedico");
+
                     b.Navigation("entradasClinicas");
 
                     b.Navigation("medicoEspecialidades");
+
+                    b.Navigation("medicosObraSociales");
 
                     b.Navigation("slotsAgenda");
 
                     b.Navigation("turnos");
                 });
 
+            modelBuilder.Entity("MedCenter.Models.ObraSocial", b =>
+                {
+                    b.Navigation("medicosObrasSociales");
+
+                    b.Navigation("pacientesObrasSociales");
+                });
+
             modelBuilder.Entity("MedCenter.Models.Paciente", b =>
                 {
                     b.Navigation("historiasclinicas");
 
+                    b.Navigation("pacientesObrasSociales");
+
+                    b.Navigation("turnos");
+                });
+
+            modelBuilder.Entity("MedCenter.Models.PacienteObraSocial", b =>
+                {
                     b.Navigation("turnos");
                 });
 
             modelBuilder.Entity("MedCenter.Models.Persona", b =>
                 {
-                    b.Navigation("medicos");
+                    b.Navigation("Medico");
 
-                    b.Navigation("pacientes");
+                    b.Navigation("Paciente");
+
+                    b.Navigation("Secretaria");
 
                     b.Navigation("reportesestadisticos");
-
-                    b.Navigation("secretarias");
                 });
 
             modelBuilder.Entity("MedCenter.Models.Secretaria", b =>

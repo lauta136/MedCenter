@@ -19,4 +19,8 @@ public partial class Medico
 
     public virtual ICollection<MedicoEspecialidad> medicoEspecialidades { get; set; } = new List<MedicoEspecialidad>();
 
+    public ICollection<MedicoObraSocial> medicosObraSociales { get; set; } = new List<MedicoObraSocial>();
+
+    public ICollection<DisponibilidadMedico> disponibilidadesMedico { get; set; } = new List<DisponibilidadMedico>(); //Lista con los bloques de tiempo que atiende en el consultorio, asociado a dias
+
 }

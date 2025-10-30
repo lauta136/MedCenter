@@ -4,6 +4,10 @@ using Microsoft.EntityFrameworkCore;
 using MedCenter.Data;
 using MedCenter.DTOs;
 using System.Security.Claims;
+using MedCenter.Migrations;
+using MedCenter.Models;
+using System.Runtime.InteropServices;
+using MedCenter.Services.DisponibilidadMedico;
 
 namespace MedCenter.Controllers
 {
@@ -14,10 +18,13 @@ namespace MedCenter.Controllers
         private AppDbContext _context;
         private AuthService _authService;
 
-        public SecretariaController(AppDbContext context, AuthService auth)
+        private DisponibilidadService _dispoService;
+
+        public SecretariaController(AppDbContext context, AuthService auth, DisponibilidadService disponibilidadService)
         {
             _context = context;
             _authService = auth;
+            _dispoService = disponibilidadService;
         }
 
        
@@ -128,27 +135,127 @@ namespace MedCenter.Controllers
 
 
         // GET: Secretaria/AgendaMedica
-        public async Task<IActionResult> AgendaMedica()
+        public async Task<IActionResult> AgendaMedico()
         {
             var medicos = await _context.medicos
                 .Include(m => m.idNavigation)
-                .Include(m => m.medicoEspecialidades)
-                    .ThenInclude(me => me.especialidad)
-                .Select(m => new MedicoViewDTO
-                {
-                    Id = m.id,
-                    Nombre = m.idNavigation.nombre,
-                    Matricula = m.matricula,
-                    Especialidades = m.medicoEspecialidades
-                        .Select(me => me.especialidad.nombre ?? "Sin especialidad")
-                        .ToList()
-                })
+                .Include(m => m.disponibilidadesMedico)
+                //.Include(m => m.medicoEspecialidades)
+                    //.ThenInclude(me => me.especialidad)
+                    .Include(m => m.slotsAgenda)
+                .Select(m => new MedicoAgendaDTO(
+                    m.id,
+                    m.idNavigation.nombre!,
+                    m.matricula!,
+                    m.slotsAgenda,
+                    m.disponibilidadesMedico
+                ))
                 .ToListAsync();
 
             ViewBag.SecretariaNombre = UserName;
             return View(medicos);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GestionarDisponibilidad(int medico_id)
+        {
+            var medico = await _context.medicos
+                    .Include(m => m.idNavigation)
+                    .FirstOrDefaultAsync(m => m.id == medico_id);
+
+            if (medico == null)
+                return NotFound();
+
+            var disponibilidad = await _context.disponibilidad_medico
+            .Where(dm => dm.medico_id == medico_id && dm.activa == true)
+            .OrderBy(dm => dm.dia_semana)
+            .ThenBy(dm => dm.hora_inicio)
+            .ToListAsync();
+
+            ViewBag.SecretariaNombre = UserName;
+            ViewBag.MedicoId = medico_id;
+            ViewBag.MedicoNombre = medico.idNavigation.nombre;
+
+            return View(disponibilidad);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AgregarBloqueDisponibilidad(int medico_id, ManipularDisponibilidadDTO dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "Datos inválidos. Verifique los campos.";
+                return RedirectToAction(nameof(GestionarDisponibilidad), new { medico_id = medico_id }); //agrega nombre de la vista al que lo mandas
+            }
+
+            DisponibilidadResult result = await _dispoService.AgregarBloqueDisponibilidad(medico_id, dto);
+
+            if(result.success)
+            {
+                TempData["SuccessMessage"] = result.message;
+                return RedirectToAction(nameof(GestionarDisponibilidad), new { medico_id = medico_id });
+            }
+            else
+            {
+                TempData["ErrorMessage"] = result.message;
+                return RedirectToAction(nameof(GestionarDisponibilidad), new { medico_id = medico_id});
+            }
+
+        }
+
+       /* [HttpPost]
+        public async Task<IActionResult> EditarBloqueDisponibilidad(ManipularDisponibilidadDTO dto, int dispo_id, int medico_id)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "Datos inválidos. Verifique los campos.";
+                return RedirectToAction(nameof(GestionarDisponibilidad), new { medico_id });
+            }
+            
+            DisponibilidadResult result = await _dispoService.EditarBloqueDisponibilidad(dto, dispo_id, medico_id);
+
+            if (result.success)
+            {
+                TempData["SuccessMessage"] = result.message;
+                return RedirectToAction(nameof(GestionarDisponibilidad), new { medico_id = medico_id });
+            }
+            else
+            {
+                TempData["ErrorMessage"] = result.message;
+                return RedirectToAction(nameof(GestionarDisponibilidad), new { medico_id = medico_id });
+            }
+            
+        }
+        */
+        [HttpPost]
+        public async Task<IActionResult> CancelarBloqueDisponibilidad(int medico_id, ManipularDisponibilidadDTO dto, int dispo_id)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "Error inesperado al cancelar el bloque";
+                return RedirectToAction(nameof(GestionarDisponibilidad), new { medico_id = medico_id }); //agrega nombre de la vista al que lo mandas
+            }
+
+            DisponibilidadResult result = await _dispoService.CancelarBloqueDisponibilidad(medico_id, dto, dispo_id);
+
+            if (result.success)
+                TempData["SuccessMessage"] = "El bloque fue cancelado exitosamente";
+
+            TempData["ErrorMessage"] = result.message;
+            
+            return RedirectToAction(nameof(GestionarDisponibilidad), new { medico_id = medico_id });
+             
+        }
+
+       
+        
+        public async Task<IActionResult> GenerarSlotsAgenda(int medico_id)
+        {
+            DisponibilidadResult result = await _dispoService.GenerarSlotsAgenda(medico_id);
+
+            return Json(new {success = result.success, message = result.message});
+        }
+        
         // GET: Secretaria/Reportes
         public async Task<IActionResult> Reportes()
         {

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using MedCenter.Attributes;
 
 namespace MedCenter.DTOs
 {
@@ -8,7 +9,7 @@ namespace MedCenter.DTOs
         [NotWhiteSpace]
         public string Nombre { get; set; } = string.Empty;
 
-        [Required(AllowEmptyStrings =false,ErrorMessage = "El email es obligatorio")]
+        [Required(AllowEmptyStrings = false, ErrorMessage = "El email es obligatorio")]
         [EmailAddress(ErrorMessage = "El formato del email no es válido")]
         public string Email { get; set; } = string.Empty;
 

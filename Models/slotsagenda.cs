@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace MedCenter.Models;
 
-public partial class SlotAgenda
+public partial class SlotAgenda //Adentro de cada bloque (DisponibilidadMedico) se encuentran los slots de la agenda
 {
     public int id { get; set; }
 
-    public DateOnly? fecha { get; set; }
+    public DateOnly? fecha { get; set; } //no deberia ser nullable
 
     public TimeOnly? horainicio { get; set; }
 
@@ -19,5 +20,10 @@ public partial class SlotAgenda
 
     public virtual Medico? medico { get; set; }
 
-    public virtual ICollection<Turno> turnos { get; set; } = new List<Turno>();
-}
+    public int bloqueDisponibilidadId { get; set; }
+
+    [Required]
+    public DisponibilidadMedico bloqueDisponibilidad { get; set; }
+
+    public virtual ICollection<Turno> turnos { get; set; } = new List<Turno>(); //creo deberia cambiar a un solo turno?, no coleccion
+} 
