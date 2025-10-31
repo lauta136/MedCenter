@@ -205,9 +205,7 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey(d => d.secretaria_id)
                 .HasConstraintName("turnos_secretaria_id_fkey");
 
-            entity.HasOne(d => d.slot).WithMany(p => p.turnos)
-                .HasForeignKey(d => d.slot_id)
-                .HasConstraintName("turnos_slot_id_fkey");
+            entity.HasOne(t => t.slot).WithOne(s => s.Turno).HasForeignKey<Turno>(s => s.slot_id).HasConstraintName("turno_slotagenda_fkey");
 
             entity.HasOne(t => t.paciente_obrasocial)
                   .WithMany(po => po.turnos)

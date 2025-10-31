@@ -101,8 +101,8 @@ namespace MedCenter.Services.DisponibilidadMedico
             await _context.SaveChangesAsync();
 
             await _context.slotsagenda
-            .Include(sa => sa.turnos)
-            .Where(sa => sa.bloqueDisponibilidadId == dispo_id && sa.turnos == null).ExecuteDeleteAsync();
+            .Include(sa => sa.Turno)
+            .Where(sa => sa.bloqueDisponibilidadId == dispo_id && sa.Turno == null).ExecuteDeleteAsync();
 
             return new DisponibilidadResult { success = true, message = "El bloque fue cancelado exitosamente"};
              

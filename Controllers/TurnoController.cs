@@ -228,6 +228,43 @@ public class TurnoController : BaseController
 
         await _context.SaveChangesAsync();
 
+        //Cargo las propiedades de navegacion despues del SaveChangesAsync() para que se hayan rellenado con ef 
+        await _context.turnos.Entry(turno).Reference(t => t.paciente).Query().Include(p => p.idNavigation).LoadAsync();
+        await _context.turnos.Entry(turno).Reference(t => t.medico).Query().Include(m => m.idNavigation).LoadAsync();
+
+        await _context.turnos.Entry(turno).Reference(t => t.especialidad).LoadAsync();
+
+        _context.turnoAuditorias.Add(new TurnoAuditoria
+        {
+            TurnoId = turno.id,
+            UsuarioNombre = UserName,
+            MomentoAccion = DateTime.Now,
+            Accion = "INSERT",
+            FechaNueva = turno.fecha,
+            HoraNueva = turno.hora,
+            EstadoNuevo = turno.estado,
+            PacienteId = turno.paciente_id.Value,
+            PacienteNombre = turno.paciente.idNavigation.nombre,
+            MedicoId = turno.medico_id.Value,
+            MedicoNombre = turno.medico.idNavigation.nombre,
+            EspecialidadId = turno.especialidad_id.Value,
+            EspecialidadNombre = turno.especialidad.nombre,
+            SlotIdNuevo = turno.slot_id,
+        });
+
+        _context.trazabilidadTurnos.Add(new TrazabilidadTurno
+        {
+            TurnoId = turno.id,
+            UsuarioId = UserId.Value,
+            UsuarioRol = UserRole,
+            MomentoAccion = DateTime.Now,
+            Accion = "INSERT",
+            Descripcion = User.IsInRole("Secretaria") ? $"La secretaria {UserName} reservo un turno" : $"El paciente {UserName} reservo un turno"
+        });
+
+        await _context.SaveChangesAsync();
+
+
         return Json(new { success = true, message = "Turno creado exitosamente" });
     }
     
@@ -602,13 +639,53 @@ public class TurnoController : BaseController
         {
             TempData["ErrorMessage"] = $"El turno no puede ser cancelado, Estado actual:{turno.estado}";
 
-           // if (User.IsInRole("Paciente"))
-                return RedirectToAction("Cancelar", "Turno"); //FIJATE SI ES ASI O DIRECTAMENTE DEVOLVER LA View de la seleccion a cancelar
+            // if (User.IsInRole("Paciente"))
+            return RedirectToAction("Cancelar", "Turno"); //FIJATE SI ES ASI O DIRECTAMENTE DEVOLVER LA View de la seleccion a cancelar
         }
+
+        
+        //Vale la pena cargar las propiedades de navegacion aca en vez de en la consulta original porque puede ser que en ese momento no fueran necesarias (si no se puede cancelar) y las estariamos cargando sin proposito alguno
+        await _context.turnos.Entry(turno).Reference(t => t.medico).Query().Include(m => m.idNavigation).LoadAsync();
+        await _context.turnos.Entry(turno).Reference(t => t.paciente).Query().Include(p => p.idNavigation).LoadAsync();
+        await _context.turnos.Entry(turno).Reference(t => t.especialidad).LoadAsync();
+
+        _context.turnoAuditorias.Add(new TurnoAuditoria
+        {
+            TurnoId = turno.id,
+            UsuarioNombre = UserName,
+            MomentoAccion = DateTime.Now,
+            Accion = "CANCEL",
+            FechaAnterior = turno.fecha,
+            FechaNueva = turno.fecha,
+            HoraAnterior = turno.hora,
+            HoraNueva = turno.hora,
+            EstadoAnterior = turno.estado,
+            EstadoNuevo = "Cancelado",
+            PacienteId = turno.paciente_id.Value,
+            PacienteNombre = turno.paciente.idNavigation.nombre,
+            MedicoId = turno.medico_id.Value,
+            MedicoNombre = turno.medico.idNavigation.nombre,
+            EspecialidadId = turno.especialidad_id.Value,
+            EspecialidadNombre = turno.especialidad.nombre,
+            SlotIdAnterior = turno.slot_id,
+            SlotIdNuevo = turno.slot_id,
+            MotivoCancelacion = dto.MotivoCancelacion
+        });
+
+        _context.trazabilidadTurnos.Add(new TrazabilidadTurno
+        {
+            TurnoId = turno.id,
+            UsuarioId = UserId.Value,
+            UsuarioRol = UserRole,
+            MomentoAccion = DateTime.Now,
+            Accion = "CANCEL",
+            Descripcion = User.IsInRole("Secretaria") ? $"La secretaria {UserName} cancelo un turno" : $"El paciente {UserName} cancelo un turno"
+        });
 
         _stateService.Cancelar(turno, dto.MotivoCancelacion);
         _context.Update(turno);
         await _context.SaveChangesAsync();
+
 
         if (User.IsInRole("Paciente"))
             return RedirectToAction($"Dashboard", "Paciente");
