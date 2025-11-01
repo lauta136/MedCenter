@@ -15,15 +15,15 @@ namespace MedCenter.Services.DisponibilidadMedico
             _context = context;
         }
 
-        public async Task<List<DateOnly>> GetDiasDisponibles(int id_medico) //sacar turnos de aca a un mes maximo
+        public async Task<List<DateOnly>> GetDiasDisponibles(int medicoId) //sacar turnos de aca a 2 meses maximo
         {
 
             DateOnly hoy = DateOnly.FromDateTime(DateTime.Now);
 
-            DateOnly limite = DateOnly.FromDateTime(DateTime.Now.AddDays(30));
+            DateOnly limite = DateOnly.FromDateTime(DateTime.Now.AddDays(60));
 
             var fechas = await _context.slotsagenda
-                        .Where(sa => sa.medico_id == id_medico && sa.fecha!.Value >= hoy && sa.fecha.Value <= limite)
+                        .Where(sa => sa.medico_id == medicoId && sa.fecha!.Value >= hoy && sa.fecha.Value <= limite && sa.disponible == true)
                         .Select(sa => sa.fecha!.Value)
                         .Distinct()
                         .OrderBy(f => f)
