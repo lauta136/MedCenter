@@ -46,7 +46,11 @@ public partial class AppDbContext : DbContext
     public DbSet<MedicoObraSocial> medico_obrasocial { get; set; }
     public DbSet<PacienteObraSocial> paciente_obrasocial { get; set; }
 
+    public DbSet<TurnoAuditoria> turnoAuditorias { get; set; }
+
     public DbSet<DisponibilidadMedico> disponibilidad_medico { get; set; }
+
+    public DbSet<TrazabilidadTurno> trazabilidadTurnos { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<EntradaClinica>(entity =>
@@ -201,9 +205,7 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey(d => d.secretaria_id)
                 .HasConstraintName("turnos_secretaria_id_fkey");
 
-            entity.HasOne(d => d.slot).WithMany(p => p.turnos)
-                .HasForeignKey(d => d.slot_id)
-                .HasConstraintName("turnos_slot_id_fkey");
+            entity.HasOne(t => t.slot).WithOne(s => s.Turno).HasForeignKey<Turno>(s => s.slot_id).HasConstraintName("turno_slotagenda_fkey");
 
             entity.HasOne(t => t.paciente_obrasocial)
                   .WithMany(po => po.turnos)
@@ -338,6 +340,46 @@ public partial class AppDbContext : DbContext
             e.HasIndex(e => new { e.dia_semana, e.hora_inicio, e.hora_fin, e.medico_id, e.activa })
              .HasFilter("activa = true")
              .IsUnique();
+        });
+
+        modelBuilder.Entity<TurnoAuditoria>(e =>
+        {
+            e.ToTable("auditoriasturnos");
+
+            e.HasKey(e => e.Id);
+            e.Property(e => e.Id).UseIdentityAlwaysColumn().HasColumnName("id");
+
+            e.Property(e => e.UsuarioNombre).HasColumnName("usuario_nombre").IsRequired();
+            e.Property(e => e.TurnoId).HasColumnName("turno_id").IsRequired();
+            e.Property(e => e.EstadoAnterior).HasColumnName("estado_anterior");
+            e.Property(e => e.EstadoNuevo).HasColumnName("estado_nuevo");
+            e.Property(e => e.FechaAnterior).HasColumnName("fecha_anterior");
+            e.Property(e => e.FechaNueva).HasColumnName("fecha_nueva");
+            e.Property(e => e.HoraAnterior).HasColumnName("hora_anterior");
+            e.Property(e => e.HoraNueva).HasColumnName("hora_nueva");
+            e.Property(e => e.MomentoAccion).HasColumnName("momento_accion");
+            e.Property(e => e.SlotIdAnterior).HasColumnName("slot_id_anterior");
+            e.Property(e => e.SlotIdNuevo).HasColumnName("slot_id_nuevo");
+            e.Property(e => e.Accion).HasColumnName("accion").IsRequired();
+            e.Property(e => e.MotivoCancelacion).HasColumnName("motivo_cancelacion");
+
+        });
+
+        modelBuilder.Entity<TrazabilidadTurno>(e =>
+        {
+            e.ToTable("trazabilidadturnos");
+
+            e.HasKey(e => e.Id);
+            e.Property(e => e.Id).UseIdentityAlwaysColumn();
+
+            e.Property(e => e.TurnoId).HasColumnName("turno_id");
+            e.Property(e => e.UsuarioId).HasColumnName("usuario_id");
+            e.Property(e => e.UsuarioNombre).HasColumnName("usuario_nombre");
+            e.Property(e => e.UsuarioRol).HasColumnName("usuario_rol");
+            e.Property(e => e.Accion).HasColumnName("accion");
+            e.Property(e => e.Descripcion).HasColumnName("descripcion");
+            e.Property(e => e.MomentoAccion).HasColumnName("momento_accion");
+
         });
 
         /* modelBuilder.Entity<RoleKey>().HasData(

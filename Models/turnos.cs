@@ -32,7 +32,7 @@ public partial class Turno
 
     public int? pacienteobrasocial_id { get; set; }
 
-    public bool es_particular { get; set; } //implementar a futuro
+    public bool es_particular { get; set; } //implementar a futuro, no esta auditado
       
     public virtual ICollection<EntradaClinica> entradasClinicas { get; set; } = new List<EntradaClinica>();
 

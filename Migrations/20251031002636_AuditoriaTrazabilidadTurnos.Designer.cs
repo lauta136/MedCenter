@@ -3,6 +3,7 @@ using System;
 using MedCenter.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MedCenter.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251031002636_AuditoriaTrazabilidadTurnos")]
+    partial class AuditoriaTrazabilidadTurnos
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -519,8 +522,7 @@ namespace MedCenter.Migrations
 
                     b.HasIndex("secretaria_id");
 
-                    b.HasIndex("slot_id")
-                        .IsUnique();
+                    b.HasIndex("slot_id");
 
                     b.ToTable("turnos");
                 });
@@ -845,9 +847,9 @@ namespace MedCenter.Migrations
                         .HasConstraintName("turnos_secretaria_id_fkey");
 
                     b.HasOne("MedCenter.Models.SlotAgenda", "slot")
-                        .WithOne("Turno")
-                        .HasForeignKey("MedCenter.Models.Turno", "slot_id")
-                        .HasConstraintName("turno_slotagenda_fkey");
+                        .WithMany("turnos")
+                        .HasForeignKey("slot_id")
+                        .HasConstraintName("turnos_slot_id_fkey");
 
                     b.Navigation("especialidad");
 
@@ -933,7 +935,7 @@ namespace MedCenter.Migrations
 
             modelBuilder.Entity("MedCenter.Models.SlotAgenda", b =>
                 {
-                    b.Navigation("Turno");
+                    b.Navigation("turnos");
                 });
 
             modelBuilder.Entity("MedCenter.Models.Turno", b =>

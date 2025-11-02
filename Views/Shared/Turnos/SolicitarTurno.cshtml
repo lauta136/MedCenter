@@ -186,7 +186,7 @@
         medicoSeleccionado = medicoId;
 
         try {
-            const response = await fetch(`/Turno/ObtenerDiasDisponibles?medicoId=${medicoId}`);
+            const response = await fetch(`/Turno/GetDiasDisponibles?medicoId=${medicoId}`);
             
             if (!response.ok) {
                 throw new Error('Error al cargar disponibilidad');
