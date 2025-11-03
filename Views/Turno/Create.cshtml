@@ -1,0 +1,113 @@
+@model MedCenter.Models.Turno
+
+@{
+    ViewData["Title"] = "Asignar Nuevo Turno";
+}
+
+<h2>@ViewData["Title"]</h2>
+<hr />
+
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create" method="post">
+            
+            @* Campo para la Fecha *@
+            <div class="form-group">
+                <label asp-for="fecha" class="control-label"></label>
+                <input asp-for="fecha" class="form-control" type="date" />
+                <span asp-validation-for="fecha" class="text-danger"></span>
+            </div>
+
+            @* Campo para la Hora *@
+            <div class="form-group mt-3">
+                <label asp-for="hora" class="control-label"></label>
+                <input asp-for="hora" class="form-control" type="time" />
+                <span asp-validation-for="hora" class="text-danger"></span>
+            </div>
+
+            
+
+            
+            <div class="form-group mt-3">
+                <label asp-for="paciente_id" class="control-label">Paciente</label>
+                <select asp-for="paciente_id" class="form-control" asp-items="@(ViewData["PacienteId"] as SelectList)">
+                    <option value="">-- Seleccione un Paciente --</option>
+                </select>
+                <span asp-validation-for="paciente_id" class="text-danger"></span>
+            </div>
+
+            
+            @* Dropdown para Médicos *@
+            <div class="form-group mt-3">
+                <label asp-for="medico_id" class="control-label">Médico</label>
+                <select asp-for="medico_id" class="form-control" asp-items="@(ViewData["MedicoId"] as SelectList)">
+                    <option value="">-- Seleccione un Médico --</option>
+                </select>
+            </div>
+
+            @* DROPDOWN PARA ESPECIALIDADES (INICIALMENTE VACÍO Y DESHABILITADO) *@
+            <div class="form-group mt-3">
+                <label asp-for="especialidad_id" class="control-label">Especialidad</label>
+                <select asp-for="especialidad_id" class="form-control" disabled>
+                    <option value="">-- Primero seleccione un médico --</option>
+                </select>
+                <span asp-validation-for="especialidad_id" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mt-4">
+                <input type="submit" value="Guardar Turno" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script>
+        // Se ejecuta cuando el documento HTML está completamente cargado
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const medicoDropdown = document.getElementById('medico_id');
+            const especialidadDropdown = document.getElementById('especialidad_id');
+
+            // "listener" que se activa cada vez que cambia la selección del médico
+            medicoDropdown.addEventListener('change', function () {
+                const medicoId = this.value; // Obtenemos el ID del médico seleccionado
+
+                // Limpiamos y deshabilitamos el dropdown de especialidades
+                especialidadDropdown.innerHTML = '<option value="">Cargando...</option>';
+                especialidadDropdown.disabled = true;
+
+                if (medicoId) {
+                    // Si se seleccionó un médico, hacemos una llamada al servidor
+                    fetch(`/Turno/GetEspecialidadesPorMedico?medicoId=${medicoId}`)
+                        .then(response => response.json()) // Convertimos la respuesta a JSON
+                        .then(data => {
+                            // Cuando llegan los datos, limpiamos el dropdown
+                            especialidadDropdown.innerHTML = '<option value="">-- Seleccione una Especialidad --</option>';
+                            
+                            // Agregamos cada especialidad recibida como una nueva opción
+                            data.forEach(function (especialidad) {
+                                const option = document.createElement('option');
+                                option.value = especialidad.id;
+                                option.text = especialidad.nombre;
+                                especialidadDropdown.appendChild(option);
+                            });
+
+                            // Habilitamos el dropdown de especialidades
+                            especialidadDropdown.disabled = false;
+                        })
+                        .catch(error => {
+                            console.error('Error al cargar las especialidades:', error);
+                            especialidadDropdown.innerHTML = '<option value="">Error al cargar</option>';
+                        });
+                } else {
+                    // Si no se seleccionó ningún médico, reseteamos el dropdown
+                    especialidadDropdown.innerHTML = '<option value="">-- Primero seleccione un médico --</option>';
+                    especialidadDropdown.disabled = true;
+                }
+            });
+        });
+    </script>
+}

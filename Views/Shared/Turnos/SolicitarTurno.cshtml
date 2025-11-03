@@ -1,0 +1,361 @@
+@model List<MedCenter.Models.Especialidad>
+@{
+    ViewData["Title"] = ViewBag.EsSecretaria ? "Asignar Turno" : "Solicitar Turno";
+    
+    // Layout dinámico según rol
+    Layout = ViewBag.EsSecretaria 
+        ? "~/Views/Shared/_SecretariaLayout.cshtml" 
+        : "~/Views/Shared/_PacienteLayout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/titles.css" />
+
+<div class="container mt-4">
+    <h2>@ViewData["Title"]</h2>
+
+    <!-- PASO 0: Solo Secretaria - Seleccionar Paciente -->
+    @if (ViewBag.EsSecretaria)
+    {
+        <div id="paso0" class="card mb-3">
+            <div class="card-header">
+                <h5>Selecciona el paciente</h5>
+            </div>
+            <div class="card-body">
+                <input type="text" id="buscarPaciente" class="form-control mb-2" 
+                       placeholder="Buscar por nombre o DNI...">
+                <select id="pacienteSelect" class="form-select" size="8">
+                    <option value="">-- Seleccionar paciente --</option>
+                    @foreach (var paciente in ViewBag.Pacientes)
+                    {
+                        <option value="@paciente.id">
+                            @paciente.nombre - DNI: @paciente.dni
+                        </option>
+                    }
+                </select>
+            </div>
+        </div>
+    }
+
+    <!-- PASO 1: Seleccionar Especialidad -->
+    <div id="paso1" class="card mb-3" style="@(ViewBag.EsSecretaria ? "display:none;" : "")">
+        <div class="card-header">
+            <h5>1. Selecciona una especialidad</h5>
+        </div>
+        <div class="card-body">
+            <select id="especialidadSelect" class="form-select">
+                <option value="">-- Seleccionar especialidad --</option>
+                @foreach (var esp in Model)
+                {
+                    <option value="@esp.id">@esp.nombre</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <!-- PASO 2: Seleccionar Médico -->
+    <div id="paso2" class="card mb-3" style="display:none;">
+        <div class="card-header">
+            <h5>2. Selecciona un médico</h5>
+        </div>
+        <div class="card-body">
+            <div id="listaMedicos" class="row">
+                <!-- Se llena con JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- PASO 3: Calendario -->
+    <div id="paso3" class="card mb-3" style="display:none;">
+        <div class="card-header">
+            <h5>3. Selecciona un día</h5>
+        </div>
+        <div class="card-body">
+            <div id="calendarioMedico" class="row">
+                <!-- Se llena con JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- PASO 4: Horarios -->
+    <div id="paso4" class="card mb-3" style="display:none;">
+        <div class="card-header">
+            <h5>4. Selecciona un horario</h5>
+        </div>
+        <div class="card-body">
+            <div id="slotsDisponibles" class="row">
+                <!-- Se llena con JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón confirmar -->
+    <button id="btnConfirmar" class="btn btn-success" style="display:none;">
+        @(ViewBag.EsSecretaria ? "Asignar Turno" : "Confirmar Turno")
+    </button>
+</div>
+
+@section Scripts {
+<script>
+    const esSecretaria = @Html.Raw(ViewBag.EsSecretaria ? "true" : "false");
+    
+    // Variables globales
+    let pacienteSeleccionado = null;
+    let especialidadSeleccionada = null;
+    let medicoSeleccionado = null;
+    let fechaSeleccionada = null;
+    let slotSeleccionado = null;
+
+    // ========== PASO 0: Solo Secretaria - Seleccionar Paciente ==========
+    if (esSecretaria) {
+        document.getElementById('pacienteSelect').addEventListener('change', function() {
+            pacienteSeleccionado = this.value;
+            
+            if (pacienteSeleccionado) {
+                document.getElementById('paso1').style.display = 'block';
+            }
+        });
+
+        // Búsqueda en tiempo real
+        document.getElementById('buscarPaciente').addEventListener('input', function() {
+            const busqueda = this.value.toLowerCase();
+            const select = document.getElementById('pacienteSelect');
+            const options = select.querySelectorAll('option');
+            
+            options.forEach(option => {
+                if (option.value === '') return; // Skip placeholder
+                
+                const texto = option.textContent.toLowerCase();
+                option.style.display = texto.includes(busqueda) ? '' : 'none';
+            });
+        });
+    }
+
+    // ========== PASO 1: Seleccionar Especialidad ==========
+    document.getElementById('especialidadSelect').addEventListener('change', async function() {
+        const especialidadId = this.value;
+        
+        if (!especialidadId) {
+            return;
+        }
+
+        especialidadSeleccionada = especialidadId;
+
+        try {
+            // Hacer petición al servidor
+            const response = await fetch(`/Turno/GetMedicosPorEspecialidad?especialidadId=${especialidadId}`);
+            
+            if (!response.ok) {
+                throw new Error('Error al cargar médicos');
+            }
+
+            const medicos = await response.json();
+            
+            const listaMedicos = document.getElementById('listaMedicos');
+            listaMedicos.innerHTML = '';
+
+            if (medicos.length === 0) {
+                listaMedicos.innerHTML = '<p class="text-muted">No hay médicos disponibles para esta especialidad.</p>';
+                return;
+            }
+
+            // Crear tarjeta para cada médico
+            medicos.forEach(medico => {
+                listaMedicos.innerHTML += `
+                    <div class="col-md-4 mb-3">
+                        <div class="card tarjeta-medico" onclick="seleccionarMedico(${medico.id})">
+                            <div class="card-body">
+                                <h6>${medico.nombre}</h6>
+                                <p class="text-muted mb-0">Matrícula: ${medico.matricula}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Mostrar paso 2
+            document.getElementById('paso2').style.display = 'block';
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al cargar los médicos. Intente nuevamente.');
+        }
+    });
+
+    // ========== PASO 2: Seleccionar Médico ==========
+    async function seleccionarMedico(medicoId) {
+        medicoSeleccionado = medicoId;
+
+        try {
+            const response = await fetch(`/Turno/GetDiasDisponibles?medicoId=${medicoId}`);
+            
+            if (!response.ok) {
+                throw new Error('Error al cargar disponibilidad');
+            }
+
+            const dias = await response.json();
+            
+            const calendario = document.getElementById('calendarioMedico');
+            calendario.innerHTML = '';
+
+            if (dias.length === 0) {
+                calendario.innerHTML = '<p class="text-muted">No hay días disponibles para este médico.</p>';
+                return;
+            }
+
+            dias.forEach(dia => {
+                const fecha = new Date(dia + 'T00:00:00');
+                const diaTexto = fecha.toLocaleDateString('es-AR', { 
+                    weekday: 'long', 
+                    day: 'numeric', 
+                    month: 'long' 
+                });
+
+                calendario.innerHTML += `
+                    <div class="col-md-3 mb-3">
+                        <button class="btn btn-outline-primary w-100" 
+                                onclick="seleccionarFecha('${dia}')">
+                            ${diaTexto}
+                        </button>
+                    </div>
+                `;
+            });
+
+            document.getElementById('paso3').style.display = 'block';
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al cargar los días disponibles. Intente nuevamente.');
+        }
+    }
+
+    // ========== PASO 3: Seleccionar Fecha ==========
+    async function seleccionarFecha(fecha) {
+        fechaSeleccionada = fecha;
+
+        try {
+            const response = await fetch(
+                `/Turno/GetSlotsDisponibles?medicoId=${medicoSeleccionado}&fecha=${fecha}`
+            );
+            
+            if (!response.ok) {
+                throw new Error('Error al cargar horarios');
+            }
+
+            const slots = await response.json();
+            
+            const slotsDiv = document.getElementById('slotsDisponibles');
+            slotsDiv.innerHTML = '';
+
+            if (slots.length === 0) {
+                slotsDiv.innerHTML = '<p class="text-muted">No hay horarios disponibles para este día.</p>';
+                return;
+            }
+
+            slots.forEach(slot => {
+                slotsDiv.innerHTML += `
+                    <div class="col-md-3 mb-3">
+                        <button class="btn btn-outline-success w-100" 
+                                onclick="seleccionarSlot(${slot.id})">
+                            ${slot.horaInicio} - ${slot.horaFin}
+                        </button>
+                    </div>
+                `;
+            });
+
+            document.getElementById('paso4').style.display = 'block';
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al cargar los horarios. Intente nuevamente.');
+        }
+    }
+
+    // ========== PASO 4: Seleccionar Slot ==========
+    function seleccionarSlot(slotId) {
+        slotSeleccionado = slotId;
+        document.getElementById('btnConfirmar').style.display = 'block';
+    }
+
+    // ========== CONFIRMAR TURNO ==========
+    document.getElementById('btnConfirmar').addEventListener('click', async function() {
+        // Validación para secretaria
+        if (esSecretaria && !pacienteSeleccionado) {
+            alert('Debe seleccionar un paciente');
+            return;
+        }
+
+        try {
+            const token = document.querySelector('[name="__RequestVerificationToken"]').value;
+            
+            // Construir body del request
+            let body = `slotId=${slotSeleccionado}&especialidadId=${especialidadSeleccionada}&medicoId=${medicoSeleccionado}&__RequestVerificationToken=${token}`;            
+            if (esSecretaria) {
+                body += `&pacienteElegidoId=${pacienteSeleccionado}`;
+            }
+
+            const response = await fetch('/Turno/Reservar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: body
+            });
+
+            if (!response.ok) {
+                throw new Error('Error en la solicitud');
+            }
+
+            const resultado = await response.json();
+            
+            if (resultado.success) {
+                alert('✓ ' + resultado.message);
+                
+                // Redirigir según rol
+                if (esSecretaria) {
+                    window.location.href = '/Secretaria/Dashboard';
+                } else {
+                    window.location.href = '/Paciente/Dashboard';
+                }
+            } else {
+                alert('✗ ' + resultado.message);
+            }
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al confirmar el turno. Intente nuevamente.');
+        }
+    });
+</script>
+
+<style>
+    .tarjeta-medico {
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: 1px solid #dee2e6;
+    }
+    
+    .tarjeta-medico:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-color: #0d6efd;
+    }
+
+    #pacienteSelect {
+    font-family: monospace;
+    background-color: white;
+    color: #212529; /* Color de texto oscuro */
+    }
+
+    #buscarPaciente {
+        background-color: white;
+        color: #212529; /* Color de texto oscuro */
+    }
+
+    #buscarPaciente:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        background-color: white; /* Mantener blanco al hacer focus */
+        color: #212529;
+    }
+</style>
+}

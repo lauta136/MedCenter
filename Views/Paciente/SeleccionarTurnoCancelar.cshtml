@@ -1,0 +1,144 @@
+@model IEnumerable<MedCenter.DTOs.TurnoViewDTO>
+
+@{
+    ViewData["Title"] = "Seleccionar Turno a Cancelar";
+    Layout = "~/Views/Shared/_PacienteLayout.cshtml";
+}
+
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-danger text-white">
+            <h4><i class="fas fa-times-circle me-2"></i>Cancelar Turno</h4>
+        </div>
+        <div class="card-body bg-white">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show">
+                    <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Hora</th>
+                                <th>Médico</th>
+                                <th>Especialidad</th>
+                                <th>Estado</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var turno in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <i class="fas fa-calendar text-primary me-2"></i>
+                                        <strong>@turno.Fecha</strong>
+                                    </td>
+                                    <td>
+                                        <i class="fas fa-clock text-muted me-2"></i>
+                                        @turno.Hora
+                                    </td>
+                                    <td>
+                                        <i class="fas fa-user-md text-success me-2"></i>
+                                        @turno.MedicoNombre
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info bg-opacity-10 text-info">
+                                            @turno.Especialidad
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check me-1"></i>@turno.Estado
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-controller = "Turno" asp-action="Cancelar" asp-route-id="@turno.Id"
+                                           class="btn btn-outline-danger btn-sm" title="Cancelar">
+                                            <i class="fas fa-times"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No hay turnos activos en este momento.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    /* --- GENERAL CARD STYLING --- */
+    .card {
+        border-radius: 12px;
+        border: none;
+        overflow: hidden;
+    }
+
+    .card-header {
+        border-bottom: none;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.75rem 1.25rem rgba(0, 0, 0, 0.1);
+    }
+
+    /* --- TABLE --- */
+    .table {
+        background-color: #fff !important;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table thead th {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        color: #6c757d;
+        background-color: #f8f9fa !important;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .table td {
+        background-color: #fff !important;
+    }
+
+    /* --- BUTTONS --- */
+    .btn-outline-danger {
+        border-color: #dc3545;
+        color: #dc3545;
+    }
+
+    .btn-outline-danger:hover {
+        background-color: #dc3545;
+        color: #fff;
+    }
+</style>
