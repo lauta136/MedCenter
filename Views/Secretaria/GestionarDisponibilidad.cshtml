@@ -8,6 +8,60 @@
 }
 <link rel="stylesheet" href="~/css/titles.css" />
 
+
+<style>
+    /* ✅ Estilos para inputs de tiempo y selects */
+    input[type="time"],
+    select.form-select {
+        background-color: #ffffff !important;
+        color: #1a1a1a !important;
+        border: 1px solid var(--border);
+        padding: 0.75rem;
+        border-radius: 0.375rem;
+    }
+
+    input[type="time"]:focus,
+    select.form-select:focus {
+        background-color: #ffffff !important;
+        color: #1a1a1a !important;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--primary);
+        outline: none;
+    }
+
+    /* ✅ Relojito visible */
+    input[type="time"]::-webkit-calendar-picker-indicator {
+        filter: invert(0);
+        cursor: pointer;
+        opacity: 1;
+        padding: 5px;
+    }
+
+    input[type="time"]::-moz-calendar-picker-indicator {
+        filter: invert(0);
+        cursor: pointer;
+    }
+
+    /* ✅ Opciones del select legibles */
+    select.form-select option {
+        background-color: #ffffff;
+        color: #1a1a1a;
+    }
+
+    /* ✅ Botón de cierre de alertas visible */
+    .btn-close-white {
+        filter: invert(1);
+    }
+     /* ✅ AGREGAR ESTO: Estilos para botón secundario *
+    .btn-secondary {
+        background-color: hsl(203, 95%, 49%) !important;
+        color: var(--muted-foreground) !important;
+        border: 1px solid var(--border) !important;
+    }*/
+
+</style>
+
+
 <div class="container mt-4">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -22,33 +76,29 @@
         </a>
     </div>
 
-    <!-- Mensaje de éxito -->
-    @if (TempData["SuccessMessage"] != null)
+    <!-- ✅ Mensajes unificados (una sola vez) -->
+    @if ( TempData["ErrorMessage"] != null || ViewBag.ErrorMessage != null)
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle me-2"></i>
-            @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
+        <div class="mb-4">
+           
 
-    <!-- Mensaje de error -->
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-circle me-2"></i>
-            @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                </div>
+            }
 
-    <!-- Mensaje de error -->
-    @if (ViewBag.ErrorMessage != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-circle me-2"></i>
-            @ViewBag.ErrorMessage
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            @if (ViewBag.ErrorMessage != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    @ViewBag.ErrorMessage
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                </div>
+            }
         </div>
     }
 
@@ -94,7 +144,6 @@
                                         }
                                     </td>
                                     <td>
-                                        <!-- ✅ Solo botón de cancelar -->
                                         <button class="btn btn-sm btn-danger" 
                                             onclick="confirmarEliminar(@dispo.id)">
                                             <i class="fas fa-times"></i> Desactivar
@@ -122,6 +171,7 @@
         </div>
         <div class="card-body" id="formularioBloque" style="display: none;">
             <form id="formDisponibilidad" asp-action="AgregarBloqueDisponibilidad" method="post">
+                @Html.AntiForgeryToken()
                 <input type="hidden" name="medico_id" value="@medicoId" />
                 
                 <div class="row g-3">
@@ -179,8 +229,8 @@
 
                 <!-- Preview del bloque -->
                 <div class="mt-3 p-3 bg-light rounded" id="preview" style="display: none;">
-                    <p class="mb-1"><strong>Vista previa:</strong></p>
-                    <p class="mb-0" id="previewText"></p>
+                    <p class="mb-1" style="color: #1a1a1a;"><strong>Vista previa:</strong></p>
+                    <p class="mb-0" id="previewText" style="color: #1a1a1a;"></p>
                 </div>
             </form>
         </div>
@@ -201,8 +251,6 @@
     }
 </div>
 
-
-
 <!-- Modal para confirmar eliminación -->
 <div class="modal fade" id="modalEliminar" tabindex="-1">
     <div class="modal-dialog">
@@ -212,9 +260,10 @@
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     Confirmar Eliminación
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form asp-action="CancelarBloqueDisponibilidad" method="post">
+                @Html.AntiForgeryToken()
                 <input type="hidden" name="medico_id" value="@medicoId" />
                 <input type="hidden" name="dispo_id" id="deleteDispoId" />
                 
@@ -233,8 +282,8 @@
                     <div class="alert alert-warning">
                         <i class="fas fa-lightbulb me-2"></i>
                         <strong>Sugerencia:</strong> Si necesita cambiar el horario, 
-                                desactive este bloque y cree uno nuevo con el horario actualizado.
-                        </div>
+                        desactive este bloque y cree uno nuevo con el horario actualizado.
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -248,8 +297,6 @@
         </div>
     </div>
 </div>
-
-
 
 @section Scripts {
 <script>
@@ -271,7 +318,7 @@
         const horaFin = document.querySelector('[name="Hora_fin"]').value;
         const duracion = document.querySelector('[name="Duracion_turno_minutos"]').value;
 
-        if (dia && horaInicio && horaFin) { //si tienen algun elemento seleccionado
+        if (dia && horaInicio && horaFin) {
             const preview = document.getElementById('preview');
             const previewText = document.getElementById('previewText');
             
@@ -280,12 +327,11 @@
                 <span class="text-success">${horaInicio}</span> a 
                 <span class="text-success">${horaFin}</span> - 
                 Turnos cada <span class="text-info">${duracion} minutos</span>
-            `; //Texto que se va a cargar en previewText 
+            `;
             preview.style.display = 'block'; 
         }
     }
 
-   
     // Confirmar eliminar
     function confirmarEliminar(id) {
         document.getElementById('deleteDispoId').value = id;
