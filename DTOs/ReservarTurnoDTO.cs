@@ -14,8 +14,5 @@ public class ReservarTurnoDTO
     public int PacienteId { get; set; }
 
     [Required]
-    public DateOnly Fecha { get; set; }
-
-    [Required]
     public int SlotId { get; set; } // ← Referencia al slot de agenda
 }

@@ -225,29 +225,36 @@ public class TurnoController : BaseController
 
         slot.disponible = false;
 
-        await _context.SaveChangesAsync();
+
+
+        await _context.SaveChangesAsync(); //Para que se le asigne un valor al id de turno, no puedo hacerlo todo en un solo saveChanges ya que el turnoId no esta fijado como FK en la tabla auditoria
 
         //Cargo las propiedades de navegacion despues del SaveChangesAsync() para que se hayan rellenado con ef 
-        await _context.turnos.Entry(turno).Reference(t => t.paciente).Query().Include(p => p.idNavigation).LoadAsync();
+        /*await _context.turnos.Entry(turno).Reference(t => t.paciente).Query().Include(p => p.idNavigation).LoadAsync();
         await _context.turnos.Entry(turno).Reference(t => t.medico).Query().Include(m => m.idNavigation).LoadAsync();
 
         await _context.turnos.Entry(turno).Reference(t => t.especialidad).LoadAsync();
+        */
+        var pacNombre = await _context.pacientes.Where(p => p.id == turno.paciente_id).Include(p => p.idNavigation).Select(p => new { p.idNavigation.nombre }).FirstOrDefaultAsync();
+        var medNombre = await _context.medicos.Where(m => m.id == turno.medico_id).Include(m => m.idNavigation).Select(m => new { m.idNavigation.nombre }).FirstOrDefaultAsync();
+        var espNombre = await _context.especialidades.Where(e => e.id == turno.especialidad_id).Select(e => new { e.nombre }).FirstOrDefaultAsync();
+
 
         _context.turnoAuditorias.Add(new TurnoAuditoria
         {
-            TurnoId = turno.id,
+            TurnoId = turno.id, //Es nulo porque no fue guardado con SaveChangesAsync
             UsuarioNombre = UserName,
-            MomentoAccion = DateTime.Now,
+            MomentoAccion = DateTime.UtcNow,
             Accion = "INSERT",
             FechaNueva = turno.fecha,
             HoraNueva = turno.hora,
             EstadoNuevo = turno.estado,
             PacienteId = turno.paciente_id.Value,
-            PacienteNombre = turno.paciente.idNavigation.nombre,
+            PacienteNombre = pacNombre.nombre,
             MedicoId = turno.medico_id.Value,
-            MedicoNombre = turno.medico.idNavigation.nombre,
+            MedicoNombre = medNombre.nombre,
             EspecialidadId = turno.especialidad_id.Value,
-            EspecialidadNombre = turno.especialidad.nombre,
+            EspecialidadNombre = espNombre.nombre,
             SlotIdNuevo = turno.slot_id,
         });
 
@@ -256,7 +263,8 @@ public class TurnoController : BaseController
             TurnoId = turno.id,
             UsuarioId = UserId.Value,
             UsuarioRol = UserRole,
-            MomentoAccion = DateTime.Now,
+            UsuarioNombre = UserName,
+            MomentoAccion = DateTime.UtcNow,
             Accion = "INSERT",
             Descripcion = User.IsInRole("Secretaria") ? $"La secretaria {UserName} reservo un turno" : $"El paciente {UserName} reservo un turno"
         });
@@ -341,7 +349,7 @@ public class TurnoController : BaseController
         {
             TurnoId = turno.id,
             UsuarioNombre = UserName,
-            MomentoAccion = DateTime.Now,
+            MomentoAccion = DateTime.UtcNow,
             Accion = "UPDATE",
             FechaNueva = dto.Fecha,
             FechaAnterior = turno.fecha,
@@ -363,8 +371,9 @@ public class TurnoController : BaseController
         {
             TurnoId = turno.id,
             UsuarioId = UserId.Value,
+            UsuarioNombre = UserName,
             UsuarioRol = UserRole,
-            MomentoAccion = DateTime.Now,
+            MomentoAccion = DateTime.UtcNow,
             Accion = "UPDATE",
             Descripcion = User.IsInRole("Secretaria") ? $"La secretaria {UserName} reprogramo un turno" : $"El paciente {UserName} reprogramo un turno"
         });
@@ -397,9 +406,9 @@ public class TurnoController : BaseController
         return Json(dias.Select(d => d.ToString("yyyy-MM-dd")));
     }
 
-    public async Task<JsonResult> GetSlotsDisponibles(int id_medico, DateOnly fecha)
+    public async Task<JsonResult> GetSlotsDisponibles(int medicoId, DateOnly fecha)
     {
-        var slots = await _disponibilidadService.GetSlotsDisponibles(id_medico, fecha);
+        var slots = await _disponibilidadService.GetSlotsDisponibles(medicoId, fecha);
         var dtos = slots.Select(sa => new SlotAgendaViewDTO
         {
             Id = sa.id,
@@ -698,7 +707,7 @@ public class TurnoController : BaseController
         {
             TurnoId = turno.id,
             UsuarioNombre = UserName,
-            MomentoAccion = DateTime.Now,
+            MomentoAccion = DateTime.UtcNow,
             Accion = "CANCEL",
             FechaAnterior = turno.fecha,
             FechaNueva = turno.fecha,
@@ -722,19 +731,21 @@ public class TurnoController : BaseController
             TurnoId = turno.id,
             UsuarioId = UserId.Value,
             UsuarioRol = UserRole,
-            MomentoAccion = DateTime.Now,
+            UsuarioNombre = UserName,
+            MomentoAccion = DateTime.UtcNow,
             Accion = "CANCEL",
             Descripcion = User.IsInRole("Secretaria") ? $"La secretaria {UserName} cancelo un turno" : $"El paciente {UserName} cancelo un turno"
         });
 
         _stateService.Cancelar(turno, dto.MotivoCancelacion);
 
-        var slotUpdate = new SlotAgenda { id = turno.slot_id.Value, disponible = true , Turno = null};
-
+        var slotUpdate = new SlotAgenda { id = turno.slot_id.Value, disponible = true };
+        turno.slot_id = null;
         _context.Attach(slotUpdate);
 
+
         _context.Entry(slotUpdate).Property(sa => sa.disponible).IsModified = true;
-        _context.Entry(slotUpdate).Property(sa => sa.Turno).IsModified = true;
+
 
         await _context.SaveChangesAsync();
 
