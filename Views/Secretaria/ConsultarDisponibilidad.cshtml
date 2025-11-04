@@ -1,0 +1,360 @@
+@model List<MedCenter.Models.Especialidad>
+@{
+    ViewData["Title"] = "Consultar Disponibilidad";
+    Layout = "~/Views/Shared/_SecretariaLayout.cshtml";
+}
+
+<style>
+    /* Tarjetas de médicos */
+    .tarjeta-medico {
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: 1px solid #dee2e6;
+    }
+    
+    .tarjeta-medico:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-color: #0d6efd;
+    }
+
+    /* Tarjetas de horarios */
+    .card-horario {
+        cursor: default;
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: 1px solid #dee2e6;
+        min-height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .card-horario.disponible {
+        background-color: #d1fae5 !important;
+        border-color: #10b981;
+    }
+
+    .card-horario.disponible:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        background-color: #a7f3d0 !important;
+    }
+
+    .card-horario.ocupado {
+        background-color: #fee2e2 !important;
+        border-color: #ef4444;
+        color: #991b1b !important;
+    }
+
+    .card-horario.ocupado:hover {
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+    }
+
+    /* Select legible */
+    select.form-select {
+        background-color: #ffffff !important;
+        color: #1a1a1a !important;
+        border: 1px solid var(--border);
+    }
+
+    select.form-select:focus {
+        background-color: #ffffff !important;
+        color: #1a1a1a !important;
+        border-color: var(--primary);
+    }
+
+    select.form-select option {
+        background-color: #ffffff;
+        color: #1a1a1a;
+    }
+
+    /* Texto de horarios */
+    .card-horario p {
+        font-weight: 500;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    .card-horario.ocupado p {
+        color: #991b1b !important;
+    }
+
+    /* Badge de estado */
+    .badge-disponible {
+        background-color: #10b981;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-ocupado {
+        background-color: #ef4444;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+</style>
+
+<div class="container mt-4">
+    <h2>@ViewData["Title"]</h2>
+
+    <!-- PASO 1: Seleccionar Especialidad -->
+    <div id="paso1" class="card mb-3">
+        <div class="card-header">
+            <h5>1. Selecciona una especialidad</h5>
+        </div>
+        <div class="card-body">
+            <select id="especialidadSelect" class="form-select">
+                <option value="">-- Seleccionar especialidad --</option>
+                @foreach (var esp in Model)
+                {
+                    <option value="@esp.id">@esp.nombre</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <!-- PASO 2: Seleccionar Médico -->
+    <div id="paso2" class="card mb-3" style="display:none;">
+        <div class="card-header">
+            <h5>2. Selecciona un médico</h5>
+        </div>
+        <div class="card-body">
+            <div id="listaMedicos" class="row">
+                <!-- Se llena con JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- PASO 3: Calendario -->
+    <div id="paso3" class="card mb-3" style="display:none;">
+        <div class="card-header">
+            <h5>3. Selecciona un día</h5>
+        </div>
+        <div class="card-body">
+            <div id="calendarioMedico" class="row">
+                <!-- Se llena con JavaScript -->
+            </div>
+            <div id="horariosDisponibles" class="mt-4">
+                <!-- Se llena con JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Variables globales
+    let especialidadSeleccionada = null;
+    let medicoSeleccionado = null;
+    let fechaSeleccionada = null;
+
+    // ========== PASO 1: Seleccionar Especialidad ==========
+    document.getElementById('especialidadSelect').addEventListener('change', async function() {
+        const especialidadId = this.value;
+        
+        if (!especialidadId) {
+            // ✅ Ocultar todo si no hay especialidad seleccionada
+            document.getElementById('paso2').style.display = 'none';
+            document.getElementById('paso3').style.display = 'none';
+            return;
+        }
+
+        especialidadSeleccionada = especialidadId;
+
+        // ✅ LIMPIAR contenido previo
+        document.getElementById('listaMedicos').innerHTML = '';
+        document.getElementById('calendarioMedico').innerHTML = '';
+        document.getElementById('horariosDisponibles').innerHTML = '';
+        document.getElementById('paso3').style.display = 'none';
+
+        try {
+            const response = await fetch(`/Turno/GetMedicosPorEspecialidad?especialidadId=${especialidadId}`);
+            
+            if (!response.ok) {
+                throw new Error('Error al cargar médicos');
+            }
+
+            const medicos = await response.json();
+            
+            const listaMedicos = document.getElementById('listaMedicos');
+
+            if (medicos.length === 0) {
+                listaMedicos.innerHTML = '<p class="text-muted">No hay médicos disponibles para esta especialidad.</p>';
+                document.getElementById('paso2').style.display = 'block';
+                return;
+            }
+
+            medicos.forEach(medico => {
+                listaMedicos.innerHTML += `
+                    <div class="col-md-4 mb-3">
+                        <div class="card tarjeta-medico" data-medico-id="${medico.id}">
+                            <div class="card-body">
+                                <h6>${medico.nombre}</h6>
+                                <p class="text-muted mb-0">Matrícula: ${medico.matricula}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('paso2').style.display = 'block';
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al cargar los médicos. Intente nuevamente.');
+        }
+    });
+
+    // ✅ Event Delegation para médicos
+    document.getElementById('listaMedicos').addEventListener('click', async function(event) {
+        const tarjeta = event.target.closest('.tarjeta-medico');
+        if (!tarjeta) return;
+        
+        const medicoId = parseInt(tarjeta.dataset.medicoId);
+        
+        // Resaltar selección
+        document.querySelectorAll('.tarjeta-medico').forEach(t => {
+            t.classList.remove('border-primary', 'bg-light');
+        });
+        tarjeta.classList.add('border-primary', 'bg-light');
+        
+        await seleccionarMedico(medicoId);
+    });
+
+    // ========== PASO 2: Seleccionar Médico ==========
+    async function seleccionarMedico(medicoId) {
+        medicoSeleccionado = medicoId;
+
+        // ✅ LIMPIAR contenido previo del médico anterior
+        document.getElementById('calendarioMedico').innerHTML = '';
+        document.getElementById('horariosDisponibles').innerHTML = '';
+
+        try {
+            const response = await fetch(`/Turno/GetDiasDisponibles?medicoId=${medicoId}`);
+            
+            if (!response.ok) {
+                throw new Error('Error al cargar disponibilidad');
+            }
+
+            const diasDisponibles = await response.json();
+            
+            const calendarioMedico = document.getElementById('calendarioMedico');
+
+            if (diasDisponibles.length === 0) {
+                calendarioMedico.innerHTML = '<p class="text-muted">No hay días disponibles para este médico.</p>';
+                // ✅ Ocultar paso 3 si no hay días
+                document.getElementById('paso3').style.display = 'none';
+                return;
+            }
+
+            diasDisponibles.forEach(dia => {
+                calendarioMedico.innerHTML += `
+                    <div class="col-md-3 mb-3">
+                        <button class="btn btn-outline-primary w-100 btn-fecha" data-fecha="${dia}">
+                            ${formatearFecha(dia)}
+                        </button>
+                    </div>
+                `;
+            });
+
+            // ✅ Mostrar paso 3 solo si hay días
+            document.getElementById('paso3').style.display = 'block';
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al cargar la disponibilidad. Intente nuevamente.');
+        }
+    }
+
+    // ✅ Event Delegation para fechas
+    document.getElementById('calendarioMedico').addEventListener('click', function(event) {
+        if (!event.target.classList.contains('btn-fecha')) return;
+        
+        const fecha = event.target.dataset.fecha;
+        
+        // Resaltar selección
+        document.querySelectorAll('.btn-fecha').forEach(btn => {
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-outline-primary');
+        });
+        event.target.classList.remove('btn-outline-primary');
+        event.target.classList.add('btn-primary');
+        
+        seleccionarFecha(fecha);
+    });
+
+    // ========== PASO 3: Seleccionar Fecha ==========
+    async function seleccionarFecha(fecha) {
+        fechaSeleccionada = fecha;
+
+        try {
+            const response = await fetch(`/Turno/GetTodosLosSlots?medicoId=${medicoSeleccionado}&fecha=${fecha}`);
+            
+            if (!response.ok) {
+                throw new Error('Error al cargar horarios');
+            }
+
+            const slots = await response.json();
+            
+            const horariosDisponibles = document.getElementById('horariosDisponibles');
+            
+            if (slots.length === 0) {
+                horariosDisponibles.innerHTML = `
+                    <h5 class="mb-3">Horarios del ${formatearFecha(fecha)}</h5>
+                    <p class="text-muted">No hay horarios configurados para este día.</p>
+                `;
+                return;
+            }
+
+            let html = `
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Horarios del ${formatearFecha(fecha)}</h5>
+                    <div>
+                        <span class="badge-disponible me-2"><i class="fas fa-check me-1"></i>Disponible</span>
+                        <span class="badge-ocupado"><i class="fas fa-times me-1"></i>Ocupado</span>
+                    </div>
+                </div>
+                <div class="row g-2">
+            `;
+
+            slots.forEach(slot => {
+                const claseDisponibilidad = slot.disponible ? 'disponible' : 'ocupado';
+                const icono = slot.disponible 
+                    ? '<i class="fas fa-check-circle text-success me-1"></i>' 
+                    : '<i class="fas fa-times-circle text-danger me-1"></i>';
+                
+                html += `
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <div class="card card-horario ${claseDisponibilidad}">
+                            <div class="card-body text-center p-2">
+                                ${icono}
+                                <p>${slot.horaInicio} - ${slot.horaFin}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            horariosDisponibles.innerHTML = html;
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al cargar los horarios. Intente nuevamente.');
+        }
+    }
+
+    // Función auxiliar para formatear fechas
+    function formatearFecha(fecha) {
+        const [year, month, day] = fecha.split('-');
+        const fechaLocal = new Date(year, month - 1, day);
+        const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        return fechaLocal.toLocaleDateString('es-ES', opciones);
+    }
+</script>
+}

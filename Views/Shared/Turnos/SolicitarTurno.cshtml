@@ -203,7 +203,9 @@
             }
 
             dias.forEach(dia => {
-                const fecha = new Date(dia + 'T00:00:00');
+                // Parsear la fecha como local para evitar problemas de zona horaria
+                const [year, month, day] = dia.split('-');
+                const fecha = new Date(year, month - 1, day);
                 const diaTexto = fecha.toLocaleDateString('es-AR', { 
                     weekday: 'long', 
                     day: 'numeric', 
@@ -234,7 +236,7 @@
 
         try {
             const response = await fetch(
-                `/Turno/GetSlotsDisponibles?medicoId=${medicoSeleccionado}&fecha=${fecha}`
+                `/Turno/GetTodosLosSlots?medicoId=${medicoSeleccionado}&fecha=${fecha}`
             );
             
             if (!response.ok) {
@@ -247,20 +249,36 @@
             slotsDiv.innerHTML = '';
 
             if (slots.length === 0) {
-                slotsDiv.innerHTML = '<p class="text-muted">No hay horarios disponibles para este día.</p>';
+                slotsDiv.innerHTML = '<p class="text-muted">No hay horarios para este día.</p>';
                 return;
             }
 
+            let hayDisponibles = false;
             slots.forEach(slot => {
-                slotsDiv.innerHTML += `
-                    <div class="col-md-3 mb-3">
-                        <button class="btn btn-outline-success w-100" 
-                                onclick="seleccionarSlot(${slot.id})">
-                            ${slot.horaInicio} - ${slot.horaFin}
-                        </button>
-                    </div>
-                `;
+                if (slot.disponible) {
+                    hayDisponibles = true;
+                    slotsDiv.innerHTML += `
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-success w-100" 
+                                    onclick="seleccionarSlot(${slot.id})">
+                                ${slot.horaInicio} - ${slot.horaFin}
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    slotsDiv.innerHTML += `
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-danger w-100" disabled title="No disponible">
+                                ${slot.horaInicio} - ${slot.horaFin}
+                            </button>
+                        </div>
+                    `;
+                }
             });
+
+            if (!hayDisponibles) {
+                slotsDiv.innerHTML += '<p class="text-muted mt-3">No hay horarios disponibles para reservar en este día.</p>';
+            }
 
             document.getElementById('paso4').style.display = 'block';
 

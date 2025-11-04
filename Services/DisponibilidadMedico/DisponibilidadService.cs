@@ -134,6 +134,13 @@ namespace MedCenter.Services.DisponibilidadMedico
                                              .OrderBy(sa => sa.horainicio)
                                              .ToListAsync();
         }
+        
+        public async Task<List<SlotAgenda>> GetTodosLosSlots(int id_medico, DateOnly fecha)
+        {
+            return await _context.slotsagenda.Where(sa => sa.medico_id == id_medico && sa.fecha == fecha)
+                                             .OrderBy(sa => sa.horainicio)
+                                             .ToListAsync();
+        }
 
         public async Task<bool> SlotEstaDisponible(int id_slotagenda)
         {

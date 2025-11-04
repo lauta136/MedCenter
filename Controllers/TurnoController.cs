@@ -414,6 +414,20 @@ public class TurnoController : BaseController
             Id = sa.id,
             HoraInicio = sa.horainicio,
             HoraFin = sa.horafin,
+            Disponible = sa.disponible ?? false
+        });
+        return Json(dtos);
+    }
+
+    public async Task<JsonResult> GetTodosLosSlots(int medicoId, DateOnly fecha)
+    {
+        var slots = await _disponibilidadService.GetTodosLosSlots(medicoId, fecha);
+        var dtos = slots.Select(sa => new SlotAgendaViewDTO
+        {
+            Id = sa.id,
+            HoraInicio = sa.horainicio,
+            HoraFin = sa.horafin,
+            Disponible = sa.disponible ?? false
         });
         return Json(dtos);
     }

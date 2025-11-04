@@ -80,6 +80,13 @@ namespace MedCenter.Controllers
             return View();
         }
 
+        // GET: Secretaria/ConsultarDisponibilidad
+        public async Task<IActionResult> ConsultarDisponibilidad()
+        {
+            var especialidades = await _context.especialidades.ToListAsync();
+            return View(especialidades);
+        }
+
         // GET: Secretaria/Pacientes
         public async Task<IActionResult> Pacientes()
         {
