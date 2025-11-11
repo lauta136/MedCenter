@@ -642,11 +642,8 @@ public class TurnoController : BaseController
 
     public async Task<IActionResult> Cancelar(int? id)
     {
-        if (UserRole == "Paciente")
-            ViewBag.PacienteNombre = UserName;
-
-        else
-            ViewBag.SecretariaNombre = UserName;
+        
+        ViewBag.UserName = UserName;
 
         if (id.HasValue)
         {

@@ -54,14 +54,14 @@ namespace MedCenter.Controllers
                 .Take(10)
                 .ToListAsync();
 
-            ViewBag.PacienteNombre = paciente.idNavigation.nombre;
+            ViewBag.UserName = UserName;
             return View(turnos);
         }
 
         // GET: Paciente/SolicitarTurno
         public async Task<IActionResult> SolicitarTurno()
         {
-            ViewBag.PacienteNombre = await GetPacienteNombre();
+            ViewBag.UserName = UserName;
             return View();
         }
 
@@ -87,14 +87,14 @@ namespace MedCenter.Controllers
                 })
                 .ToListAsync();
 
-            ViewBag.PacienteNombre = await GetPacienteNombre();
+            ViewBag.UserName = UserName;
             return View(turnos);
         }
 
         //GET: Paciente/SeleccionarTurnoCancelar
         public async Task<IActionResult> SeleccionarTurnoCancelar()
         {
-            ViewBag.PacienteNombre = UserName;
+            ViewBag.UserName = UserName;
             
             return View();
         }
@@ -109,7 +109,7 @@ namespace MedCenter.Controllers
                         .ThenInclude(m => m.idNavigation)
                 .FirstOrDefaultAsync(h => h.paciente_id == UserId);
 
-            ViewBag.PacienteNombre = await GetPacienteNombre();
+            ViewBag.UserName = UserName;
             return View(historiaClinica);
         }
 
@@ -124,17 +124,10 @@ namespace MedCenter.Controllers
             if (paciente == null)
                 return NotFound();
 
-            ViewBag.PacienteNombre = paciente.idNavigation.nombre;
+            ViewBag.UserName = paciente.idNavigation.nombre;
             return View(paciente);
         }
 
-        private async Task<string> GetPacienteNombre()
-        {
-            var paciente = await _context.pacientes
-                .Include(p => p.idNavigation)
-                .FirstOrDefaultAsync(p => p.id == UserId);
-            
-            return paciente?.idNavigation.nombre ?? "Usuario";
-        }
+       
     }
 }

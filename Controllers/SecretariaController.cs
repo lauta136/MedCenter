@@ -62,7 +62,7 @@ namespace MedCenter.Controllers
             ViewBag.TurnosConfirmados = turnosHoy.Count(t => t.Estado == "Reservado");
             ViewBag.TurnosCancelados = await _context.turnos.CountAsync(t => t.estado == "Cancelado");
             ViewBag.TotalPacientes = await _context.pacientes.CountAsync();
-            ViewBag.SecretariaNombre = UserName;
+            ViewBag.UserName = UserName;
 
 
             return View(turnosHoy);
@@ -84,6 +84,7 @@ namespace MedCenter.Controllers
         public async Task<IActionResult> ConsultarDisponibilidad()
         {
             var especialidades = await _context.especialidades.ToListAsync();
+            ViewBag.UserName = UserName;
             return View(especialidades);
         }
 
@@ -99,14 +100,14 @@ namespace MedCenter.Controllers
                                 Email = p.idNavigation.email
                             })
                             .ToListAsync();
-            ViewBag.SecretariaNombre = UserName;
+            ViewBag.UserName = UserName;
             return View(pacientes);
         }
 
         //GET: Secretaria/NuevoPaciente
         public async Task<IActionResult> NuevoPaciente()
         {
-            ViewBag.SecretariaNombre = UserName;
+            ViewBag.UserName = UserName;
 
             return View(new RegisterDTO { Role = "Paciente" }); //Para que en el POST ya tenga el rol correcto
 
@@ -119,7 +120,7 @@ namespace MedCenter.Controllers
         {
             if (!ModelState.IsValid)
             {
-                ViewBag.SecretariaNombre = UserName;
+                ViewBag.UserName = UserName;
                 return View(model);
             }
 
@@ -136,7 +137,7 @@ namespace MedCenter.Controllers
             }
 
             ModelState.AddModelError("", result.ErrorMessage ?? "Error al registrar el paciente");
-            ViewBag.SecretariaNombre = UserName;
+            ViewBag.UserName = UserName;
             return View(model);
         }
 
@@ -159,7 +160,7 @@ namespace MedCenter.Controllers
                 ))
                 .ToListAsync();
 
-            ViewBag.SecretariaNombre = UserName;
+            ViewBag.UserName = UserName;
             return View(medicos);
         }
 
@@ -179,7 +180,7 @@ namespace MedCenter.Controllers
             .ThenBy(dm => dm.hora_inicio)
             .ToListAsync();
 
-            ViewBag.SecretariaNombre = UserName;
+            ViewBag.UserName = UserName;
             ViewBag.MedicoId = medico_id;
             ViewBag.MedicoNombre = medico.idNavigation.nombre;
 
@@ -284,7 +285,7 @@ namespace MedCenter.Controllers
             ViewBag.TurnosMes = turnosMes;
             ViewBag.PacientesNuevosMes = pacientesNuevosMes;
             ViewBag.TurnosCancelados = turnosCancelados;
-            ViewBag.SecretariaNombre = UserName;
+            ViewBag.UserName = UserName;
 
             return View();
         }
@@ -295,7 +296,7 @@ namespace MedCenter.Controllers
     // TODO: Implementar lógica para obtener solicitudes pendientes de pacientes
     // Filtrar turnos con estado "Pendiente" o similar
     
-    ViewBag.SecretariaNombre = UserName;
+    ViewBag.UserName = UserName;
     return View();
 }
 
@@ -330,7 +331,7 @@ public async Task<IActionResult> SolicitudesReprogramacion()
     // TODO: Implementar lógica para obtener solicitudes de reprogramación
     // Necesitarás una tabla adicional para guardar estas solicitudes
     
-    ViewBag.SecretariaNombre = UserName;
+    ViewBag.UserName = UserName;
     return View();
 }
 
