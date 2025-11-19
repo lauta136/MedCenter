@@ -406,6 +406,31 @@ public class TurnoController : BaseController
         return Json(dias.Select(d => d.ToString("yyyy-MM-dd")));
     }
 
+    [HttpGet]
+public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
+{
+    try
+    {
+        var diasDisponibles = await _disponibilidadService.GetDiasDisponibles(medicoId);
+        var disponibilidadPorDia = await _disponibilidadService.GetColoresSemaforo(medicoId);
+
+        var resultado = diasDisponibles.Select(fecha => new
+        {
+            fecha = fecha.ToString("yyyy-MM-dd"),
+            color = disponibilidadPorDia.ContainsKey(fecha) 
+                ? disponibilidadPorDia[fecha].ToString().ToLower() 
+                : "verde"
+        }).ToList();
+
+        return Ok(resultado);
+    }
+    catch (Exception ex)
+    {
+        //_logger.LogError(ex, "Error al obtener disponibilidad por día");
+        return StatusCode(500, "Error al cargar la disponibilidad");
+    }
+}
+
     public async Task<JsonResult> GetSlotsDisponibles(int medicoId, DateOnly fecha)
     {
         var slots = await _disponibilidadService.GetSlotsDisponibles(medicoId, fecha);

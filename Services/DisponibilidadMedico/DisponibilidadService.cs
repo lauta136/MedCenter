@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualBasic;
 using MedCenter.DTOs;
+using MedCenter.Services.DisponibilidadMedico;
+using System.Drawing;
 
 namespace MedCenter.Services.DisponibilidadMedico
 {
@@ -14,7 +16,7 @@ namespace MedCenter.Services.DisponibilidadMedico
         {
             _context = context;
         }
-
+        
         public async Task<List<DateOnly>> GetDiasDisponibles(int medicoId) //sacar turnos de aca a 2 meses maximo
         {
 
@@ -134,12 +136,49 @@ namespace MedCenter.Services.DisponibilidadMedico
                                              .OrderBy(sa => sa.horainicio)
                                              .ToListAsync();
         }
-        
+
         public async Task<List<SlotAgenda>> GetTodosLosSlots(int id_medico, DateOnly fecha)
         {
             return await _context.slotsagenda.Where(sa => sa.medico_id == id_medico && sa.fecha == fecha)
                                              .OrderBy(sa => sa.horainicio)
                                              .ToListAsync();
+        }
+        
+        public async Task<Dictionary<DateOnly,Colores>> GetColoresSemaforo(int id_medico)
+        {
+            // Return a dictionary where the key is the DateOnly.DayNumber for the date and the value is the colour string.
+            var result = new Dictionary<DateOnly, Colores>();
+
+            var slotsConTurnos = await _context.slotsagenda
+                                .Where(s => s.bloqueDisponibilidad.medico_id == id_medico 
+                                && s.fecha >= DateOnly.FromDateTime(DateTime.Today)
+                                && s.fecha <= DateOnly.FromDateTime(DateTime.Today.AddDays(60)))
+                                .GroupBy(s => s.fecha.Value)
+                                .Select(g => new
+                                {
+                                    Fecha = g.Key,
+                                    TotalSlots = g.Count(),
+                                    SlotsOcupados = g.Count(s => s.Turno != null)
+                                })
+                                .OrderBy(g => g.Fecha)
+                                .ToListAsync();
+
+            foreach(var s in slotsConTurnos) //va en cualquier orden
+            {
+                var porcentaje = (double)s.SlotsOcupados / s.TotalSlots * 100;
+                Colores color;
+                if (porcentaje >= 80)
+                            color = Colores.Rojo; // Casi lleno
+
+                else if (porcentaje >= 50)
+                    color = Colores.Amarillo; // Mitad ocupado
+                else
+        
+                color = Colores.Verde; // Bastante disponible
+                result.Add(s.Fecha, color);
+            }
+
+            return result;
         }
 
         public async Task<bool> SlotEstaDisponible(int id_slotagenda)
