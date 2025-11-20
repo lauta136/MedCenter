@@ -184,12 +184,15 @@ public class TurnoController : BaseController
             return BadRequest(ModelState);
 
         if (!await _disponibilidadService.SlotEstaDisponible(dto.SlotId))
-            return Json(new { success = false, errormessage = "El horario ya no esta disponible" }); //Los Json se crean de forma dinamica
+            return Json(new { success = false, message = "El horario ya no esta disponible" }); //Los Json se crean de forma dinamica
 
         var slot = await _context.slotsagenda.FirstOrDefaultAsync(sa => sa.id == dto.SlotId);
 
         if (slot == null)
-            return Json(new { success = false, errormessage = "No se encontro el horario" });
+            return Json(new { success = false, message = "No se encontro el horario" });
+
+        if(slot.fecha <= DateOnly.FromDateTime(DateTime.Now)) 
+            return Json(new {succes = false, message = "No pueden reservarse turnos para el dia actual, hagalo con mas antelacion"});
 
         int pacienteFinalId;
 

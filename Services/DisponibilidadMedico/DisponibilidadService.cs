@@ -6,6 +6,7 @@ using Microsoft.VisualBasic;
 using MedCenter.DTOs;
 using MedCenter.Services.DisponibilidadMedico;
 using System.Drawing;
+using Microsoft.EntityFrameworkCore.Design;
 
 namespace MedCenter.Services.DisponibilidadMedico
 {
@@ -37,8 +38,8 @@ namespace MedCenter.Services.DisponibilidadMedico
 
         public async Task<DisponibilidadResult> AgregarBloqueDisponibilidad(int medico_id, ManipularDisponibilidadDTO dto)
         {
-
-            if (await NuevaDisponibilidadCoherente(dto, medico_id))
+            DisponibilidadResult resultado = await NuevaDisponibilidadCoherente(dto,medico_id);
+            if (resultado.success)
             {
                 _context.disponibilidad_medico.Add(new Models.DisponibilidadMedico
                 {
@@ -52,12 +53,12 @@ namespace MedCenter.Services.DisponibilidadMedico
                 });
                 await _context.SaveChangesAsync();
 
-                return new DisponibilidadResult { success = true, message = "El bloque fue agregado exitosamente" };
+                return resultado;
 
             }
             else
             {
-                return new DisponibilidadResult { success = false, message = "El nuevo horario ingresado se superpone con uno ya activo" };
+                return resultado;
             }
 
         }
@@ -110,13 +111,21 @@ namespace MedCenter.Services.DisponibilidadMedico
              
         }
         
-         public async Task<bool> NuevaDisponibilidadCoherente(ManipularDisponibilidadDTO dto, int medico_id) //Que la nueva insercion no se superponga con otra ya guardada
+        public async Task<DisponibilidadResult> NuevaDisponibilidadCoherente(ManipularDisponibilidadDTO dto, int medico_id) //Que la nueva insercion no se superponga con otra ya guardada
         {
             // bool flag = true;
 
-            if (dto.Hora_inicio >= dto.Hora_fin) return false;
+            if (dto.Hora_inicio >= dto.Hora_fin) return new DisponibilidadResult{success = false, message = "La hora de inicio del bloque es mas tarde que la de fin"};
 
-            if ((dto.Hora_fin - dto.Hora_inicio).TotalMinutes < dto.Duracion_turno_minutos) return false; 
+            //if ((dto.Hora_fin - dto.Hora_inicio).TotalMinutes < dto.Duracion_turno_minutos) return new DisponibilidadResult{success = false, message = "El tamaño del bloque de disponibilidad es menor a la duracion del turno"}; 
+
+            if(dto.Hora_inicio.Hour < 8 || dto.Hora_inicio.Hour > 18) return new DisponibilidadResult{success = false, message = "La hora de inicio es demasiado tarde/temprano"}; //puesto arbitrariamente, con un futuro rol de administrador puede ponerse a mano
+
+            if(dto.Hora_fin.Hour < 9 || dto.Hora_fin.Hour > 19) return new DisponibilidadResult{success = false, message = "La hora de fin es demasiado tarde/temprano"}; //puesto arbitrariamente, con un futuro rol de administrador puede ponerse a mano
+
+            if((dto.Hora_fin - dto.Hora_inicio).TotalMinutes < 60) return new DisponibilidadResult{success = false, message = "El bloque no puede ser de menos de 1 hora"};
+
+            if((dto.Hora_fin - dto.Hora_inicio).TotalMinutes % dto.Duracion_turno_minutos != 0 ) return new DisponibilidadResult{success = false, message = "La duracion total del bloque debe ser capaz de contener un numero entero de turnos"};
 
             var disponibilidadesPrecisas = await _context.disponibilidad_medico.Where(dm => dm.medico_id == medico_id && dm.activa == true && dm.dia_semana == dto.Dia_semana)
                                                                                .ToListAsync();
@@ -124,10 +133,10 @@ namespace MedCenter.Services.DisponibilidadMedico
             foreach (var item in disponibilidadesPrecisas)
             {
                 if (dto.Hora_inicio.IsBetween(item.hora_inicio, item.hora_fin) || dto.Hora_fin.IsBetween(item.hora_inicio, item.hora_fin))
-                    return false;
+                    return new DisponibilidadResult{success = false, message = "El bloque a ingresar se superpone con uno ya existente de este medico"};
             }
 
-            return true;
+            return new DisponibilidadResult{success = true, message = "El bloque fue asignado con exito"};
         }
 
         public async Task<List<SlotAgenda>> GetSlotsDisponibles(int id_medico, DateOnly fecha)
