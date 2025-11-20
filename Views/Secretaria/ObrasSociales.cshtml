@@ -1,0 +1,276 @@
+@model IEnumerable<MedCenter.Models.ObraSocial>
+@{
+    ViewData["Title"] = "Obras Sociales";
+    Layout = "~/Views/Shared/_SecretariaLayout.cshtml";
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="mb-1">
+                    <i class="fas fa-hospital me-2 text-primary"></i>Obras Sociales
+                </h2>
+                <p class="text-muted mb-0">Consulta todas las obras sociales disponibles en el sistema</p>
+            </div>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-6">
+                        <label class="form-label fw-5">Buscar Obra Social</label>
+                        <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nombre o sigla..." style="background-color: white !important; color: black !important;">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-5">Estado</label>
+                        <select id="statusFilter" class="form-select">
+                            <option value="">Todos</option>
+                            <option value="activa">Activas</option>
+                            <option value="inactiva">Inactivas</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Obras Sociales Table -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                @if (Model.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="obrasSocialesTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="fw-6 text-uppercase small">ID</th>
+                                    <th class="fw-6 text-uppercase small">Nombre</th>
+                                    <th class="fw-6 text-uppercase small">Sigla</th>
+                                    <th class="fw-6 text-uppercase small">Estado</th>
+                                    <th class="fw-6 text-uppercase small">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var obraSocial in Model)
+                                {
+                                    <tr class="obra-row" data-status="@(obraSocial.activa ? "activa" : "inactiva")">
+                                        <td>
+                                            <span class="badge bg-secondary">@obraSocial.id</span>
+                                        </td>
+                                        <td class="obra-nombre fw-5">@obraSocial.nombre</td>
+                                        <td>
+                                            <span class="obra-sigla">
+                                                @if (!string.IsNullOrEmpty(obraSocial.sigla))
+                                                {
+                                                    <code>@obraSocial.sigla</code>
+                                                }
+                                                else
+                                                {
+                                                    <em class="text-muted">N/A</em>
+                                                }
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if (obraSocial.activa)
+                                            {
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check-circle me-1"></i>Activa
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-times-circle me-1"></i>Inactiva
+                                                </span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#detallesModal" onclick="mostrarDetalles(@obraSocial.id, '@obraSocial.nombre', '@obraSocial.sigla', @obraSocial.activa.ToString().ToLower())">
+                                                    <i class="fas fa-eye"></i> Ver
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info text-center py-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <span>No hay obras sociales registradas en el sistema</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm bg-light">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <div class="icon-box bg-primary">
+                                    <i class="fas fa-hospital text-white"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="text-muted mb-1">Total Obras</h6>
+                                <h3 class="mb-0">@Model.Count()</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm bg-light">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <div class="icon-box bg-success">
+                                    <i class="fas fa-check-circle text-white"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="text-muted mb-1">Activas</h6>
+                                <h3 class="mb-0">@Model.Count(os => os.activa)</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm bg-light">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <div class="icon-box bg-danger">
+                                    <i class="fas fa-times-circle text-white"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="text-muted mb-1">Inactivas</h6>
+                                <h3 class="mb-0">@Model.Count(os => !os.activa)</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Detalles -->
+<div class="modal fade" id="detallesModal" tabindex="-1" aria-labelledby="detallesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white border-0">
+                <h5 class="modal-title" id="detallesModalLabel">
+                    <i class="fas fa-hospital me-2"></i>Detalles de Obra Social
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label text-muted small">ID</label>
+                        <p class="fw-6" id="modalId">-</p>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label text-muted small">Nombre</label>
+                        <p class="fw-6" id="modalNombre">-</p>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label text-muted small">Sigla</label>
+                        <p class="fw-6" id="modalSigla">-</p>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label text-muted small">Estado</label>
+                        <p id="modalEstado">-</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    h2 {
+        color: #2d3748 !important;
+    }
+    .icon-box {
+        width: 50px;
+        height: 50px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+
+    .fw-6 {
+        font-weight: 600;
+    }
+</style>
+
+<script>
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('keyup', function () {
+        const searchValue = this.value.toLowerCase();
+        const rows = document.querySelectorAll('.obra-row');
+
+        rows.forEach(row => {
+            const nombre = row.querySelector('.obra-nombre').textContent.toLowerCase();
+            const sigla = row.querySelector('.obra-sigla').textContent.toLowerCase();
+
+            if (nombre.includes(searchValue) || sigla.includes(searchValue)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+    // Status filter functionality
+    document.getElementById('statusFilter').addEventListener('change', function () {
+        const filterValue = this.value;
+        const rows = document.querySelectorAll('.obra-row');
+
+        rows.forEach(row => {
+            if (filterValue === '') {
+                row.style.display = '';
+            } else {
+                if (row.getAttribute('data-status') === filterValue) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+    });
+
+    // Show details in modal
+    function mostrarDetalles(id, nombre, sigla, activa) {
+        document.getElementById('modalId').textContent = id;
+        document.getElementById('modalNombre').textContent = nombre;
+        document.getElementById('modalSigla').textContent = sigla || 'N/A';
+        
+        const estadoBadge = activa === 'true' 
+            ? '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Activa</span>'
+            : '<span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i>Inactiva</span>';
+        
+        document.getElementById('modalEstado').innerHTML = estadoBadge;
+    }
+</script>

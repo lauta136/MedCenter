@@ -264,6 +264,17 @@ namespace MedCenter.Controllers
             return Json(new {success = result.success, message = result.message});
         }
         
+        // GET: Secretaria/ObrasSociales
+        public async Task<IActionResult> ObrasSociales()
+        {
+            var obrasSociales = await _context.obras_sociales
+                .OrderBy(os => os.nombre)
+                .ToListAsync();
+
+            ViewBag.UserName = UserName;
+            return View(obrasSociales);
+        }
+
         // GET: Secretaria/Reportes
         public async Task<IActionResult> Reportes()
         {
