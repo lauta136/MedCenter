@@ -17,8 +17,11 @@
     @if (ViewBag.EsSecretaria)
     {
         <div id="paso0" class="card mb-3">
-            <div class="card-header">
-                <h5>Selecciona el paciente</h5>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Selecciona el paciente</h5>
+                <button id="btnCambiarPaciente" class="btn btn-sm btn-warning" style="display:none;">
+                    <i class="fas fa-edit"></i> Cambiar paciente
+                </button>
             </div>
             <div class="card-body">
                 <input type="text" id="buscarPaciente" class="form-control mb-2" 
@@ -32,6 +35,11 @@
                         </option>
                     }
                 </select>
+                <div id="pacienteSeleccionadoInfo" style="display:none; margin-top:10px;">
+                    <p class="alert alert-info mb-0">
+                        <strong>Paciente seleccionado:</strong> <span id="pacienteNombreInfo"></span>
+                    </p>
+                </div>
             </div>
         </div>
     }
@@ -111,8 +119,53 @@
             pacienteSeleccionado = this.value;
             
             if (pacienteSeleccionado) {
+                // Obtener nombre del paciente seleccionado
+                const selectedOption = this.options[this.selectedIndex];
+                const pacienteName = selectedOption.text;
+                
+                // Desabilitar el select después de la selección
+                document.getElementById('pacienteSelect').disabled = true;
+                document.getElementById('buscarPaciente').disabled = true;
+                
+                // Mostrar info del paciente seleccionado
+                document.getElementById('pacienteNombreInfo').textContent = pacienteName;
+                document.getElementById('pacienteSeleccionadoInfo').style.display = 'block';
+                
+                // Mostrar botón de cambiar paciente
+                document.getElementById('btnCambiarPaciente').style.display = 'inline-block';
+                
                 document.getElementById('paso1').style.display = 'block';
             }
+        });
+
+        // Botón para cambiar paciente
+        document.getElementById('btnCambiarPaciente').addEventListener('click', function() {
+            // Re-habilitar selección
+            document.getElementById('pacienteSelect').disabled = false;
+            document.getElementById('buscarPaciente').disabled = false;
+            document.getElementById('pacienteSelect').value = '';
+            document.getElementById('buscarPaciente').value = '';
+            
+            // Limpiar selección
+            pacienteSeleccionado = null;
+            
+            // Ocultar info
+            document.getElementById('pacienteSeleccionadoInfo').style.display = 'none';
+            this.style.display = 'none';
+            
+            // Ocultar pasos siguientes
+            document.getElementById('paso1').style.display = 'none';
+            document.getElementById('paso2').style.display = 'none';
+            document.getElementById('paso3').style.display = 'none';
+            document.getElementById('paso4').style.display = 'none';
+            document.getElementById('btnConfirmar').style.display = 'none';
+            
+            // Limpiar selecciones siguientes
+            especialidadSeleccionada = null;
+            medicoSeleccionado = null;
+            fechaSeleccionada = null;
+            slotSeleccionado = null;
+            document.getElementById('especialidadSelect').value = '';
         });
 
         // Búsqueda en tiempo real

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MedCenter.Models;
 using MedCenter.DTOs;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace MedCenter.Services.EspecialidadService;
 
@@ -23,6 +24,7 @@ public class EspecialidadService
                                           .ToListAsync();
         return especialidades;
     }
+
 
     [HttpGet]
     public async Task<List<MedicoViewDTO>> GetMedicosPorEspecialidad(int especialidadId)

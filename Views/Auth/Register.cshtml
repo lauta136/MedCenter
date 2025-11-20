@@ -293,7 +293,7 @@ form#registerForm select.form-select:focus {
                 const container = document.getElementById('especialidadesContainer');
                 container.innerHTML = '<p class="text-muted text-center">Cargando especialidades...</p>';
                 
-                fetch('/Especialidad/GetEspecialidades') // Necesitarás crear este endpoint
+                fetch('/Especialidad/GetEspecialidadesJson') // Necesitarás crear este endpoint
                     .then(response => response.json())
                     .then(data => {
                         let html = '<div class="row">';
