@@ -124,6 +124,11 @@ public class TurnoController : BaseController
         return Json(medicos);
     }
     
+    public async Task<JsonResult> ObtenerSlotsDelDia(int medicoId, DateOnly fecha)
+    {
+        List<SlotAgenda> slots = await _disponibilidadService.GetSlotsDisponibles(medicoId,fecha);
+        return Json(slots);
+    }
 
     
 
@@ -321,7 +326,7 @@ public class TurnoController : BaseController
             ViewBag.EstadoActual = estadoActual.GetNombreEstado();
             ViewBag.DescripcionEstado = estadoActual.GetDescripcion();
 
-            return View(turnoDto);
+            return View("~/Views/Shared/Turnos/ReprogramarTurno.cshtml",turnoDto);
         }
 
         TempData["ErrorMessage"] = "El turno no es reprogramable." +
@@ -337,7 +342,7 @@ public class TurnoController : BaseController
         var nuevoSlot = await _context.slotsagenda.FirstOrDefaultAsync(sa => sa.id == nuevoSlotId);
 
         if (!await _disponibilidadService.SlotEstaDisponible(nuevoSlot!.id))
-            return Json(new { success = false, errormessage = "El horario ya no esta disponible" });
+            return Json(new { success = false, errormessage = "El horario ya no esta disponible, recuerde que no puede asignar un horario para el dia actual" });
 
         if (!_stateService.PuedeReprogramar(turno!))
             return Json(new { success = false, errormessage = "El turno ya no puede reprogramarse" });
@@ -381,20 +386,24 @@ public class TurnoController : BaseController
             Descripcion = User.IsInRole("Secretaria") ? $"La secretaria {UserName} reprogramo un turno" : $"El paciente {UserName} reprogramo un turno"
         });
 
+        // Guardar el ID del slot viejo ANTES de cambiarlo
+        var slotViejoId = turno.slot_id.Value;
+
         turno.slot_id = nuevoSlotId;
         turno.fecha = nuevoSlot.fecha;
         turno.hora = nuevoSlot.horainicio;
         turno.medico_id = nuevoSlot.medico_id;
         _stateService.Reprogramar(turno);
 
-
+        // Marcar el nuevo slot como no disponible
         nuevoSlot.disponible = false;
-        //slotViejo.disponible = true;
 
-        var slotViejo = new SlotAgenda { id = turno.slot_id.Value, disponible = true , Turno = null};
+        // Liberar el slot viejo (usando el ID guardado)
+        var slotViejo = new SlotAgenda { id = slotViejoId, disponible = true};
         _context.Attach(slotViejo);
         _context.Entry(slotViejo).Property(sa => sa.disponible).IsModified = true;
-        _context.Entry(slotViejo).Property(sa => sa.Turno).IsModified = true;
+        _context.Entry(slotViejo).Reference(sa => sa.Turno).CurrentValue = null;
+        _context.Entry(slotViejo).Reference(sa => sa.Turno).IsModified = true;
 
         await _context.SaveChangesAsync();
 

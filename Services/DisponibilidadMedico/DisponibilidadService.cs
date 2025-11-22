@@ -194,7 +194,7 @@ namespace MedCenter.Services.DisponibilidadMedico
         {
             var condition = await _context.slotsagenda.Where(sa => sa.id == id_slotagenda && sa.disponible == true).FirstOrDefaultAsync();
 
-            if (condition == null) return false;
+            if (condition == null || condition.fecha == DateOnly.FromDateTime(DateTime.Now.Date)) return false;
 
             return true;
         }
@@ -264,9 +264,10 @@ namespace MedCenter.Services.DisponibilidadMedico
 
         public async Task LiberarSlot(int id_slotagenda)
         {
-            var slot = await _context.slotsagenda.Where(sa => sa.id == id_slotagenda).FirstOrDefaultAsync();
+            var slot = await _context.slotsagenda.Where(sa => sa.id == id_slotagenda).Include(sa => sa.Turno).FirstOrDefaultAsync();
 
             slot!.disponible = true;
+            slot!.Turno = null;
 
             _context.Update(slot);
             await _context.SaveChangesAsync();
