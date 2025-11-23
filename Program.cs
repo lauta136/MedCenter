@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using MedCenter.Services.TurnoStates;
 using MedCenter.Services.DisponibilidadMedico;
 using MedCenter.Services.EspecialidadService;
+using MedCenter.Services.TurnoSv;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<DisponibilidadService>();
 builder.Services.AddScoped<EspecialidadService>();
+builder.Services.AddScoped<TurnoService>();
 
 builder.Services.AddAuthentication("Cookies")
     .AddCookie("Cookies", options =>

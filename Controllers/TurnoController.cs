@@ -13,6 +13,7 @@ using System.Net.WebSockets;
 using MedCenter.Controllers;
 using MedCenter.Services.DisponibilidadMedico;
 using MedCenter.Services.EspecialidadService;
+using MedCenter.Services.TurnoSv;
 
 
 // Heredamos de Controller para poder trabajar con Vistas Razor
@@ -22,12 +23,14 @@ public class TurnoController : BaseController
     private TurnoStateService _stateService;
     private DisponibilidadService _disponibilidadService;
     private EspecialidadService _especialidadService;
-    public TurnoController(AppDbContext context, TurnoStateService turnoStateService, DisponibilidadService disponibilidadService, EspecialidadService especialidadService)
+    private readonly TurnoService _turnoService;
+    public TurnoController(AppDbContext context, TurnoStateService turnoStateService, DisponibilidadService disponibilidadService, EspecialidadService especialidadService, TurnoService turnoService)
     {
         _context = context;
         _stateService = turnoStateService;
         _disponibilidadService = disponibilidadService;
         _especialidadService = especialidadService;
+        _turnoService = turnoService;
     }
 
     // GET: Turno/Details/5
@@ -721,6 +724,8 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
     public async Task<IActionResult> GestionarTurnos()
     {
         ViewBag.UserName = UserName;
+
+        await _turnoService.FinalizarTurnosPasados();
         
         var turnos = User.IsInRole("Paciente") ? await ObtenerTurnosGestionarPaciente() : await ObtenerTurnosGestionarSecretaria();
 
@@ -871,8 +876,10 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
 
     }
 */
+   
     public async Task<List<TurnoViewDTO>> ObtenerTurnosGestionarPaciente()
     {
+
         var turnos = await _context.turnos
                      .Where(t => t.paciente_id == UserId)
                      .Include(t => t.medico)

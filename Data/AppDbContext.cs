@@ -376,6 +376,7 @@ public partial class AppDbContext : DbContext
             e.Property(e => e.UsuarioId).HasColumnName("usuario_id");
             e.Property(e => e.UsuarioNombre).HasColumnName("usuario_nombre");
             e.Property(e => e.UsuarioRol).HasColumnName("usuario_rol");
+
             e.Property(e => e.Accion).HasColumnName("accion");
             e.Property(e => e.Descripcion).HasColumnName("descripcion");
             e.Property(e => e.MomentoAccion).HasColumnName("momento_accion");
