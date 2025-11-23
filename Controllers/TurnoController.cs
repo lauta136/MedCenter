@@ -326,6 +326,7 @@ public class TurnoController : BaseController
                 var estadoActual = _stateService.GetEstadoActual(turno);
                 ViewBag.EstadoActual = estadoActual.GetNombreEstado();
                 ViewBag.DescripcionEstado = estadoActual.GetDescripcion();
+                ViewBag.UserName = UserName;
 
                 return View("~/Views/Shared/Turnos/ReprogramarTurno.cshtml",turnoDto);
             }
@@ -339,9 +340,9 @@ public class TurnoController : BaseController
 
 
     [HttpPost]
-    public async Task<IActionResult> Reprogramar(TurnoEditDTO dto, int nuevoSlotId)
+    public async Task<IActionResult> Reprogramar(int turno_id, int nuevoSlotId)
     {
-        var turno = await _context.turnos.FirstOrDefaultAsync(t => t.id == dto.Id);
+        var turno = await _context.turnos.FirstOrDefaultAsync(t => t.id == turno_id);
         var nuevoSlot = await _context.slotsagenda.FirstOrDefaultAsync(sa => sa.id == nuevoSlotId);
 
         if (!await _disponibilidadService.SlotEstaDisponible(nuevoSlot!.id))
@@ -362,12 +363,12 @@ public class TurnoController : BaseController
             UsuarioNombre = UserName,
             MomentoAccion = DateTime.UtcNow,
             Accion = "UPDATE",
-            FechaNueva = dto.Fecha,
+            FechaNueva = nuevoSlot.fecha,
             FechaAnterior = turno.fecha,
-            HoraNueva = dto.Hora,
+            HoraNueva = nuevoSlot.horainicio,
             HoraAnterior = turno.hora,
-            EstadoNuevo = turno.estado,
-            EstadoAnterior = _stateService.GetEstadoActual(turno).ToString(),
+            EstadoNuevo = "Reprogramado",
+            EstadoAnterior = _stateService.GetEstadoActual(turno).GetNombreEstado(),
             PacienteId = turno.paciente_id.Value,
             PacienteNombre = turno.paciente.idNavigation.nombre,
             MedicoId = turno.medico_id.Value,
@@ -393,6 +394,7 @@ public class TurnoController : BaseController
         var slotViejoId = turno.slot_id.Value;
 
         turno.slot_id = nuevoSlotId;
+        turno.slot = nuevoSlot;  //Tengo que ponerlo, sino como EF prioriza las propiedades de navegacion ve lo de abajo y piensa que el turno no debe apuntar a ningun slot
         turno.fecha = nuevoSlot.fecha;
         turno.hora = nuevoSlot.horainicio;
         turno.medico_id = nuevoSlot.medico_id;
@@ -405,8 +407,8 @@ public class TurnoController : BaseController
         var slotViejo = new SlotAgenda { id = slotViejoId, disponible = true};
         _context.Attach(slotViejo);
         _context.Entry(slotViejo).Property(sa => sa.disponible).IsModified = true;
-        _context.Entry(slotViejo).Reference(sa => sa.Turno).CurrentValue = null;
-        _context.Entry(slotViejo).Reference(sa => sa.Turno).IsModified = true;
+        //_context.Entry(slotViejo).Reference(sa => sa.Turno).CurrentValue = null; ya se rompe la relacion cambiando la Fk y prop de nav desde la otra entidad
+       // _context.Entry(slotViejo).Reference(sa => sa.Turno).IsModified = true;
 
         await _context.SaveChangesAsync();
 
@@ -680,49 +682,42 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
         return View(turnoDto);
     }
 
-    public async Task<IActionResult> Cancelar(int? id)
+    public async Task<IActionResult> Cancelar(int id)
     {
         
         ViewBag.UserName = UserName;
 
-        if (id.HasValue)
+       
+
+        var turno = await ObtenerConfirmacionCancelacion(id);
+
+        if (turno != null)
         {
-
-            var turno = await ObtenerConfirmacionCancelacion(id.Value);
-
-            if (turno != null)
+            if (!_stateService.PuedeCancelar(turno))
             {
-                if (!_stateService.PuedeCancelar(turno))
-                {
                     TempData["ErrorMessage"] = $"Este turno no puede ser cancelado. Estado actual: {turno.estado}";
                     return RedirectToAction(nameof(Index));
-                }
-                var view = User.IsInRole("Paciente") ? "~/Views/Paciente/ConfirmarCancelacion.cshtml"
+            }
+            var view = User.IsInRole("Paciente") ? "~/Views/Paciente/ConfirmarCancelacion.cshtml"
                                                        : "~/Views/Secretaria/ConfirmarCancelacion.cshtml";
 
-                var turnoDto = new TurnoCancelDTO // <-- Usamos el nuevo DTO
-                {
-                    Id = turno.id,
-                    Fecha = turno.fecha.HasValue ? turno.fecha.Value.ToString() : "Sin fecha",
-                    Hora = turno.hora.HasValue ? turno.hora.Value.ToString() : "Sin hora",
-                    PacienteNombre = (turno.paciente != null && turno.paciente.idNavigation != null) ? turno.paciente.idNavigation.nombre : "Desconocido",
-                    MedicoNombre = (turno.medico != null && turno.medico.idNavigation != null) ? turno.medico.idNavigation.nombre : "Desconocido"
-                    // La propiedad MotivoCancelacion se deja , la llena el usuario
-                };
+            var turnoDto = new TurnoCancelDTO // <-- Usamos el nuevo DTO
+            {
+                Id = turno.id,
+                Fecha = turno.fecha.HasValue ? turno.fecha.Value.ToString() : "Sin fecha",
+                Hora = turno.hora.HasValue ? turno.hora.Value.ToString() : "Sin hora",
+                PacienteNombre = (turno.paciente != null && turno.paciente.idNavigation != null) ? turno.paciente.idNavigation.nombre : "Desconocido",
+                MedicoNombre = (turno.medico != null && turno.medico.idNavigation != null) ? turno.medico.idNavigation.nombre : "Desconocido"
+                // La propiedad MotivoCancelacion se deja , la llena el usuario
+            };
 
-                return View(view, turnoDto);
-            }
-            return NotFound();
-
+            return View(view, turnoDto);
         }
-        var turnos = User.IsInRole("Paciente") ? await ObtenerTurnosCancelarPaciente() : await ObtenerTurnosCancelarSecretaria();
+        return NotFound();
 
-        var view2 = User.IsInRole("Paciente") ? "~/Views/Paciente/SeleccionarTurnoCancelar.cshtml" : "~/Views/Secretaria/SeleccionarTurnoCancelar.cshtml";
-
-        return View(view2, turnos);
-
+       
     }
-
+    
     public async Task<IActionResult> GestionarTurnos()
     {
         ViewBag.UserName = UserName;
@@ -764,6 +759,9 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
         await _context.turnos.Entry(turno).Reference(t => t.medico).Query().Include(m => m.idNavigation).LoadAsync();
         await _context.turnos.Entry(turno).Reference(t => t.paciente).Query().Include(p => p.idNavigation).LoadAsync();
         await _context.turnos.Entry(turno).Reference(t => t.especialidad).LoadAsync();
+        //await _context.turnos.Entry(turno).Reference(t => t.slot).LoadAsync();
+        //int? slotViejoId =  _context.turnos.Entry(turno).Property(t=>t.slot_id).CurrentValue;
+
 
         _context.turnoAuditorias.Add(new TurnoAuditoria
         {
@@ -784,7 +782,7 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
             EspecialidadId = turno.especialidad_id.Value,
             EspecialidadNombre = turno.especialidad.nombre,
             SlotIdAnterior = turno.slot_id,
-            SlotIdNuevo = turno.slot_id,
+            SlotIdNuevo = null,
             MotivoCancelacion = dto.MotivoCancelacion
         });
 
@@ -845,7 +843,7 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
         //return View("ConfirmarCancelacion", turnoDto);
     }
 
-    public async Task<List<TurnoViewDTO>> ObtenerTurnosCancelarPaciente()
+   /* public async Task<List<TurnoViewDTO>> ObtenerTurnosCancelarPaciente()
     {
         var turnos = await _context.turnos
                      .Where(t => t.paciente_id == UserId)
@@ -872,7 +870,7 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
         return turnosCancelables;
 
     }
-
+*/
     public async Task<List<TurnoViewDTO>> ObtenerTurnosGestionarPaciente()
     {
         var turnos = await _context.turnos
@@ -900,7 +898,7 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
         return turnosGestionables;
     }
 
-    public async Task<List<TurnoViewDTO>> ObtenerTurnosCancelarSecretaria()
+   /* public async Task<List<TurnoViewDTO>> ObtenerTurnosCancelarSecretaria()
     {
         var turnos = await _context.turnos
                      .Include(t => t.medico)
@@ -928,7 +926,7 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
                                 
         return turnosCancelables;
     }
-
+*/
     public async Task<List<TurnoViewDTO>> ObtenerTurnosGestionarSecretaria()
     {
         var turnos = await _context.turnos
@@ -937,9 +935,9 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
                      .Include(t => t.paciente)
                      .ThenInclude(p => p.idNavigation)
                      .Include(t => t.especialidad)
-                     //.Where(t => t.fecha.Value.ToDateTime(t.hora.Value) > DateTime.Now.AddHours(24))
-                    .ToListAsync();
-
+                     .Where(t => t.fecha.Value.ToDateTime(t.hora.Value) >= DateTime.Now)
+                     .ToListAsync();
+ 
         var turnosGestionables = turnos//Where(t => _stateService.PuedeCancelar(t) || _stateService.PuedeReprogramar(t))
                                 .Select(t => new TurnoViewDTO
                                 {
