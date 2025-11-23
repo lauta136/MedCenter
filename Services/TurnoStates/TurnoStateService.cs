@@ -37,13 +37,13 @@ namespace MedCenter.Services.TurnoStates
         public bool PuedeReprogramar(Turno turno)
         {
             var estado = GetEstadoActual(turno);
-            return estado.PuedeReprogramar();
+            return estado.PuedeReprogramar(turno);
         }
 
         public bool PuedeCancelar(Turno turno)
         {
             var estado = GetEstadoActual(turno);
-            return estado.PuedeCancelar();
+            return estado.PuedeCancelar(turno);
         }
 
         public bool PuedeFinalizar(Turno turno)

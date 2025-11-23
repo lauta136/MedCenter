@@ -181,14 +181,20 @@
                                                    class="btn btn-outline-primary" title="Ver detalles">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                <a asp-controller="Turno" asp-action="Edit" asp-route-id="@turno.Id" 
-                                                   class="btn btn-outline-warning" title="Editar">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                                <a asp-controller="Turno" asp-action="Cancel" asp-route-id="@turno.Id" 
-                                                   class="btn btn-outline-danger" title="Cancelar">
-                                                    <i class="fas fa-times"></i>
-                                                </a>
+                                                @if(turno.PuedeReprogramar)
+                                                {
+                                                    <a asp-controller="Turno" asp-action="Reprogramar" asp-route-id="@turno.Id" 
+                                                        class="btn btn-outline-warning" title="Editar">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                }
+                                                @if(turno.PuedeCancelar)
+                                                {
+                                                    <a asp-controller="Turno" asp-action="Cancel" asp-route-id="@turno.Id" 
+                                                    class="btn btn-outline-danger" title="Cancelar">
+                                                        <i class="fas fa-times"></i>
+                                                    </a>
+                                                }
                                             </div>
                                         </td>
                                     </tr>

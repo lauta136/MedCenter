@@ -300,7 +300,7 @@ public class TurnoController : BaseController
 
             var turnoState = _stateService.GetEstadoActual(turno);
 
-            if (turnoState.PuedeReprogramar())
+            if (turnoState.PuedeReprogramar(turno))
             {
                 // Crea el DTO y lo llenamos con los datos del turno
                 var turnoDto = new TurnoEditDTO
@@ -585,7 +585,7 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
 
         var turnoState = _stateService.GetEstadoActual(turno);
 
-        if (turnoState.PuedeReprogramar())
+        if (turnoState.PuedeReprogramar(turno))
         {
             // Crea el DTO y lo llenamos con los datos del turno
             var turnoDto = new TurnoEditDTO
@@ -937,10 +937,10 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
                      .Include(t => t.paciente)
                      .ThenInclude(p => p.idNavigation)
                      .Include(t => t.especialidad)
-                     .Where(t => t.fecha.Value.ToDateTime(t.hora.Value) > DateTime.Now.AddHours(24))
+                     //.Where(t => t.fecha.Value.ToDateTime(t.hora.Value) > DateTime.Now.AddHours(24))
                     .ToListAsync();
 
-        var turnosGestionables = turnos.Where(t => _stateService.PuedeCancelar(t) || _stateService.PuedeReprogramar(t))
+        var turnosGestionables = turnos//Where(t => _stateService.PuedeCancelar(t) || _stateService.PuedeReprogramar(t))
                                 .Select(t => new TurnoViewDTO
                                 {
                                     Id = t.id,

@@ -10,29 +10,29 @@ namespace MedCenter.Services.TurnoStates
         public string GetDescripcion() => "Turno cancelado - estado final";
         public string GetColorBadge() => "danger";
 
-        public bool PuedeReservar() => false;
-        public bool PuedeReprogramar() => false;
-        public bool PuedeCancelar() => false;
+        public bool PuedeReservar(Turno turno) => false;
+        public bool PuedeReprogramar(Turno turno) => false;
+        public bool PuedeCancelar(Turno turno) => false;
         public bool PuedeFinalizar() => false;
 
         public ITurnoState Reservar(Turno turno)
         {
-            throw new TransicionDeEstadoInvalidaException(GetNombreEstado(), "reservar");
+            throw new TransicionDeEstadoInvalidaException(GetNombreEstado(), "reservar",false);
         }
 
         public ITurnoState Reprogramar(Turno turno)
         {
-            throw new TransicionDeEstadoInvalidaException(GetNombreEstado(), "reprogramar");
+            throw new TransicionDeEstadoInvalidaException(GetNombreEstado(), "reprogramar",false);
         }
 
         public ITurnoState Cancelar(Turno turno, string motivo)
         {
-            throw new TransicionDeEstadoInvalidaException(GetNombreEstado(), "cancelar");
+            throw new TransicionDeEstadoInvalidaException(GetNombreEstado(), "cancelar",false);
         }
 
         public ITurnoState Finalizar(Turno turno)
         {
-            throw new TransicionDeEstadoInvalidaException(GetNombreEstado(), "finalizar");
+            throw new TransicionDeEstadoInvalidaException(GetNombreEstado(), "finalizar",false);
         }
     }
 }

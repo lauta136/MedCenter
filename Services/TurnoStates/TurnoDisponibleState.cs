@@ -9,23 +9,28 @@ namespace MedCenter.Services.TurnoStates
 
         public ITurnoState Reservar(Turno turno)
         {
-            turno.estado = "Reservado";
-            return new TurnoReservadoState();
+            if(turno.fecha!.Value > DateOnly.FromDateTime(DateTime.Now.AddHours(24)))
+            {
+                turno.estado = "Reservado";
+                return new TurnoReservadoState();
+            }
+            else throw new TransicionDeEstadoInvalidaException(GetNombreEstado(),"Reservar", true);
+
         }
 
         public ITurnoState Reprogramar(Turno turno)
         {
-            throw new TransicionDeEstadoInvalidaException(GetNombreEstado(), "Reprogramar");
+            throw new TransicionDeEstadoInvalidaException(GetNombreEstado(), "Reprogramar", false);
         }
 
         public ITurnoState Cancelar(Turno turno, string motivo_cancelacion)
         {
-            throw new TransicionDeEstadoInvalidaException(GetNombreEstado(), "Cancelar");
+            throw new TransicionDeEstadoInvalidaException(GetNombreEstado(), "Cancelar", false);
         }
 
         public ITurnoState Finalizar(Turno turno)
         {
-            throw new TransicionDeEstadoInvalidaException(GetNombreEstado(), "Finalizar");
+            throw new TransicionDeEstadoInvalidaException(GetNombreEstado(), "Finalizar", false);
         }
 
         public string GetColorBadge()
@@ -40,13 +45,13 @@ namespace MedCenter.Services.TurnoStates
             return "Disponible";
         }
 
-        public bool PuedeCancelar() => false;
+        public bool PuedeCancelar(Turno turno) => false;
 
         public bool PuedeFinalizar() => false;
 
-        public bool PuedeReprogramar() => false;
+        public bool PuedeReprogramar(Turno turno) => false;
 
-        public bool PuedeReservar() => true;
+        public bool PuedeReservar(Turno turno) => turno.fecha > DateOnly.FromDateTime(DateTime.Now.AddHours(24));
 
 
     }

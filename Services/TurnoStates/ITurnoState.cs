@@ -10,10 +10,10 @@ public interface ITurnoState
     ITurnoState Reprogramar(Turno turno);
     ITurnoState Finalizar(Turno turno);
 
-    bool PuedeReprogramar();
+    bool PuedeReprogramar(Turno turno);
     bool PuedeFinalizar();
-    bool PuedeReservar();
-    bool PuedeCancelar();
+    bool PuedeReservar(Turno turno);
+    bool PuedeCancelar(Turno turno);
 
     string GetDescripcion();
     string GetColorBadge();
