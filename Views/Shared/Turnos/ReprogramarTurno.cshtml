@@ -1,0 +1,584 @@
+@model MedCenter.DTOs.TurnoEditDTO
+@{
+    ViewData["Title"] = "Reprogramar Turno";
+    Layout = User.IsInRole("Secretaria") 
+        ? "~/Views/Shared/_SecretariaLayout.cshtml" 
+        : "~/Views/Shared/_PacienteLayout.cshtml";
+}
+
+<style>
+    /* Título en negro */
+    h2 {
+        color: #2d3748 !important;
+    }
+
+    /* Card de información del turno actual */
+    .info-turno-actual {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .info-turno-actual h5 {
+        color: white;
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+
+    .info-item i {
+        width: 24px;
+        margin-right: 0.75rem;
+        opacity: 0.9;
+    }
+
+    /* Badge de estado */
+    .badge-estado {
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        display: inline-block;
+        margin-top: 0.5rem;
+    }
+
+    /* Tarjetas de médicos */
+    .tarjeta-medico {
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: 1px solid #dee2e6;
+        height: 100%;
+    }
+    
+    .tarjeta-medico:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-color: #0d6efd;
+    }
+
+    .tarjeta-medico.seleccionada {
+        border-color: #0d6efd;
+        border-width: 2px;
+        background-color: #e7f3ff;
+    }
+
+    /* Botones de días */
+    .btn-dia {
+        position: relative;
+        padding: 0.75rem;
+        text-align: center;
+        transition: all 0.2s;
+    }
+
+    .btn-dia:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-dia.seleccionado {
+        background-color: #0d6efd !important;
+        color: white !important;
+        border-color: #0d6efd !important;
+    }
+
+    /* Slots de horarios */
+    .slot-horario {
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 2px solid #10b981;
+        background-color: #d1fae5;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    .slot-horario:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        background-color: #a7f3d0;
+    }
+
+    .slot-horario.seleccionado {
+        background-color: #059669;
+        color: white;
+        border-color: #047857;
+    }
+
+    .slot-horario i {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Selects legibles */
+    select.form-select {
+        background-color: #ffffff !important;
+        color: #1a1a1a !important;
+        border: 1px solid var(--border);
+    }
+
+    select.form-select:focus {
+        background-color: #ffffff !important;
+        color: #1a1a1a !important;
+        border-color: var(--primary);
+    }
+
+    select.form-select option {
+        background-color: #ffffff;
+        color: #1a1a1a;
+    }
+
+    /* Botones de acción */
+    .btn-confirmar {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border: none;
+        color: white;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        border-radius: 0.5rem;
+        transition: all 0.2s;
+    }
+
+    .btn-confirmar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        color: white;
+    }
+
+    .btn-confirmar:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    /* Alertas de ayuda */
+    .alert-info {
+        background-color: #dbeafe;
+        border-color: #3b82f6;
+        color: #1e40af;
+    }
+
+    /* Pasos */
+    .paso-header {
+        background-color: #f8f9fa;
+        border-left: 4px solid #0d6efd;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 0.375rem;
+    }
+
+    .paso-header h5 {
+        color: #2d3748;
+        margin: 0;
+        font-weight: 600;
+    }
+
+    /* Loading spinner */
+    .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>@ViewData["Title"]</h2>
+        <a href="@(User.IsInRole("Secretaria") ? Url.Action("GestionarTurnos", "Turno") : Url.Action("GestionarTurnos", "Turno"))" 
+           class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver
+        </a>
+    </div>
+
+    <!-- Información del Turno Actual -->
+    <div class="info-turno-actual">
+        <h5><i class="fas fa-info-circle me-2"></i>Información del Turno Actual</h5>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="info-item">
+                    <i class="fas fa-user"></i>
+                    <span><strong>Paciente:</strong> @Model.PacienteNombre</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-stethoscope"></i>
+                    <span><strong>Especialidad:</strong> @Model.EspecialidadNombre</span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="info-item">
+                    <i class="fas fa-calendar"></i>
+                    <span><strong>Fecha:</strong> @(String.Format("{0:dd/MM/yyyy}", Model.Fecha))</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-clock"></i>
+                    <span><strong>Hora:</strong> @Model.Hora</span>
+                </div>
+            </div>
+        </div>
+        <div class="mt-2">
+            <span class="badge-estado bg-warning text-dark">
+                <i class="fas fa-exclamation-triangle me-1"></i>
+                @ViewBag.EstadoActual
+            </span>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(ViewBag.DescripcionEstado))
+    {
+        <div class="alert alert-info mb-4">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Nota:</strong> @ViewBag.DescripcionEstado
+        </div>
+    }
+
+    <form id="formReprogramar">
+        @Html.AntiForgeryToken()
+        <input type="hidden" id="turnoId" value="@Model.Id" />
+        <input type="hidden" id="especialidadId" value="@Model.EspecialidadId" />
+
+        <!-- PASO 1: Seleccionar Médico -->
+        <div class="card mb-3">
+            <div class="card-header paso-header">
+                <h5><i class="fas fa-user-md me-2"></i>1. Selecciona el médico</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    Puedes mantener el mismo médico o elegir otro de la especialidad <strong>@Model.EspecialidadNombre</strong>
+                </div>
+                <div id="listaMedicos" class="row">
+                    <div class="col-12 text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando médicos...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PASO 2: Seleccionar Fecha -->
+        <div id="paso2" class="card mb-3" style="display:none;">
+            <div class="card-header paso-header">
+                <h5><i class="fas fa-calendar-alt me-2"></i>2. Selecciona una nueva fecha</h5>
+            </div>
+            <div class="card-body">
+                <div id="calendarioDisponible" class="row">
+                    <!-- Se llena con JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- PASO 3: Seleccionar Horario -->
+        <div id="paso3" class="card mb-3" style="display:none;">
+            <div class="card-header paso-header">
+                <h5><i class="fas fa-clock me-2"></i>3. Selecciona un nuevo horario</h5>
+            </div>
+            <div class="card-body">
+                <div id="horariosDisponibles" class="row">
+                    <!-- Se llena con JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Botón Confirmar -->
+        <div class="text-end mt-4">
+            <button type="button" id="btnConfirmar" class="btn btn-confirmar" style="display:none;" disabled>
+                <i class="fas fa-check-circle me-2"></i>
+                Confirmar Reprogramación
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+    // Variables globales
+    let medicoSeleccionado = @Model.MedicoId; // Por defecto el médico actual
+    let fechaSeleccionada = null;
+    let slotSeleccionado = null;
+
+    // ========== CARGAR MÉDICOS AL INICIO ==========
+    document.addEventListener('DOMContentLoaded', async function() {
+        await cargarMedicos();
+    });
+
+    async function cargarMedicos() {
+        const especialidadId = document.getElementById('especialidadId').value;
+        
+        try {
+            const response = await fetch(`/Turno/GetMedicosPorEspecialidad?especialidadId=${especialidadId}`);
+            
+            if (!response.ok) {
+                throw new Error('Error al cargar médicos');
+            }
+
+            const medicos = await response.json();
+            
+            const listaMedicos = document.getElementById('listaMedicos');
+            listaMedicos.innerHTML = '';
+
+            if (medicos.length === 0) {
+                listaMedicos.innerHTML = '<p class="text-muted">No hay médicos disponibles.</p>';
+                return;
+            }
+
+            medicos.forEach(medico => {
+                const esActual = medico.id === @Model.MedicoId;
+                const claseSeleccionada = esActual ? 'seleccionada' : '';
+                
+                listaMedicos.innerHTML += `
+                    <div class="col-md-4 mb-3">
+                        <div class="card tarjeta-medico ${claseSeleccionada}" data-medico-id="${medico.id}">
+                            <div class="card-body">
+                                <h6 class="mb-2">
+                                    ${medico.nombre}
+                                    ${esActual ? '<span class="badge bg-primary ms-2">Actual</span>' : ''}
+                                </h6>
+                                <p class="text-muted mb-0">
+                                    <i class="fas fa-id-card me-1"></i>
+                                    Matrícula: ${medico.matricula}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Si ya hay un médico seleccionado (el actual), cargar sus días
+            if (medicoSeleccionado) {
+                await cargarDiasDisponibles(medicoSeleccionado);
+            }
+
+        } catch (error) {
+            console.error('Error:', error);
+            listaMedicos.innerHTML = '<div class="alert alert-danger">Error al cargar los médicos.</div>';
+        }
+    }
+
+    // Event Delegation para médicos
+    document.getElementById('listaMedicos').addEventListener('click', async function(event) {
+        const tarjeta = event.target.closest('.tarjeta-medico');
+        if (!tarjeta) return;
+        
+        const medicoId = parseInt(tarjeta.dataset.medicoId);
+        
+        // Resaltar selección
+        document.querySelectorAll('.tarjeta-medico').forEach(t => {
+            t.classList.remove('seleccionada');
+        });
+        tarjeta.classList.add('seleccionada');
+        
+        medicoSeleccionado = medicoId;
+        
+        // Limpiar pasos siguientes
+        document.getElementById('calendarioDisponible').innerHTML = '';
+        document.getElementById('horariosDisponibles').innerHTML = '';
+        document.getElementById('paso3').style.display = 'none';
+        document.getElementById('btnConfirmar').style.display = 'none';
+        
+        await cargarDiasDisponibles(medicoId);
+    });
+
+    // ========== PASO 2: Cargar Días Disponibles ==========
+    async function cargarDiasDisponibles(medicoId) {
+        try {
+            const response = await fetch(`/Turno/GetDiasDisponibles?medicoId=${medicoId}`);
+            
+            if (!response.ok) {
+                throw new Error('Error al cargar disponibilidad');
+            }
+
+            const dias = await response.json();
+            
+            const calendario = document.getElementById('calendarioDisponible');
+            calendario.innerHTML = '';
+
+            if (dias.length === 0) {
+                calendario.innerHTML = '<p class="text-muted">No hay días disponibles para este médico.</p>';
+                document.getElementById('paso2').style.display = 'block';
+                return;
+            }
+
+            dias.forEach(dia => {
+                calendario.innerHTML += `
+                    <div class="col-md-3 col-sm-4 col-6 mb-3">
+                        <button type="button" class="btn btn-outline-primary w-100 btn-dia" data-fecha="${dia}">
+                            <i class="fas fa-calendar-day d-block mb-1"></i>
+                            ${formatearFecha(dia)}
+                        </button>
+                    </div>
+                `;
+            });
+
+            document.getElementById('paso2').style.display = 'block';
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al cargar la disponibilidad.');
+        }
+    }
+
+    // Event Delegation para fechas
+    document.getElementById('calendarioDisponible').addEventListener('click', async function(event) {
+        const boton = event.target.closest('.btn-dia');
+        if (!boton) return;
+        
+        const fecha = boton.dataset.fecha;
+        
+        // Resaltar selección
+        document.querySelectorAll('.btn-dia').forEach(btn => {
+            btn.classList.remove('seleccionado');
+        });
+        boton.classList.add('seleccionado');
+        
+        fechaSeleccionada = fecha;
+        
+        // Limpiar horarios
+        document.getElementById('horariosDisponibles').innerHTML = '';
+        document.getElementById('btnConfirmar').style.display = 'none';
+        
+        await cargarHorariosDisponibles(fecha);
+    });
+
+    // ========== PASO 3: Cargar Horarios Disponibles ==========
+    async function cargarHorariosDisponibles(fecha) {
+        try {
+            const response = await fetch(`/Turno/ObtenerSlotsDelDia?medicoId=${medicoSeleccionado}&fecha=${fecha}`);
+            
+            if (!response.ok) {
+                throw new Error('Error al cargar horarios');
+            }
+
+            const slots = await response.json();
+            
+            const horariosDiv = document.getElementById('horariosDisponibles');
+            horariosDiv.innerHTML = '';
+
+            if (slots.length === 0) {
+                horariosDiv.innerHTML = `
+                    <div class="col-12">
+                        <p class="text-muted">No hay horarios disponibles para este día.</p>
+                    </div>
+                `;
+                document.getElementById('paso3').style.display = 'block';
+                return;
+            }
+
+            slots.forEach(slot => {
+                horariosDiv.innerHTML += `
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-3">
+                        <div class="slot-horario" data-slot-id="${slot.id}">
+                            <i class="fas fa-clock"></i>
+                            <div>${slot.horainicio}</div>
+                            <div>${slot.horafin}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('paso3').style.display = 'block';
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al cargar los horarios.');
+        }
+    }
+
+    // Event Delegation para slots
+    document.getElementById('horariosDisponibles').addEventListener('click', function(event) {
+        const slot = event.target.closest('.slot-horario');
+        if (!slot) return;
+        
+        slotSeleccionado = parseInt(slot.dataset.slotId);
+        
+        // Resaltar selección
+        document.querySelectorAll('.slot-horario').forEach(s => {
+            s.classList.remove('seleccionado');
+        });
+        slot.classList.add('seleccionado');
+        
+        // Mostrar botón confirmar
+        const btnConfirmar = document.getElementById('btnConfirmar');
+        btnConfirmar.style.display = 'block';
+        btnConfirmar.disabled = false;
+    });
+
+    // ========== CONFIRMAR REPROGRAMACIÓN ==========
+    document.getElementById('btnConfirmar').addEventListener('click', async function() {
+        if (!slotSeleccionado) {
+            console.log("no hay un slot seleccionado");
+            alert('Por favor selecciona un horario');
+            return;
+        }
+
+        const turnoId = document.getElementById('turnoId').value;
+        const token = document.querySelector('[name="__RequestVerificationToken"]').value;
+
+        console.log('📋 Datos a enviar:', {
+            turnoId,
+            slotSeleccionado,
+            token: token ? 'Presente' : 'FALTA'
+        });
+
+        // Deshabilitar botón
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Reprogramando...';
+
+        try {
+            // Enviar como x-www-form-urlencoded para que ASP.NET Core lo procese correctamente
+            const params = new URLSearchParams();
+            params.append('turno_id', turnoId);
+            params.append('nuevoSlotId', slotSeleccionado);
+            params.append('__RequestVerificationToken', token);
+
+            const response = await fetch('/Turno/Reprogramar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: params.toString()
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Error response:', errorText);
+                throw new Error(`Error en la solicitud: ${response.status}`);
+            }
+
+            const resultado = await response.json();
+            
+            if (resultado.success) {
+                alert('✓ ' + resultado.message);
+                window.location.href = '@(User.IsInRole("Secretaria") ? Url.Action("Dashboard", "Secretaria") : Url.Action("Dashboard", "Paciente"))';
+            } else {
+                alert('✗ ' + (resultado.errormessage || resultado.message));
+                // Rehabilitar botón
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-check-circle me-2"></i>Confirmar Reprogramación';
+            }
+
+        } catch (error) {
+            console.error('Error completo:', error);
+            alert('Error al reprogramar el turno: ' + error.message);
+            // Rehabilitar botón
+            this.disabled = false;
+            this.innerHTML = '<i class="fas fa-check-circle me-2"></i>Confirmar Reprogramación';
+        }
+    });
+
+    // Función auxiliar para formatear fechas
+    function formatearFecha(fecha) {
+        const [year, month, day] = fecha.split('-');
+        const fechaLocal = new Date(year, month - 1, day);
+        const opciones = { weekday: 'short', day: 'numeric', month: 'short' };
+        return fechaLocal.toLocaleDateString('es-ES', opciones);
+    }
+</script>
+}

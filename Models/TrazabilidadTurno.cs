@@ -8,12 +8,11 @@ public class TrazabilidadTurno
     [Required]
     public int TurnoId { get; set; }
 
-    [Required]
-    public int UsuarioId { get; set; }
+    public int? UsuarioId { get; set; }
     [Required]
     public string UsuarioNombre { get; set; }
-    [Required]
-    public string UsuarioRol { get; set; }
+
+    public string? UsuarioRol { get; set; }
     [Required]
     public DateTime MomentoAccion { get; set; }
     [Required]

@@ -12,6 +12,8 @@ namespace MedCenter.DTOs
         public string? PacienteNombre { get; set; }
         public string? MedicoNombre { get; set; }
         public string? Especialidad { get; set; }
+        public bool PuedeCancelar { get; set; }
+        public bool PuedeReprogramar { get; set; }
 
         public TurnoViewDTO() { }
     }

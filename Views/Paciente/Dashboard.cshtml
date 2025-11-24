@@ -123,14 +123,20 @@
                                                    class="btn btn-outline-primary" title="Ver detalles">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                <a asp-action="ReprogramarTurno" asp-route-id="@turno.Id" 
-                                                   class="btn btn-outline-warning" title="Reprogramar">
-                                                    <i class="fas fa-calendar-alt"></i>
-                                                </a>
-                                                <a asp-controller = "Turno" asp-action="Cancelar" asp-route-id="@turno.Id" 
-                                                   class="btn btn-outline-danger" title="Cancelar">
-                                                    <i class="fas fa-times"></i>
-                                                </a>
+                                                @if(turno.PuedeReprogramar)
+                                                {
+                                                    <a asp-controller = "Turno" asp-action="Reprogramar" asp-route-id="@turno.Id" 
+                                                        class="btn btn-outline-warning" title="Reprogramar">
+                                                        <i class="fas fa-calendar-alt"></i>
+                                                    </a>
+                                                }
+                                                @if(turno.PuedeCancelar)
+                                                {
+                                                    <a asp-controller = "Turno" asp-action="Cancelar" asp-route-id="@turno.Id" 
+                                                        class="btn btn-outline-danger" title="Cancelar">
+                                                        <i class="fas fa-times"></i>
+                                                    </a>
+                                                }
                                             </div>
                                         </td>
                                     </tr>

@@ -8,6 +8,7 @@ using MedCenter.Migrations;
 using MedCenter.Models;
 using System.Runtime.InteropServices;
 using MedCenter.Services.DisponibilidadMedico;
+using MedCenter.Services.TurnoStates;
 
 namespace MedCenter.Controllers
 {
@@ -17,14 +18,15 @@ namespace MedCenter.Controllers
     {
         private AppDbContext _context;
         private AuthService _authService;
-
+        private readonly TurnoStateService _stateService;
         private DisponibilidadService _dispoService;
 
-        public SecretariaController(AppDbContext context, AuthService auth, DisponibilidadService disponibilidadService)
+        public SecretariaController(AppDbContext context, AuthService auth, DisponibilidadService disponibilidadService, TurnoStateService turnoStateService)
         {
             _context = context;
             _authService = auth;
             _dispoService = disponibilidadService;
+            _stateService = turnoStateService;
         }
 
        
@@ -54,6 +56,8 @@ namespace MedCenter.Controllers
                              Estado = t.estado,
                              MedicoNombre = t.medico.idNavigation.nombre,
                              PacienteNombre = t.paciente.idNavigation.nombre,
+                             PuedeReprogramar = _stateService.PuedeReprogramar(t),
+                             PuedeCancelar = _stateService.PuedeCancelar(t)
                          }).
                          ToListAsync();
 
