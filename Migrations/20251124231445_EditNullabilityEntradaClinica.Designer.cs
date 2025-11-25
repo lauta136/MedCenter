@@ -3,6 +3,7 @@ using System;
 using MedCenter.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MedCenter.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251124231445_EditNullabilityEntradaClinica")]
+    partial class EditNullabilityEntradaClinica
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -100,12 +103,17 @@ namespace MedCenter.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<int>("turno_id")
+                        .HasColumnType("integer");
+
                     b.HasKey("id")
                         .HasName("entradasclinicas_pkey");
 
                     b.HasIndex("historia_id");
 
                     b.HasIndex("medico_id");
+
+                    b.HasIndex("turno_id");
 
                     b.ToTable("entradasclinicas");
                 });
@@ -136,7 +144,7 @@ namespace MedCenter.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("id"));
 
-                    b.Property<int>("paciente_id")
+                    b.Property<int?>("paciente_id")
                         .HasColumnType("integer");
 
                     b.HasKey("id")
@@ -467,9 +475,6 @@ namespace MedCenter.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("id"));
 
-                    b.Property<int?>("entradaClinica_id")
-                        .HasColumnType("integer");
-
                     b.Property<bool>("es_particular")
                         .HasColumnType("boolean");
 
@@ -507,9 +512,6 @@ namespace MedCenter.Migrations
 
                     b.HasKey("id")
                         .HasName("turnos_pkey");
-
-                    b.HasIndex("entradaClinica_id")
-                        .IsUnique();
 
                     b.HasIndex("especialidad_id");
 
@@ -673,9 +675,18 @@ namespace MedCenter.Migrations
                         .IsRequired()
                         .HasConstraintName("entradasclinicas_medico_id_fkey");
 
+                    b.HasOne("MedCenter.Models.Turno", "turno")
+                        .WithMany("entradasClinicas")
+                        .HasForeignKey("turno_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("entradasclinicas_turno_id_fkey");
+
                     b.Navigation("historia");
 
                     b.Navigation("medico");
+
+                    b.Navigation("turno");
                 });
 
             modelBuilder.Entity("MedCenter.Models.HistoriaClinica", b =>
@@ -683,8 +694,6 @@ namespace MedCenter.Migrations
                     b.HasOne("MedCenter.Models.Paciente", "paciente")
                         .WithOne("historiasclinicas")
                         .HasForeignKey("MedCenter.Models.HistoriaClinica", "paciente_id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("historiasclinicas_paciente_id_fkey");
 
                     b.Navigation("paciente");
@@ -815,11 +824,6 @@ namespace MedCenter.Migrations
 
             modelBuilder.Entity("MedCenter.Models.Turno", b =>
                 {
-                    b.HasOne("MedCenter.Models.EntradaClinica", "EntradaClinica")
-                        .WithOne("turno")
-                        .HasForeignKey("MedCenter.Models.Turno", "entradaClinica_id")
-                        .HasConstraintName("turno_entradaclinica_fkey");
-
                     b.HasOne("MedCenter.Models.Especialidad", "especialidad")
                         .WithMany("turnos")
                         .HasForeignKey("especialidad_id")
@@ -855,8 +859,6 @@ namespace MedCenter.Migrations
                         .HasForeignKey("MedCenter.Models.Turno", "slot_id")
                         .HasConstraintName("turno_slotagenda_fkey");
 
-                    b.Navigation("EntradaClinica");
-
                     b.Navigation("especialidad");
 
                     b.Navigation("medico");
@@ -873,12 +875,6 @@ namespace MedCenter.Migrations
             modelBuilder.Entity("MedCenter.Models.DisponibilidadMedico", b =>
                 {
                     b.Navigation("slotsAgenda");
-                });
-
-            modelBuilder.Entity("MedCenter.Models.EntradaClinica", b =>
-                {
-                    b.Navigation("turno")
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("MedCenter.Models.Especialidad", b =>
@@ -948,6 +944,11 @@ namespace MedCenter.Migrations
             modelBuilder.Entity("MedCenter.Models.SlotAgenda", b =>
                 {
                     b.Navigation("Turno");
+                });
+
+            modelBuilder.Entity("MedCenter.Models.Turno", b =>
+                {
+                    b.Navigation("entradasClinicas");
                 });
 #pragma warning restore 612, 618
         }

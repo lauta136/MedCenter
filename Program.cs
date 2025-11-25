@@ -5,6 +5,7 @@ using MedCenter.Services.TurnoStates;
 using MedCenter.Services.DisponibilidadMedico;
 using MedCenter.Services.EspecialidadService;
 using MedCenter.Services.TurnoSv;
+using MedCenter.Services.HistoriaClinicaSv;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +27,7 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<DisponibilidadService>();
 builder.Services.AddScoped<EspecialidadService>();
 builder.Services.AddScoped<TurnoService>();
+builder.Services.AddScoped<HistoriaClinicaService>();
 
 builder.Services.AddAuthentication("Cookies")
     .AddCookie("Cookies", options =>

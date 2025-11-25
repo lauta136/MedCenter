@@ -29,12 +29,13 @@ public partial class Turno
     public int? secretaria_id { get; set; }
 
     public int? slot_id { get; set; }
+    public int? entradaClinica_id {get;set;}
 
     public int? pacienteobrasocial_id { get; set; }
 
     public bool es_particular { get; set; } //implementar a futuro, no esta auditado
       
-    public virtual ICollection<EntradaClinica> entradasClinicas { get; set; } = new List<EntradaClinica>();
+    public virtual EntradaClinica? EntradaClinica {get; set;}
 
     public virtual Medico? medico { get; set; }
 

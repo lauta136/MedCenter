@@ -200,7 +200,7 @@ namespace MedCenter.Services.DisponibilidadMedico
         {
             var condition = await _context.slotsagenda.Where(sa => sa.id == id_slotagenda && sa.disponible == true).FirstOrDefaultAsync();
 
-            if (condition == null || condition.fecha == DateOnly.FromDateTime(DateTime.Now.Date)) return false;
+            if (condition == null /*|| condition.fecha == DateOnly.FromDateTime(DateTime.Now.Date*/) return false;
 
             return true;
         }
