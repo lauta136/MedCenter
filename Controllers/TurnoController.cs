@@ -148,7 +148,8 @@ public class TurnoController : BaseController
                 turno.estado = "Disponible";
                 _context.Add(turno);
                 await _context.SaveChangesAsync();
-                _stateService.Reservar(turno);
+                //_stateService.Reservar(turno);
+                turno.estado = "Reservado";
                 _context.Update(turno);
                 await _context.SaveChangesAsync();
 
@@ -200,8 +201,8 @@ public class TurnoController : BaseController
             return Json(new { success = false, message = "No se encontro el horario" });
 
         if(slot.fecha <= DateOnly.FromDateTime(DateTime.Now)) 
-            return Json(new {succes = false, message = "No pueden reservarse turnos para el dia actual, hagalo con mas antelacion"});
-
+            return Json(new {succes = false, message = "No pueden reservarse turnos para el dia actual o hacia el pasado, hagalo con mas antelacion"});
+        
         int pacienteFinalId;
 
         if (UserRole == "Secretaria")

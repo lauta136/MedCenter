@@ -10,6 +10,7 @@ namespace MedCenter.DTOs
         public string Hora { get; set; } = string.Empty;
         public string? Estado { get; set; }
         public string? PacienteNombre { get; set; }
+        public int? PacienteId{get;set;}
         public string? MedicoNombre { get; set; }
         public string? Especialidad { get; set; }
         public bool PuedeCancelar { get; set; }

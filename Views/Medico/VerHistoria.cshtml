@@ -1,97 +1,163 @@
-@model MedCenter.Models.HistoriaClinica
+@model MedCenter.DTOs.HistoriaClinicaViewDTO
 @{
     ViewData["Title"] = "Historia Clínica";
     Layout = "~/Views/Shared/_MedicoLayout.cshtml";
 }
 
-<div class="row">
-    <div class="col-12">
-        <!-- Patient Info -->
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-primary text-white">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="mb-0">
-                            <i class="fas fa-user me-2"></i>
-                            @Model.paciente.idNavigation.nombre
-                        </h5>
-                    </div>
-                    <a asp-action="NuevaEntrada" asp-route-pacienteId="@Model.paciente_id" class="btn btn-light btn-sm">
-                        <i class="fas fa-plus me-2"></i>
-                        Nueva Entrada
-                    </a>
-                </div>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 style="color: black;">
+                    <i class="fas fa-file-medical me-2 text-primary"></i>
+                    Historia Clínica
+                </h2>
+                <a asp-action="MisPacientes" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        <p class="mb-1 text-muted small">DNI</p>
-                        <p class="mb-3"><strong>@Model.paciente.dni</strong></p>
-                    </div>
-                    <div class="col-md-4">
-                        <p class="mb-1 text-muted small">Email</p>
-                        <p class="mb-3"><strong>@Model.paciente.idNavigation.email</strong></p>
-                    </div>
-                    <div class="col-md-4">
-                        <p class="mb-1 text-muted small">Teléfono</p>
-                        <p class="mb-3"><strong>@Model.paciente.telefono</strong></p>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Clinical Entries -->
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-0 py-3">
-                <h5 class="mb-0 fw-semibold">
-                    <i class="fas fa-notes-medical me-2 text-success"></i>
-                    Entradas Clínicas
-                </h5>
+            <!-- Patient Info Card -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user me-2"></i>
+                        Información del Paciente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <p class="mb-1 text-muted small">Nombre</p>
+                            <p class="mb-3 fw-semibold">@Model.PacienteNombre</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="mb-1 text-muted small">DNI</p>
+                            <p class="mb-3">@Model.PacienteDni</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="mb-1 text-muted small">Email</p>
+                            <p class="mb-3">@Model.PacienteEmail</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="mb-1 text-muted small">Teléfono</p>
+                            <p class="mb-3">@Model.PacienteTelefono</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                @if (Model.EntradasClinicas.Any())
+
+            @if (Model.HistoriaId == null)
+            {
+                <!-- No Historia Clinica Card -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <div class="mb-4">
+                            <i class="fas fa-folder-open fa-4x text-muted opacity-50"></i>
+                        </div>
+                        <h4 class="text-muted mb-3">Este paciente no tiene historia clínica</h4>
+                        <p class="text-muted mb-4">Puede crear una nueva historia clínica para comenzar a registrar las consultas</p>
+                        @Html.AntiForgeryToken()
+                        <button class="btn btn-primary btn-lg" onclick="crearHistoriaClinica(@Model.PacienteId)">
+                            <i class="fas fa-plus-circle me-2"></i>
+                            Crear Historia Clínica
+                        </button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-clipboard-list me-2 text-success"></i>
+                    Entradas Clínicas (@Model.Entradas.Count())
+                </h5>
+                <button onclick="verificarYCrearEntrada(@Model.PacienteId)" class="btn btn-success">
+                    <i class="fas fa-plus me-2"></i>
+                    Nueva Entrada
+                </button>
+            </div>                @if (Model.Entradas.Any())
                 {
-                    <div class="timeline">
-                        @foreach (var entrada in Model.EntradasClinicas.OrderByDescending(e => e.fecha))
+                    <!-- Entradas List -->
+                    <div class="accordion" id="entradasAccordion">
+                        @foreach (var entrada in Model.Entradas.OrderByDescending(e => e.Fecha))
                         {
-                            <div class="timeline-item mb-4">
-                                <div class="timeline-marker"></div>
-                                <div class="timeline-content">
-                                    <div class="card border-start border-primary border-3">
-                                        <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="card border-0 shadow-sm mb-3">
+                                <div class="card-header bg-white border-0" id="heading-@entrada.Id">
+                                    <button class="btn btn-link text-decoration-none text-dark w-100 text-start p-0" 
+                                            type="button" 
+                                            data-bs-toggle="collapse" 
+                                            data-bs-target="#collapse-@entrada.Id" 
+                                            aria-expanded="false" 
+                                            aria-controls="collapse-@entrada.Id">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center flex-grow-1">
+                                                <div class="me-3">
+                                                    <i class="fas fa-calendar-day text-primary me-2"></i>
+                                                    <strong>@entrada.Fecha.ToString("dd/MM/yyyy")</strong>
+                                                </div>
+                                                <div class="me-3">
+                                                    <i class="fas fa-user-md text-success me-2"></i>
+                                                    <span>Dr. @entrada.MedicoNombre</span>
+                                                </div>
                                                 <div>
-                                                    <h6 class="mb-1">@entrada.fecha?.ToString("dd/MM/yyyy")</h6>
-                                                    <p class="text-muted small mb-0">
-                                                        <i class="fas fa-user-md me-1"></i>
-                                                        @entrada.medico.idNavigation.nombre
-                                                    </p>
+                                                    <i class="fas fa-stethoscope text-info me-2"></i>
+                                                    <span class="text-muted small">@(entrada.Diagnostico?.Length > 50 ? entrada.Diagnostico.Substring(0, 50) + "..." : entrada.Diagnostico)</span>
                                                 </div>
                                             </div>
+                                            <i class="fas fa-chevron-down text-muted ms-3"></i>
+                                        </div>
+                                    </button>
+                                </div>
+
+                                <div id="collapse-@entrada.Id" 
+                                     class="accordion-collapse collapse" 
+                                     aria-labelledby="heading-@entrada.Id" 
+                                     data-bs-parent="#entradasAccordion">
+                                    <div class="card-body bg-light">
+                                        <div class="row">
+                                            <div class="col-md-12 mb-3">
+                                                <h6 class="fw-semibold mb-2">
+                                                    <i class="fas fa-stethoscope me-2 text-primary"></i>
+                                                    Diagnóstico
+                                                </h6>
+                                                <p class="ms-4 mb-0">@entrada.Diagnostico</p>
+                                            </div>
                                             
-                                            @if (!string.IsNullOrEmpty(entrada.diagnostico))
+                                            <div class="col-md-12 mb-3">
+                                                <h6 class="fw-semibold mb-2">
+                                                    <i class="fas fa-pills me-2 text-success"></i>
+                                                    Tratamiento
+                                                </h6>
+                                                <p class="ms-4 mb-0">@entrada.Tratamiento</p>
+                                            </div>
+
+                                            @if (!string.IsNullOrWhiteSpace(entrada.Observaciones))
                                             {
-                                                <div class="mb-3">
-                                                    <p class="mb-1 fw-semibold text-primary">Diagnóstico:</p>
-                                                    <p class="mb-0">@entrada.diagnostico</p>
+                                                <div class="col-md-12 mb-3">
+                                                    <h6 class="fw-semibold mb-2">
+                                                        <i class="fas fa-clipboard me-2 text-info"></i>
+                                                        Observaciones
+                                                    </h6>
+                                                    <p class="ms-4 mb-0">@entrada.Observaciones</p>
                                                 </div>
                                             }
-                                            
-                                            @if (!string.IsNullOrEmpty(entrada.tratamiento))
-                                            {
-                                                <div class="mb-3">
-                                                    <p class="mb-1 fw-semibold text-success">Tratamiento:</p>
-                                                    <p class="mb-0">@entrada.tratamiento</p>
+
+                                            <div class="col-md-12">
+                                                <hr class="my-2">
+                                                <div class="d-flex justify-content-between text-muted small">
+                                                    <span>
+                                                        <i class="fas fa-user-md me-1"></i>
+                                                        Atendido por: Dr. @entrada.MedicoNombre
+                                                    </span>
+                                                    <span>
+                                                        <i class="fas fa-clock me-1"></i>
+                                                        @entrada.Fecha.ToString("dd/MM/yyyy")
+                                                    </span>
                                                 </div>
-                                            }
-                                            
-                                            @if (!string.IsNullOrEmpty(entrada.observaciones))
-                                            {
-                                                <div>
-                                                    <p class="mb-1 fw-semibold text-info">Observaciones:</p>
-                                                    <p class="mb-0">@entrada.observaciones</p>
-                                                </div>
-                                            }
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -101,61 +167,126 @@
                 }
                 else
                 {
-                    <div class="text-center py-5">
-                        <i class="fas fa-notes-medical fa-4x text-muted opacity-50 mb-3"></i>
-                        <h5 class="text-muted">No hay entradas clínicas registradas</h5>
-                        <p class="text-muted mb-4">Comienza agregando la primera entrada médica</p>
-                        <a asp-action="NuevaEntrada" asp-route-pacienteId="@Model.paciente_id" class="btn btn-primary">
-                            <i class="fas fa-plus me-2"></i>
-                            Nueva Entrada
-                        </a>
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center py-5">
+                            <div class="mb-3">
+                                <i class="fas fa-notes-medical fa-3x text-muted opacity-50"></i>
+                            </div>
+                            <h5 class="text-muted">No hay entradas clínicas registradas</h5>
+                            <p class="text-muted mb-4">Comience agregando la primera entrada clínica para este paciente</p>
+                            <button onclick="verificarYCrearEntrada(@Model.PacienteId)" class="btn btn-success">
+                                <i class="fas fa-plus me-2"></i>
+                                Primera Entrada
+                            </button>
+                        </div>
                     </div>
                 }
-            </div>
-        </div>
-
-        <div class="mt-3">
-            <a asp-action="HistoriasClinicas" class="btn btn-secondary">
-                <i class="fas fa-arrow-left me-2"></i>
-                Volver
-            </a>
+            }
         </div>
     </div>
 </div>
 
+@section Scripts {
+    <script>
+        async function verificarYCrearEntrada(pacienteId) {
+            try {
+                const response = await fetch(`/HistoriaClinica/NuevaEntrada?paciente_id=${pacienteId}&verificar=true`);
+                const data = await response.json();
+                
+                if (data.success === false) {
+                    alert(data.message);
+                } else {
+                    window.location.href = `/HistoriaClinica/NuevaEntrada?paciente_id=${pacienteId}`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al verificar el turno');
+            }
+        }
+
+        async function crearHistoriaClinica(pacienteId) {
+            if (!confirm('¿Está seguro que desea crear una historia clínica para este paciente?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/HistoriaClinica/CrearHistoria?paciente_id=${pacienteId}`, {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al crear la historia clínica');
+            }
+        }
+
+        // Rotate chevron icon on collapse toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const collapseElements = document.querySelectorAll('.accordion-collapse');
+            
+            collapseElements.forEach(collapse => {
+                collapse.addEventListener('show.bs.collapse', function() {
+                    const header = this.previousElementSibling;
+                    const chevron = header.querySelector('.fa-chevron-down');
+                    if (chevron) {
+                        chevron.style.transform = 'rotate(180deg)';
+                        chevron.style.transition = 'transform 0.3s ease';
+                    }
+                });
+
+                collapse.addEventListener('hide.bs.collapse', function() {
+                    const header = this.previousElementSibling;
+                    const chevron = header.querySelector('.fa-chevron-down');
+                    if (chevron) {
+                        chevron.style.transform = 'rotate(0deg)';
+                    }
+                });
+            });
+        });
+    </script>
+}
+
 <style>
-    .timeline {
-        position: relative;
-        padding-left: 30px;
+    .card {
+        border-radius: 0.5rem;
+        transition: transform 0.2s, box-shadow 0.2s;
     }
-    
-    .timeline::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background: linear-gradient(to bottom, #3b82f6, #e5e7eb);
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
     }
-    
-    .timeline-item {
-        position: relative;
+
+    .accordion-button:not(.collapsed) {
+        background-color: #f8f9fa;
+        box-shadow: none;
     }
-    
-    .timeline-marker {
-        position: absolute;
-        left: -35px;
-        top: 5px;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background-color: #3b82f6;
-        border: 3px solid white;
-        box-shadow: 0 0 0 2px #3b82f6;
+
+    .btn-link:focus {
+        box-shadow: none;
     }
-    
-    .timeline-content {
-        margin-left: 10px;
+
+    .accordion-collapse {
+        transition: all 0.3s ease;
+    }
+
+    .card-header button {
+        padding: 1rem;
+    }
+
+    .card-header button:hover {
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
     }
 </style>

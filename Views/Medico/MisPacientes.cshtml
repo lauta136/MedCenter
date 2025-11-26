@@ -49,16 +49,16 @@
                                         </td>
                                         <td class="text-end">
                                             <div class="btn-group btn-group-sm">
-                                                <a asp-action="VerHistoria" asp-route-id="@paciente.Id" 
+                                                <a asp-controller = "HistoriaClinica" asp-action="VerHistoria" asp-route-paciente_id="@paciente.Id" 
                                                    class="btn btn-outline-primary" title="Ver historia">
                                                     <i class="fas fa-file-medical"></i>
                                                     Historia
                                                 </a>
-                                                <a asp-action="NuevaEntrada" asp-route-pacienteId="@paciente.Id" 
+                                                <button onclick="verificarTurnoActual(@paciente.Id)" 
                                                    class="btn btn-outline-success" title="Nueva entrada">
                                                     <i class="fas fa-plus"></i>
                                                     Entrada
-                                                </a>
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -99,3 +99,22 @@
         background-color: #f8f9fa;
     }
 </style>
+
+<script>
+    async function verificarTurnoActual(pacienteId) {
+        try {
+            const response = await fetch(`/HistoriaClinica/NuevaEntrada?paciente_id=${pacienteId}&verificar=true`);
+            const data = await response.json();
+            
+            if (data.success === false) {
+                alert(data.message);
+            } else {
+                // Si no hay error, redirigir a la página
+                window.location.href = `/HistoriaClinica/NuevaEntrada?paciente_id=${pacienteId}`;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al verificar el turno');
+        }
+    }
+</script>

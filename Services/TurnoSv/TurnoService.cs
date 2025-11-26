@@ -9,6 +9,7 @@ using System.Drawing;
 using Microsoft.EntityFrameworkCore.Design;
 using MedCenter.Services.TurnoStates;
 using System.Runtime.Serialization;
+using MedCenter.Migrations;
 
 namespace MedCenter.Services.TurnoSv;
 
@@ -77,6 +78,15 @@ public class TurnoService
 
         await _context.SaveChangesAsync();
 
+    }
+
+    public async Task<Turno> GetTurnoActual(int paciente_id, int medico_id)
+    {
+        Turno turnoActual = await _context.turnos.Where(t => t.paciente_id == paciente_id && t.medico_id == medico_id && t.fecha.Value.ToDateTime(t.slot.horainicio.Value).AddMinutes(-5) < DateTime.Now  && DateTime.Now < t.fecha.Value.ToDateTime(t.slot.horafin.Value).AddMinutes(30)).FirstOrDefaultAsync();//sirve porque los turnos no pueden ser asignados de madrugada
+
+        if(turnoActual == null) return null;
+        
+        return turnoActual;
     }
      
 }

@@ -70,9 +70,7 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey(d => d.medico_id)
                 .HasConstraintName("entradasclinicas_medico_id_fkey");
 
-            entity.HasOne(d => d.turno).WithMany(p => p.entradasClinicas)
-                .HasForeignKey(d => d.turno_id)
-                .HasConstraintName("entradasclinicas_turno_id_fkey");
+            
         });
 
         modelBuilder.Entity<Especialidad>(entity =>
@@ -206,6 +204,8 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("turnos_secretaria_id_fkey");
 
             entity.HasOne(t => t.slot).WithOne(s => s.Turno).HasForeignKey<Turno>(s => s.slot_id).HasConstraintName("turno_slotagenda_fkey");
+
+            entity.HasOne(t => t.EntradaClinica).WithOne(ec => ec.turno).HasForeignKey<Turno>(t => t.entradaClinica_id).HasConstraintName("turno_entradaclinica_fkey");
 
             entity.HasOne(t => t.paciente_obrasocial)
                   .WithMany(po => po.turnos)
