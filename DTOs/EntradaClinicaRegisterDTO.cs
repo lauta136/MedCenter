@@ -10,6 +10,5 @@ public class EntradaClinicaRegisterDTO
     [Required]
     public string tratamiento { get; set; }
 
-    [Required]
     public string? observaciones { get; set; } 
 }

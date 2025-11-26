@@ -201,7 +201,7 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "HistoriasClinicas" || ViewContext.RouteData.Values["action"]?.ToString() == "VerHistoria" ? "active" : "")" 
-                       asp-controller="Medico" asp-action="HistoriasClinicas">
+                       asp-controller="HistoriaClinica" asp-action="TodasLasHistorias">
                         <i class="fas fa-file-medical"></i>
                         Historias Clínicas
                     </a>
@@ -245,7 +245,7 @@
                             @(ViewBag.MedicoNombre?.ToString().Substring(0, 1).ToUpper() ?? "M")
                         </div>
                         <div>
-                            <div class="fw-semibold medico-nombre">@ViewBag.MedicoNombre</div>
+                            <div class="fw-semibold medico-nombre">@ViewBag.UserName</div>
                             <small class="text-muted">Médico</small>
                         </div>
                     </div>

@@ -202,7 +202,7 @@ public class TurnoController : BaseController
 
         if(slot.fecha <= DateOnly.FromDateTime(DateTime.Now)) 
             return Json(new {succes = false, message = "No pueden reservarse turnos para el dia actual o hacia el pasado, hagalo con mas antelacion"});
-       
+        
         int pacienteFinalId;
 
         if (UserRole == "Secretaria")

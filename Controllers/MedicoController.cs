@@ -31,7 +31,7 @@ namespace MedCenter.Controllers
             if (medico == null)
                 return NotFound();
 
-            var turnosHoy = await _context.turnos.Where(t => t.medico_id == UserId && t.fecha.Value.Day == DateTime.Now.Day && t.estado == "Reservado")
+            var turnosHoy = await _context.turnos.Where(t => t.medico_id == UserId && t.fecha.Value.Day == DateTime.Now.Day && t.estado != "Cancelado")
                             .Include(t => t.paciente)
                             .ThenInclude(p => p.idNavigation)
                             //.ThenInclude(p => p.nombre)
@@ -48,11 +48,15 @@ namespace MedCenter.Controllers
                                 Estado = t.estado,
                                 PacienteNombre = t.paciente.idNavigation.nombre,
                                 MedicoNombre = t.medico.idNavigation.nombre,
-                                Especialidad = t.especialidad.nombre
+                                Especialidad = t.especialidad.nombre,
+                                PacienteId = t.paciente_id
 
                             }).ToListAsync();
 
-            ViewBag.MedicoNombre = UserName;
+            ViewBag.UserName = UserName;
+            ViewBag.TotalTurnosHoy = turnosHoy.Count();
+            ViewBag.TurnosFinalizados = turnosHoy.Where(t => t.Estado == "Finalizado").Count();
+            
             return View(turnosHoy);
         }
 
@@ -93,7 +97,7 @@ namespace MedCenter.Controllers
                                     })
                                     .ToListAsync();
 
-            ViewBag.MedicoNombre = UserName;
+            ViewBag.UserName = UserName;
             return View(misPacientesViews);
         }
         

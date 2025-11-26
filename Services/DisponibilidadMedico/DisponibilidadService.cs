@@ -113,15 +113,13 @@ namespace MedCenter.Services.DisponibilidadMedico
         
         public async Task<DisponibilidadResult> NuevaDisponibilidadCoherente(ManipularDisponibilidadDTO dto, int medico_id) //Que la nueva insercion no se superponga con otra ya guardada
         {
-            // bool flag = true;
+            
 
-            if (dto.Hora_inicio >= dto.Hora_fin) return new DisponibilidadResult{success = false, message = "La hora de inicio del bloque es mas tarde que la de fin"};
+            //if (dto.Hora_inicio >= dto.Hora_fin) return new DisponibilidadResult{success = false, message = "La hora de inicio del bloque es mas tarde que la de fin"};
 
-            //if ((dto.Hora_fin - dto.Hora_inicio).TotalMinutes < dto.Duracion_turno_minutos) return new DisponibilidadResult{success = false, message = "El tamaño del bloque de disponibilidad es menor a la duracion del turno"}; 
+            //if(dto.Hora_inicio.Hour < 8 || dto.Hora_inicio.Hour > 18) return new DisponibilidadResult{success = false, message = "La hora de inicio es demasiado tarde/temprano"}; //puesto arbitrariamente, con un futuro rol de administrador puede ponerse a mano
 
-            if(dto.Hora_inicio.Hour < 8 || dto.Hora_inicio.Hour > 18) return new DisponibilidadResult{success = false, message = "La hora de inicio es demasiado tarde/temprano"}; //puesto arbitrariamente, con un futuro rol de administrador puede ponerse a mano
-
-            if(dto.Hora_fin.Hour < 9 || dto.Hora_fin.Hour > 19) return new DisponibilidadResult{success = false, message = "La hora de fin es demasiado tarde/temprano"}; //puesto arbitrariamente, con un futuro rol de administrador puede ponerse a mano
+           // if(dto.Hora_fin.Hour < 9 || dto.Hora_fin.Hour > 19) return new DisponibilidadResult{success = false, message = "La hora de fin es demasiado tarde/temprano"}; //puesto arbitrariamente, con un futuro rol de administrador puede ponerse a mano
 
             if((dto.Hora_fin - dto.Hora_inicio).TotalMinutes < 60) return new DisponibilidadResult{success = false, message = "El bloque no puede ser de menos de 1 hora"};
 
