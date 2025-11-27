@@ -49,7 +49,7 @@ namespace MedCenter.Services.TurnoStates
             return new TurnoAusentadoState();
         }
 
-        public bool PuedeAusentar(Turno turno)
+        public bool PuedeMarcarAusente(Turno turno)
         {
             return true;
         }

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using MedCenter.Data;
 using MedCenter.DTOs;
 using System.Security.Claims;
+using MedCenter.Services.TurnoSv;
 using MedCenter.Services.TurnoStates;
 
 namespace MedCenter.Controllers
@@ -13,11 +14,13 @@ namespace MedCenter.Controllers
     {
         private readonly AppDbContext _context;
         private readonly TurnoStateService _stateService;
+        private readonly TurnoService _turnoService;
 
-        public PacienteController(AppDbContext context, TurnoStateService service)
+        public PacienteController(AppDbContext context, TurnoStateService service, TurnoService turnoService)
         {
             _context = context;
             _stateService = service;
+            _turnoService = turnoService;
         }
 
         // GET: Paciente/Dashboard (Vista por defecto - Mis Turnos)
@@ -57,6 +60,9 @@ namespace MedCenter.Controllers
                 .ToListAsync();
 
             ViewBag.UserName = UserName;
+
+            await _turnoService.FinalizarAusentarTurnosPasados();
+
             return View(turnos);
         }
 

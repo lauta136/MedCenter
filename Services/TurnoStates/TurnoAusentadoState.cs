@@ -28,10 +28,10 @@ public class TurnoAusentadoState : ITurnoState
 
     public string GetNombreEstado()
     {
-        return "Ausente";
+        return "Ausentado";
     }
 
-    public bool PuedeAusentar(Turno turno)
+    public bool PuedeMarcarAusente(Turno turno)
     {
         return false;
     }

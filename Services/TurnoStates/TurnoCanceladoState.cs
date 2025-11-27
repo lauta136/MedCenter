@@ -40,7 +40,7 @@ namespace MedCenter.Services.TurnoStates
             throw new TransicionDeEstadoInvalidaException(GetNombreEstado(), "ausentar", false);
         }
 
-        public bool PuedeAusentar(Turno turno)
+        public bool PuedeMarcarAusente(Turno turno)
         {
             return false;
         }

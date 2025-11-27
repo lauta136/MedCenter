@@ -8,6 +8,7 @@ using MedCenter.Migrations;
 using MedCenter.Models;
 using System.Runtime.InteropServices;
 using MedCenter.Services.DisponibilidadMedico;
+using MedCenter.Services.TurnoSv;
 using MedCenter.Services.TurnoStates;
 
 namespace MedCenter.Controllers
@@ -20,13 +21,16 @@ namespace MedCenter.Controllers
         private AuthService _authService;
         private readonly TurnoStateService _stateService;
         private DisponibilidadService _dispoService;
+        private readonly TurnoService _turnoService;
 
-        public SecretariaController(AppDbContext context, AuthService auth, DisponibilidadService disponibilidadService, TurnoStateService turnoStateService)
+
+        public SecretariaController(AppDbContext context, AuthService auth, DisponibilidadService disponibilidadService, TurnoStateService turnoStateService, TurnoService turnoService)
         {
             _context = context;
             _authService = auth;
             _dispoService = disponibilidadService;
             _stateService = turnoStateService;
+            _turnoService = turnoService;
         }
 
        
@@ -67,6 +71,8 @@ namespace MedCenter.Controllers
             ViewBag.TurnosCancelados = await _context.turnos.CountAsync(t => t.estado == "Cancelado");
             ViewBag.TotalPacientes = await _context.pacientes.CountAsync();
             ViewBag.UserName = UserName;
+
+            await _turnoService.FinalizarAusentarTurnosPasados();
 
 
             return View(turnosHoy);

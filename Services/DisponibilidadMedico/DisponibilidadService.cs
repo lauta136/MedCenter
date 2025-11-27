@@ -266,15 +266,14 @@ namespace MedCenter.Services.DisponibilidadMedico
             await _context.SaveChangesAsync();
         }
 
-        public async Task LiberarSlot(int id_slotagenda)
+        public void LiberarSlot(int id_slotagenda)
         {
-            var slot = await _context.slotsagenda.Where(sa => sa.id == id_slotagenda).Include(sa => sa.Turno).FirstOrDefaultAsync();
+            var slotUpdate = new SlotAgenda{id = id_slotagenda, disponible = true};
 
-            slot!.disponible = true;
-            slot!.Turno = null;
-
-            _context.Update(slot);
-            await _context.SaveChangesAsync();
+            _context.Attach(slotUpdate).Property(sa => sa.disponible).IsModified = true;
+            _context.Entry(slotUpdate).Reference(sa => sa.Turno).CurrentValue = null;
+            _context.Entry(slotUpdate).Reference(sa => sa.Turno).IsModified = true;
+            
         }
     }
 }

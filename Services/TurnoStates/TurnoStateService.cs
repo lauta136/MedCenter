@@ -34,7 +34,7 @@ namespace MedCenter.Services.TurnoStates
             var nuevoEstado = estado.Finalizar(turno);
         }
 
-        public void Ausentar(Turno turno)
+        public void MarcarAusente(Turno turno)
         {
             var estado = GetEstadoActual(turno);
             var nuevoEstado = estado.Ausentar(turno);

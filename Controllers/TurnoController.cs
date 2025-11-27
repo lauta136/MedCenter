@@ -727,7 +727,7 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
     {
         ViewBag.UserName = UserName;
 
-        await _turnoService.FinalizarTurnosPasados();
+        await _turnoService.FinalizarAusentarTurnosPasados();
         await _disponibilidadService.LimpiarSlotsPasados();
         
         var turnos = User.IsInRole("Paciente") ? await ObtenerTurnosGestionarPaciente() : await ObtenerTurnosGestionarSecretaria();

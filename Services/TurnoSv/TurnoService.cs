@@ -17,67 +17,78 @@ public class TurnoService
 {
     private readonly AppDbContext _context;
     private readonly TurnoStateService _stateService;
+    private readonly DisponibilidadService _dispoService;
 
-    public TurnoService(AppDbContext appDbContext, TurnoStateService turnoStateService)
+    public TurnoService(AppDbContext appDbContext, TurnoStateService turnoStateService, DisponibilidadService disponibilidadService)
     {
         _context = appDbContext;
         _stateService = turnoStateService;
+        _dispoService = disponibilidadService;
     }
-    public async Task FinalizarTurnosPasados()
+    public async Task FinalizarAusentarTurnosPasados()
     {
         // Use the fully-qualified model type to avoid the Turno namespace/type conflict
         // and compare only by date here (time comparison omitted because the property was missing in the original expression).
        
-        List<Turno> turnosAFinalizar =await  _context.turnos.Include(t => t.slot). Include(t => t.medico).ThenInclude(m => m.idNavigation)
+        List<Turno> turnosPasados =await  _context.turnos.Include(t => t.slot). Include(t => t.medico).ThenInclude(m => m.idNavigation)
                                                   .Include(t => t.paciente).ThenInclude(p => p.idNavigation)
                                                   .Include(t => t.especialidad)
-                                                  .Where(t => t.slot != null && t.slot.disponible == false && t.fecha.Value.ToDateTime(t.slot.horafin.Value) < DateTime.Now
+                                                  .Include(t => t.EntradaClinica)
+                                                  .Where(t => t.slot != null && t.slot.disponible == false && t.fecha.Value.ToDateTime(t.slot.horafin.Value) < DateTime.Now.AddMinutes(30)
                                                    && (t.estado == "Reservado"|| t.estado == "Reprogramado"))
                                                   .ToListAsync();
-        
+            
+        List<Turno> turnosAAusentar = turnosPasados.Where(t => t.EntradaClinica == null).ToList();
+        List<Turno> turnosAFinalizar = turnosPasados.Where(t => t.EntradaClinica != null).ToList();
+
 
         foreach(Turno turno in turnosAFinalizar)
         {
-            
-
-            _context.turnoAuditorias.Add(new TurnoAuditoria
-            {
-                TurnoId = turno.id,
-                UsuarioNombre = "System",
-                MomentoAccion = DateTime.UtcNow,
-                Accion = "FINALIZE",
-                FechaAnterior = turno.fecha,
-                FechaNueva = null,
-                HoraAnterior = turno.hora,
-                HoraNueva = null,
-                EstadoAnterior = turno.estado,
-                EstadoNuevo = "Finalizado",
-                PacienteId = turno.paciente_id.Value,
-                PacienteNombre = turno.paciente.idNavigation.nombre,
-                MedicoId = turno.medico_id.Value,
-                MedicoNombre = turno.medico.idNavigation.nombre,
-                EspecialidadId = turno.especialidad_id.Value,
-                EspecialidadNombre = turno.especialidad.nombre,
-                SlotIdAnterior = turno.slot_id,
-                SlotIdNuevo = null,
-
-            });
-            _context.trazabilidadTurnos.Add(new TrazabilidadTurno
-            {
-                TurnoId = turno.id,
-                UsuarioId = null,
-                UsuarioRol = null,
-                UsuarioNombre = "System",
-                MomentoAccion = DateTime.UtcNow,
-                Accion = "FINALIZE",
-                Descripcion = $"El turno ha finalizado"
-            });
-
+            RegistrarCambioEstadoTerminal(turno, AccionesTurno.FINALIZE.ToString(),FuturosEstadosTurno.Finalizado.ToString(),"El turno ha finalizado", RolUsuario.System.ToString());
+            _dispoService.LiberarSlot(turno.slot_id.Value);
             _stateService.Finalizar(turno);
+        }
+
+        foreach(Turno turno in turnosAAusentar)
+        {
+            RegistrarCambioEstadoTerminal(turno, AccionesTurno.NOSHOW.ToString(),FuturosEstadosTurno.Ausentado.ToString(),"El paciente no atendio al turno", RolUsuario.System.ToString());
+            _dispoService.LiberarSlot(turno.slot_id.Value);
+            _stateService.MarcarAusente(turno);
         }
 
         await _context.SaveChangesAsync();
 
+    }
+
+    private void RegistrarCambioEstadoTerminal(Turno turno, string accion, string estadoNuevo, string descripcion, string usuarioNombre)
+    {
+        _context.turnoAuditorias.Add(new TurnoAuditoria
+        {
+            TurnoId = turno.id,
+            UsuarioNombre = usuarioNombre,
+            MomentoAccion = DateTime.UtcNow,
+            Accion = accion,
+            FechaAnterior = turno.fecha,
+            HoraAnterior = turno.hora,
+            EstadoAnterior = _stateService.GetEstadoActual(turno).GetNombreEstado(),
+            EstadoNuevo = estadoNuevo,
+            PacienteId = turno.paciente_id.Value,
+            PacienteNombre = turno.paciente.idNavigation.nombre,
+            MedicoId = turno.medico_id.Value,
+            MedicoNombre = turno.medico.idNavigation.nombre,
+            EspecialidadId = turno.especialidad_id.Value,
+            EspecialidadNombre = turno.especialidad.nombre,
+            SlotIdAnterior = turno.slot_id
+        });
+
+        _context.trazabilidadTurnos.Add(new TrazabilidadTurno
+        {
+            TurnoId = turno.id,
+            UsuarioNombre = usuarioNombre,
+            MomentoAccion = DateTime.UtcNow,
+            Accion = accion,
+            Descripcion = descripcion
+        });
     }
 
     public async Task<Turno> GetTurnoActual(int paciente_id, int medico_id)

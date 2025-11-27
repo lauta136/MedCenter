@@ -5,7 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using MedCenter.DTOs;
-using System.Xml; // Assuming you have a DTO for creating/updating Medicos
+using System.Xml;
+using MedCenter.Services.TurnoSv; // Assuming you have a DTO for creating/updating Medicos
 
 
 namespace MedCenter.Controllers
@@ -15,10 +16,11 @@ namespace MedCenter.Controllers
                                                //y ademas, se guarda/edita/elimina en su lista de turnos de medico
     {
         private readonly AppDbContext _context;
-
-        public MedicoController(AppDbContext context)
+        private readonly TurnoService _turnoService;
+        public MedicoController(AppDbContext context, TurnoService turnoService)
         {
             _context = context;
+            _turnoService = turnoService;
         }
 
         // ========== ACCIONES CON VISTA (para el dashboard) ==========
@@ -56,6 +58,8 @@ namespace MedCenter.Controllers
             ViewBag.UserName = UserName;
             ViewBag.TotalTurnosHoy = turnosHoy.Count();
             ViewBag.TurnosFinalizados = turnosHoy.Where(t => t.Estado == "Finalizado").Count();
+
+            await _turnoService.FinalizarAusentarTurnosPasados();
             
             return View(turnosHoy);
         }
@@ -98,6 +102,7 @@ namespace MedCenter.Controllers
                                     .ToListAsync();
 
             ViewBag.UserName = UserName;
+            
             return View(misPacientesViews);
         }
         

@@ -15,7 +15,7 @@ public interface ITurnoState
     bool PuedeFinalizar();
     bool PuedeReservar(Turno turno);
     bool PuedeCancelar(Turno turno);
-    bool PuedeAusentar(Turno turno);
+    bool PuedeMarcarAusente(Turno turno);
 
     string GetDescripcion();
     string GetColorBadge();
