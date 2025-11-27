@@ -24,7 +24,7 @@ namespace MedCenter.Services.TurnoStates
                 turno.motivo_cancelacion = motivo_cancelacion;
                 return new TurnoCanceladoState();
             }
-            else throw new TransicionDeEstadoInvalidaException(GetNombreEstado(),"Cancelar", true);
+            else throw new TransicionDeEstadoInvalidaException(GetNombreEstado(),"cancelar", true);
 
         }
 
@@ -43,6 +43,15 @@ namespace MedCenter.Services.TurnoStates
         public bool PuedeCancelar(Turno turno) => turno.fecha > DateOnly.FromDateTime(DateTime.Now.AddHours(24));
         public bool PuedeFinalizar() => true;
 
-       
+        public ITurnoState Ausentar(Turno turno)
+        {
+            turno.estado = "Ausentado";
+            return new TurnoAusentadoState();
+        }
+
+        public bool PuedeAusentar(Turno turno)
+        {
+            return true;
+        }
     }
 }

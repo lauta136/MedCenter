@@ -135,7 +135,7 @@ public class TurnoController : BaseController
 
     
 
-    // POST: Turno/Create
+    // POST: Turno/Create, no se usa
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create([Bind("fecha,hora,paciente_id,medico_id,especialidad_id")] Turno turno)
@@ -148,8 +148,7 @@ public class TurnoController : BaseController
                 turno.estado = "Disponible";
                 _context.Add(turno);
                 await _context.SaveChangesAsync();
-                //_stateService.Reservar(turno);
-                turno.estado = "Reservado";
+                _stateService.Reservar(turno);
                 _context.Update(turno);
                 await _context.SaveChangesAsync();
 
@@ -260,7 +259,7 @@ public class TurnoController : BaseController
             Accion = "INSERT",
             FechaNueva = turno.fecha,
             HoraNueva = turno.hora,
-            EstadoNuevo = turno.estado,
+            EstadoNuevo = _stateService.GetEstadoActual(turno).GetNombreEstado(),
             PacienteId = turno.paciente_id.Value,
             PacienteNombre = pacNombre.nombre,
             MedicoId = turno.medico_id.Value,
@@ -335,8 +334,9 @@ public class TurnoController : BaseController
                 return View("~/Views/Shared/Turnos/ReprogramarTurno.cshtml",turnoDto);
             }
 
+            string turnoEstado = _stateService.GetEstadoActual(turno).GetNombreEstado();
             TempData["ErrorMessage"] = "El turno no es reprogramable." +
-            (turno.estado == "Reprogramado" ? "Ya fue reprogramado con anterioridad" : $"Estado actual:{turno.estado}");
+            (turnoEstado == "Reprogramado" ? "Ya fue reprogramado con anterioridad" : $"Estado actual:{turnoEstado}");
             return RedirectToAction(nameof(Index));
         
 
@@ -478,7 +478,7 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
         return Json(dtos);
     }
 
-    //Eliminar
+    //Eliminar, no se usa 
     public async Task<IActionResult> Cancel(int? id)
     {
         if (id == null)
@@ -503,7 +503,7 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
         
         if (!_stateService.PuedeCancelar(turno))
         {
-            TempData["ErrorMessage"] = $"Este turno no puede ser cancelado. Estado actual: {turno.estado}";
+            TempData["ErrorMessage"] = $"Este turno no puede ser cancelado. Estado actual: {_stateService.GetEstadoActual(turno).GetNombreEstado()}";
             return RedirectToAction(nameof(Index));
         }
 
@@ -621,8 +621,9 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
             return View(turnoDto);
         }
 
+        string turnoEstado = _stateService.GetEstadoActual(turno).GetNombreEstado();
         TempData["ErrorMessage"] = "El turno no es reprogramable." +
-        (turno.estado == "Reprogramado" ? "Ya fue reprogramado con anterioridad" : $"Estado actual:{turno.estado}");
+        (turnoEstado == "Reprogramado" ? "Ya fue reprogramado con anterioridad" : $"Estado actual:{turnoEstado}");
         return RedirectToAction(nameof(Index));
     }
 
@@ -699,7 +700,7 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
         {
             if (!_stateService.PuedeCancelar(turno))
             {
-                    TempData["ErrorMessage"] = $"Este turno no puede ser cancelado. Estado actual: {turno.estado}";
+                    TempData["ErrorMessage"] = $"Este turno no puede ser cancelado. Estado actual: {_stateService.GetEstadoActual(turno).GetNombreEstado()}";
                     return RedirectToAction(nameof(Index));
             }
             var view = User.IsInRole("Paciente") ? "~/Views/Paciente/ConfirmarCancelacion.cshtml"
@@ -755,7 +756,7 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
 
         if (!_stateService.PuedeCancelar(turno))
         {
-            TempData["ErrorMessage"] = $"El turno no puede ser cancelado, Estado actual:{turno.estado}";
+            TempData["ErrorMessage"] = $"El turno no puede ser cancelado, Estado actual:{_stateService.GetEstadoActual(turno).GetNombreEstado()}";
 
             // if (User.IsInRole("Paciente"))
             return RedirectToAction("Cancelar", "Turno"); //FIJATE SI ES ASI O DIRECTAMENTE DEVOLVER LA View de la seleccion a cancelar
@@ -780,7 +781,7 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
             FechaNueva = turno.fecha,
             HoraAnterior = turno.hora,
             HoraNueva = turno.hora,
-            EstadoAnterior = turno.estado,
+            EstadoAnterior = _stateService.GetEstadoActual(turno).GetNombreEstado(),
             EstadoNuevo = "Cancelado",
             PacienteId = turno.paciente_id.Value,
             PacienteNombre = turno.paciente.idNavigation.nombre,
@@ -840,7 +841,7 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
 
         if (!_stateService.PuedeCancelar(turno))
         {
-            TempData["ErrorMessage"] = $"Este turno no puede ser cancelado. Estado actual: {turno.estado}";
+            TempData["ErrorMessage"] = $"Este turno no puede ser cancelado. Estado actual: {_stateService.GetEstadoActual(turno).GetNombreEstado()}";
             //return RedirectToAction(nameof(Index));
         }
 

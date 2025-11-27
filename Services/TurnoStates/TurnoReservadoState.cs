@@ -7,7 +7,7 @@ namespace MedCenter.Services.TurnoStates
 
         public ITurnoState Reservar(Turno turno)
         {
-            throw new TransicionDeEstadoInvalidaException(GetNombreEstado(),"Reservar", false);
+            throw new TransicionDeEstadoInvalidaException(GetNombreEstado(),"reservar", false);
         }
         public ITurnoState Reprogramar(Turno turno)
         {
@@ -23,7 +23,7 @@ namespace MedCenter.Services.TurnoStates
                 turno.motivo_cancelacion = motivo_cancelacion;
                 return new TurnoCanceladoState();
             }
-            else throw new TransicionDeEstadoInvalidaException(GetNombreEstado(),"Cancelar", true);
+            else throw new TransicionDeEstadoInvalidaException(GetNombreEstado(),"cancelar", true);
         }
 
         public ITurnoState Finalizar(Turno turno)
@@ -45,6 +45,15 @@ namespace MedCenter.Services.TurnoStates
 
         public bool PuedeReservar(Turno turno) => false;
 
-       
+        public ITurnoState Ausentar(Turno turno)
+        {
+            turno.estado = "Ausentado";
+            return new TurnoAusentadoState();
+        }
+
+        public bool PuedeAusentar(Turno turno)
+        {
+            return true;
+        }
     }
 }

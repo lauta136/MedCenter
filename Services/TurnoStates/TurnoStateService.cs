@@ -34,6 +34,12 @@ namespace MedCenter.Services.TurnoStates
             var nuevoEstado = estado.Finalizar(turno);
         }
 
+        public void Ausentar(Turno turno)
+        {
+            var estado = GetEstadoActual(turno);
+            var nuevoEstado = estado.Ausentar(turno);
+        }
+
         public bool PuedeReprogramar(Turno turno)
         {
             var estado = GetEstadoActual(turno);
@@ -47,6 +53,12 @@ namespace MedCenter.Services.TurnoStates
         }
 
         public bool PuedeFinalizar(Turno turno)
+        {
+            var estado = GetEstadoActual(turno);
+            return estado.PuedeFinalizar();
+        }
+
+        public bool PuedeAusentar(Turno turno)
         {
             var estado = GetEstadoActual(turno);
             return estado.PuedeFinalizar();
