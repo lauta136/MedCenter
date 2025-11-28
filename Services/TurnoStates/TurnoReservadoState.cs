@@ -16,14 +16,10 @@ namespace MedCenter.Services.TurnoStates
         }
 
         public ITurnoState Cancelar(Turno turno, string motivo_cancelacion)
-        {
-            if(turno.fecha!.Value > DateOnly.FromDateTime(DateTime.Now.AddHours(24)))
-            {
-                turno.estado = "Cancelado";
-                turno.motivo_cancelacion = motivo_cancelacion;
-                return new TurnoCanceladoState();
-            }
-            else throw new TransicionDeEstadoInvalidaException(GetNombreEstado(),"cancelar", true);
+        {  
+            turno.estado = "Cancelado";
+            turno.motivo_cancelacion = motivo_cancelacion;
+            return new TurnoCanceladoState();
         }
 
         public ITurnoState Finalizar(Turno turno)
@@ -37,7 +33,7 @@ namespace MedCenter.Services.TurnoStates
 
         public string GetNombreEstado() => "Reservado";
 
-        public bool PuedeCancelar(Turno turno) => turno.fecha > DateOnly.FromDateTime(DateTime.Now.AddHours(24));
+        public bool PuedeCancelar(Turno turno) => true;
 
         public bool PuedeFinalizar() => true;
 

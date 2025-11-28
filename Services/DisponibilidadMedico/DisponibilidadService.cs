@@ -119,7 +119,7 @@ namespace MedCenter.Services.DisponibilidadMedico
 
             if(dto.Hora_inicio.Hour < 8 || dto.Hora_inicio.Hour > 18) return new DisponibilidadResult{success = false, message = "La hora de inicio es demasiado tarde/temprano"}; //puesto arbitrariamente, con un futuro rol de administrador puede ponerse a mano
 
-            if(dto.Hora_fin.Hour < 9 || dto.Hora_fin.Hour > 19) return new DisponibilidadResult{success = false, message = "La hora de fin es demasiado tarde/temprano"}; //puesto arbitrariamente, con un futuro rol de administrador puede ponerse a mano
+            if(dto.Hora_fin.Hour < 9 || dto.Hora_fin.Hour > 20) return new DisponibilidadResult{success = false, message = "La hora de fin es demasiado tarde/temprano"}; //puesto arbitrariamente, con un futuro rol de administrador puede ponerse a mano
 
             if((dto.Hora_fin - dto.Hora_inicio).TotalMinutes < 60) return new DisponibilidadResult{success = false, message = "El bloque no puede ser de menos de 1 hora"};
 

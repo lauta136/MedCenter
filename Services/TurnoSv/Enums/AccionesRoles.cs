@@ -15,7 +15,7 @@ public enum AccionesTurno
     INSERT,
 }
 
-public enum FuturosEstadosTurno
+public enum EstadosTurno
 {
     Ausentado,
     Cancelado,

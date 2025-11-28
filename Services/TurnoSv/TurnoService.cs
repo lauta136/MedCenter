@@ -34,7 +34,7 @@ public class TurnoService
                                                   .Include(t => t.paciente).ThenInclude(p => p.idNavigation)
                                                   .Include(t => t.especialidad)
                                                   .Include(t => t.EntradaClinica)
-                                                  .Where(t => t.slot != null && t.slot.disponible == false && t.fecha.Value.ToDateTime(t.slot.horafin.Value) < DateTime.Now.AddMinutes(30)
+                                                  .Where(t => t.slot != null && t.slot.disponible == false && t.fecha.Value.ToDateTime(t.slot.horafin.Value).AddMinutes(30) < DateTime.Now
                                                    && (t.estado == "Reservado"|| t.estado == "Reprogramado"))
                                                   .ToListAsync();
             
@@ -44,15 +44,17 @@ public class TurnoService
 
         foreach(Turno turno in turnosAFinalizar)
         {
-            RegistrarCambioEstadoTerminal(turno, AccionesTurno.FINALIZE.ToString(),FuturosEstadosTurno.Finalizado.ToString(),"El turno ha finalizado", RolUsuario.System.ToString());
-            _dispoService.LiberarSlot(turno.slot_id.Value);
+            RegistrarCambioEstadoTerminal(turno, AccionesTurno.FINALIZE.ToString(),EstadosTurno.Finalizado.ToString(),"El turno ha finalizado", RolUsuario.System.ToString());
+            //_dispoService.LiberarSlot(turno.slot_id.Value);
+            turno.slot_id = null;
             _stateService.Finalizar(turno);
         }
 
         foreach(Turno turno in turnosAAusentar)
         {
-            RegistrarCambioEstadoTerminal(turno, AccionesTurno.NOSHOW.ToString(),FuturosEstadosTurno.Ausentado.ToString(),"El paciente no atendio al turno", RolUsuario.System.ToString());
-            _dispoService.LiberarSlot(turno.slot_id.Value);
+            RegistrarCambioEstadoTerminal(turno, AccionesTurno.NOSHOW.ToString(),EstadosTurno.Ausentado.ToString(),"El paciente no atendio al turno", RolUsuario.System.ToString());
+            //_dispoService.LiberarSlot(turno.slot_id.Value);
+            turno.slot_id = null;
             _stateService.MarcarAusente(turno);
         }
 

@@ -9,12 +9,12 @@ namespace MedCenter.Services.TurnoStates
 
         public ITurnoState Reservar(Turno turno)
         {
-            if(turno.fecha!.Value > DateOnly.FromDateTime(DateTime.Now.AddHours(24)))
-            {
+            //if(turno.fecha!.Value > DateOnly.FromDateTime(DateTime.Now.AddHours(24)))
+            //{
                 turno.estado = "Reservado";
                 return new TurnoReservadoState();
-            }
-            else throw new TransicionDeEstadoInvalidaException(GetNombreEstado(),"Reservar", true);
+            //}
+           // else throw new TransicionDeEstadoInvalidaException(GetNombreEstado(),"Reservar", true);
 
         }
 
