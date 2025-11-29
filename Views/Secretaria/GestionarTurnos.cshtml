@@ -1,15 +1,28 @@
 @model IEnumerable<MedCenter.DTOs.TurnoViewDTO>
 
 @{
+    var turnosGestionables = Model.Where(t => 
+        (t.Estado == "Reservado" || t.Estado == "Reprogramado") && 
+        !t.EsProximo).ToList();
+    
+    var turnosProximos = Model.Where(t => 
+        (t.Estado == "Reservado" || t.Estado == "Reprogramado") && 
+        t.EsProximo).ToList();
+    
+    var turnosHistorial = Model.Where(t => 
+        t.Estado == "Finalizado" || 
+        t.Estado == "Cancelado" || 
+        t.Estado == "Ausentado").ToList();
+
     ViewData["Title"] = "Gestionar Turnos";
     Layout = "~/Views/Shared/_SecretariaLayout.cshtml";
 }
 
-<div class="container mt-4">
+<partial name="_GestionarTurnosContent" model="Model" />
     <div class="card shadow-sm">
         <div class="card-header bg-primary text-white">
             <h4><i class="fas fa-calendar-alt me-2"></i>Gestionar Turnos</h4>
-            <p class="mb-0 small">Cancela o reprograma turnos de pacientes</p>
+            <p class="mb-0 small">Cancela, reprograma y visualiza el historial de turnos</p>
         </div>
         <div class="card-body bg-white">
             @if (TempData["SuccessMessage"] != null)
@@ -27,143 +40,421 @@
                 </div>
             }
 
-            @if (Model.Any())
-            {
-                <!-- Filters Section -->
-                <div class="row mb-4">
-                    <div class="col-md-4">
-                        <label class="form-label fw-semibold">
-                            <i class="fas fa-search me-1"></i>Buscar
-                        </label>
-                        <input type="text" id="searchInput" class="form-control" 
-                               placeholder="Buscar por paciente, médico o especialidad..." 
-                               style="background-color: white !important; color: black !important;">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-semibold">
-                            <i class="fas fa-calendar me-1"></i>Fecha
-                        </label>
-                        <input type="date" id="filterFecha" class="form-control" 
-                               style="background-color: white !important; color: black !important;">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-semibold">
-                            <i class="fas fa-tag me-1"></i>Estado
-                        </label>
-                        <select id="filterEstado" class="form-select" 
-                                style="background-color: white !important; color: black !important;">
-                            <option value="">Todos</option>
-                            <option value="Reservado">Reservado</option>
-                            <option value="Reprogramado">Reprogramado</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button id="btnLimpiarFiltros" class="btn btn-outline-secondary w-100">
-                            <i class="fas fa-eraser me-1"></i>Limpiar
-                        </button>
-                    </div>
+            <!-- Tabs Navigation -->
+            <ul class="nav nav-tabs mb-4" id="turnosTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="gestionables-tab" data-bs-toggle="tab" 
+                            data-bs-target="#gestionables" type="button" role="tab">
+                        <i class="fas fa-edit me-2"></i>
+                        Turnos Gestionables
+                        <span class="badge bg-primary ms-2">@turnosGestionables.Count()</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="proximos-tab" data-bs-toggle="tab" 
+                            data-bs-target="#proximos" type="button" role="tab">
+                        <i class="fas fa-clock me-2"></i>
+                        Próximos Turnos
+                        <span class="badge bg-warning ms-2">@turnosProximos.Count()</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="historial-tab" data-bs-toggle="tab" 
+                            data-bs-target="#historial" type="button" role="tab">
+                        <i class="fas fa-history me-2"></i>
+                        Historial
+                        <span class="badge bg-secondary ms-2">@turnosHistorial.Count()</span>
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="turnosTabContent">
+                
+                <!-- Tab 1: Turnos Gestionables -->
+                <div class="tab-pane fade show active" id="gestionables" role="tabpanel">
+                    @if (turnosGestionables.Any())
+                    {
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-search me-1"></i>Buscar
+                                </label>
+                                <input type="text" class="form-control" data-tab="gestionables" data-filter="search"
+                                       placeholder="Buscar por paciente, médico o especialidad..." 
+                                       style="background-color: white !important; color: black !important;">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-calendar me-1"></i>Fecha
+                                </label>
+                                <input type="date" class="form-control" data-tab="gestionables" data-filter="fecha"
+                                       style="background-color: white !important; color: black !important;">
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button class="btn btn-outline-secondary w-100 btn-limpiar" data-tab="gestionables">
+                                    <i class="fas fa-eraser me-1"></i>Limpiar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Turnos con más de 24 horas de anticipación</strong> - Pueden ser cancelados o reprogramados
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Hora</th>
+                                        <th>Médico</th>
+                                        <th>Paciente</th>
+                                        <th>Especialidad</th>
+                                        <th>Estado</th>
+                                        <th class="text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody data-tab="gestionables">
+                                            @foreach (var turno in turnosGestionables)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <i class="fas fa-calendar text-primary me-2"></i>
+                                                <strong>@turno.Fecha</strong>
+                                            </td>
+                                            <td>
+                                                <i class="fas fa-clock text-muted me-2"></i>
+                                                @turno.Hora
+                                            </td>
+                                            <td>
+                                                <i class="fas fa-user-md text-success me-2"></i>
+                                                @turno.MedicoNombre
+                                            </td>
+                                            <td>
+                                                <i class="fas fa-user text-primary me-2"></i>
+                                                @turno.PacienteNombre
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info bg-opacity-10 text-info">
+                                                    @turno.Especialidad
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if (turno.Estado == "Reservado")
+                                                {
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-check me-1"></i>@turno.Estado
+                                                    </span>
+                                                }
+                                                else if (turno.Estado == "Reprogramado")
+                                                {
+                                                    <span class="badge bg-warning text-dark">
+                                                        <i class="fas fa-sync me-1"></i>@turno.Estado
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td class="text-end">
+                                                <div class="btn-group" role="group">
+                                                    @if (turno.PuedeReprogramar)
+                                                    {
+                                                        <a asp-controller="Turno" asp-action="Reprogramar" asp-route-id="@turno.Id"
+                                                           class="btn btn-outline-warning btn-sm" title="Reprogramar">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                    }
+                                                    @if (turno.PuedeCancelar)
+                                                    {
+                                                        <a asp-controller="Turno" asp-action="Cancelar" asp-route-id="@turno.Id"
+                                                           class="btn btn-outline-danger btn-sm" title="Cancelar">
+                                                            <i class="fas fa-times"></i>
+                                                        </a>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            No hay turnos gestionables en este momento.
+                        </div>
+                    }
                 </div>
 
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Hora</th>
-                                <th>Médico</th>
-                                <th>Paciente</th>
-                                <th>Especialidad</th>
-                                <th>Estado</th>
-                                <th class="text-end">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var turno in Model)
-                            {
-                                <tr>
-                                    <td>
-                                        <i class="fas fa-calendar text-primary me-2"></i>
-                                        <strong>@turno.Fecha</strong>
-                                    </td>
-                                    <td>
-                                        <i class="fas fa-clock text-muted me-2"></i>
-                                        @turno.Hora
-                                    </td>
-                                    <td>
-                                        <i class="fas fa-user-md text-success me-2"></i>
-                                        @turno.MedicoNombre
-                                    </td>
-                                    <td>
-                                        <i class="fas fa-user text-primary me-2"></i>
-                                        @turno.PacienteNombre
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-info bg-opacity-10 text-info">
-                                            @turno.Especialidad
-                                        </span>
-                                    </td>
-                                    <td>
-                                        @if (turno.Estado == "Reservado")
-                                        {
-                                            <span class="badge bg-success">
-                                                <i class="fas fa-check me-1"></i>@turno.Estado
-                                            </span>
-                                        }
-                                        else if (turno.Estado == "Reprogramado")
-                                        {
-                                            <span class="badge bg-warning text-dark">
-                                                <i class="fas fa-sync me-1"></i>@turno.Estado
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-secondary">
-                                                @turno.Estado
-                                            </span>
-                                        }
-                                    </td>
-                                    <td class="text-end">
-                                        <div class="btn-group" role="group">
-                                            @if (turno.PuedeReprogramar)
-                                            {
-                                                <a asp-controller="Turno" asp-action="Reprogramar" asp-route-id="@turno.Id"
-                                                   class="btn btn-outline-warning btn-sm" title="Reprogramar">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                            }
-                                            @if (turno.PuedeCancelar)
-                                            {
-                                                <a asp-controller="Turno" asp-action="Cancelar" asp-route-id="@turno.Id"
-                                                   class="btn btn-outline-danger btn-sm" title="Cancelar">
-                                                    <i class="fas fa-times"></i>
-                                                </a>
-                                            }
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+                <!-- Tab 2: Próximos Turnos (No Gestionables) -->
+                <div class="tab-pane fade" id="proximos" role="tabpanel">
+                    @if (turnosProximos.Any())
+                    {
+                        <!-- Filters Section -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-search me-1"></i>Buscar
+                                </label>
+                                <input type="text" class="form-control" data-tab="proximos" data-filter="search"
+                                       placeholder="Buscar por paciente, médico o especialidad..." 
+                                       style="background-color: white !important; color: black !important;">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-calendar me-1"></i>Fecha
+                                </label>
+                                <input type="date" class="form-control" data-tab="proximos" data-filter="fecha"
+                                       style="background-color: white !important; color: black !important;">
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button class="btn btn-outline-secondary w-100 btn-limpiar" data-tab="proximos">
+                                    <i class="fas fa-eraser me-1"></i>Limpiar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Turnos con menos de 24 horas</strong> - Solo pueden ser cancelados por secretaría llamando al paciente
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Hora</th>
+                                        <th>Médico</th>
+                                        <th>Paciente</th>
+                                        <th>Especialidad</th>
+                                        <th>Estado</th>
+                                        <th class="text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody data-tab="proximos">
+                                    @foreach (var turno in turnosProximos)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <i class="fas fa-calendar text-primary me-2"></i>
+                                                <strong>@turno.Fecha</strong>
+                                            </td>
+                                            <td>
+                                                <i class="fas fa-clock text-muted me-2"></i>
+                                                @turno.Hora
+                                            </td>
+                                            <td>
+                                                <i class="fas fa-user-md text-success me-2"></i>
+                                                @turno.MedicoNombre
+                                            </td>
+                                            <td>
+                                                <i class="fas fa-user text-primary me-2"></i>
+                                                @turno.PacienteNombre
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info bg-opacity-10 text-info">
+                                                    @turno.Especialidad
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if (turno.Estado == "Reservado")
+                                                {
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-check me-1"></i>@turno.Estado
+                                                    </span>
+                                                }
+                                                else if (turno.Estado == "Reprogramado")
+                                                {
+                                                    <span class="badge bg-warning text-dark">
+                                                        <i class="fas fa-sync me-1"></i>@turno.Estado
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td class="text-end">
+                                                @if (turno.PuedeCancelar)
+                                                {
+                                                    <a asp-controller="Turno" asp-action="Cancelar" asp-route-id="@turno.Id"
+                                                       class="btn btn-outline-danger btn-sm" title="Cancelar (Secretaría)">
+                                                        <i class="fas fa-times"></i> Cancelar
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">
+                                                        <i class="fas fa-lock me-1"></i>No modificable
+                                                    </span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            No hay turnos próximos en este momento.
+                        </div>
+                    }
                 </div>
-            }
-            else
-            {
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    No hay turnos disponibles para gestionar en este momento.
+
+                <!-- Tab 3: Historial -->
+                <div class="tab-pane fade" id="historial" role="tabpanel">
+                    @if (turnosHistorial.Any())
+                    {
+                        <!-- Filters Section -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-search me-1"></i>Buscar
+                                </label>
+                                <input type="text" class="form-control" data-tab="historial" data-filter="search"
+                                       placeholder="Buscar por paciente, médico o especialidad..." 
+                                       style="background-color: white !important; color: black !important;">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-calendar me-1"></i>Fecha
+                                </label>
+                                <input type="date" class="form-control" data-tab="historial" data-filter="fecha"
+                                       style="background-color: white !important; color: black !important;">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-tag me-1"></i>Estado
+                                </label>
+                                <select class="form-select" data-tab="historial" data-filter="estado"
+                                        style="background-color: white !important; color: black !important;">
+                                    <option value="">Todos</option>
+                                    <option value="Finalizado">Finalizado</option>
+                                    <option value="Cancelado">Cancelado</option>
+                                    <option value="Ausentado">Ausentado</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button class="btn btn-outline-secondary w-100 btn-limpiar" data-tab="historial">
+                                    <i class="fas fa-eraser me-1"></i>Limpiar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-secondary">
+                            <i class="fas fa-archive me-2"></i>
+                            <strong>Historial de turnos</strong> - Vista informativa de turnos finalizados, cancelados y ausentados
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Hora</th>
+                                        <th>Médico</th>
+                                        <th>Paciente</th>
+                                        <th>Especialidad</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody data-tab="historial">
+                                    @foreach (var turno in turnosHistorial.OrderByDescending(t => t.Fecha))
+                                    {
+                                        <tr>
+                                            <td>
+                                                <i class="fas fa-calendar text-muted me-2"></i>
+                                                @turno.Fecha
+                                            </td>
+                                            <td>
+                                                <i class="fas fa-clock text-muted me-2"></i>
+                                                @turno.Hora
+                                            </td>
+                                            <td>
+                                                <i class="fas fa-user-md text-muted me-2"></i>
+                                                @turno.MedicoNombre
+                                            </td>
+                                            <td>
+                                                <i class="fas fa-user text-muted me-2"></i>
+                                                @turno.PacienteNombre
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary bg-opacity-10 text-secondary">
+                                                    @turno.Especialidad
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if (turno.Estado == "Finalizado")
+                                                {
+                                                    <span class="badge bg-primary">
+                                                        <i class="fas fa-check-circle me-1"></i>@turno.Estado
+                                                    </span>
+                                                }
+                                                else if (turno.Estado == "Cancelado")
+                                                {
+                                                    <span class="badge bg-danger">
+                                                        <i class="fas fa-times-circle me-1"></i>@turno.Estado
+                                                    </span>
+                                                }
+                                                else if (turno.Estado == "Ausentado")
+                                                {
+                                                    <span class="badge bg-dark">
+                                                        <i class="fas fa-user-slash me-1"></i>@turno.Estado
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">
+                                                        @turno.Estado
+                                                    </span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            No hay registros en el historial.
+                        </div>
+                    }
                 </div>
-            }
-        </div>
-        <div class="card-footer bg-light text-muted">
-            <small>
-                <i class="fas fa-info-circle me-1"></i>
-                Solo puedes gestionar turnos programados con más de 24 horas de anticipación.
-            </small>
+            </div>
         </div>
     </div>
 </div>
 
 <style>
+    /* --- TABS --- */
+    .nav-tabs .nav-link {
+        color: #6c757d;
+        border: none;
+        border-bottom: 3px solid transparent;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .nav-tabs .nav-link:hover {
+        border-bottom-color: #0d6efd;
+        color: #0d6efd;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: #0d6efd;
+        border-bottom-color: #0d6efd;
+        background-color: transparent;
+    }
+
+    .nav-tabs {
+        border-bottom: 2px solid #dee2e6;
+    }
+
     /* --- GENERAL CARD STYLING --- */
     .card {
         border-radius: 12px;
@@ -174,6 +465,159 @@
     .card-header {
         border-bottom: none;
     }
+
+    /* --- TABLE STYLING --- */
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table thead th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        color: #495057;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .table tbody tr {
+        transition: background-color 0.2s ease;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* --- BUTTON STYLING --- */
+    .btn-group .btn {
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline-warning:hover {
+        transform: scale(1.05);
+    }
+
+    .btn-outline-danger:hover {
+        transform: scale(1.05);
+    }
+
+    /* --- BADGE STYLING --- */
+    .badge {
+        padding: 0.4em 0.8em;
+        font-weight: 500;
+        font-size: 0.85rem;
+    }
+
+    /* --- FILTER SECTION --- */
+    .mb-3 label {
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .form-control, .form-select {
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+
+    /* --- ALERT STYLING --- */
+    .alert {
+        border-radius: 8px;
+        border: none;
+    }
+
+    .alert-info {
+        background-color: #cfe2ff;
+        color: #084298;
+    }
+
+    .alert-warning {
+        background-color: #fff3cd;
+        color: #664d03;
+    }
+
+    /* --- RESPONSIVE ADJUSTMENTS --- */
+    @@media (max-width: 768px) {
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .btn-group .btn {
+            margin-bottom: 0.25rem;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Setup filters for each tab
+            setupFilters('gestionables');
+            setupFilters('proximos');
+            setupFilters('historial');
+        });
+
+        function setupFilters(tabName) {
+            const searchInput = document.querySelector(`input[data-tab="${tabName}"][data-filter="search"]`);
+            const fechaInput = document.querySelector(`input[data-tab="${tabName}"][data-filter="fecha"]`);
+            const estadoSelect = document.querySelector(`select[data-tab="${tabName}"][data-filter="estado"]`);
+            const limpiarBtn = document.querySelector(`button[data-tab="${tabName}"].btn-limpiar`);
+            const tableBody = document.querySelector(`tbody[data-tab="${tabName}"]`);
+
+            if (!tableBody) return;
+
+            const filterRows = () => {
+                const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+                const fechaValue = fechaInput ? fechaInput.value : '';
+                const estadoValue = estadoSelect ? estadoSelect.value.toLowerCase() : '';
+
+                const rows = tableBody.querySelectorAll('tr');
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    const matchesSearch = !searchTerm || text.includes(searchTerm);
+                    
+                    // Date filter - convert dd/MM/yyyy to yyyy-MM-dd for comparison
+                    let matchesFecha = true;
+                    if (fechaValue) {
+                        const fechaCell = row.cells[0].textContent.trim();
+                        const parts = fechaCell.split('/');
+                        if (parts.length === 3) {
+                            const fechaFormatted = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                            matchesFecha = fechaFormatted === fechaValue;
+                        }
+                    }
+                    
+                    const matchesEstado = !estadoValue || text.includes(estadoValue);
+
+                    row.style.display = (matchesSearch && matchesFecha && matchesEstado) ? '' : 'none';
+                });
+            };
+
+            // Add event listeners for filters
+            if (searchInput) searchInput.addEventListener('input', filterRows);
+            if (fechaInput) fechaInput.addEventListener('change', filterRows);
+            if (estadoSelect) estadoSelect.addEventListener('change', filterRows);
+            
+            // Add Limpiar button functionality
+            if (limpiarBtn) {
+                limpiarBtn.addEventListener('click', () => {
+                    if (searchInput) searchInput.value = '';
+                    if (fechaInput) fechaInput.value = '';
+                    if (estadoSelect) estadoSelect.value = '';
+                    filterRows();
+                });
+            }
+        }
+    </script>
+}
+
 
     .card:hover {
         transform: translateY(-2px);

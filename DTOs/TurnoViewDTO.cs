@@ -15,6 +15,7 @@ namespace MedCenter.DTOs
         public string? Especialidad { get; set; }
         public bool PuedeCancelar { get; set; }
         public bool PuedeReprogramar { get; set; }
+        public bool EsProximo {get;set;}
 
         public TurnoViewDTO() { }
     }
