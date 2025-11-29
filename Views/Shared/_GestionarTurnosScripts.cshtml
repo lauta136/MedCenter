@@ -1,0 +1,108 @@
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        setupFilters();
+    });
+
+    function setupFilters() {
+        // Get all filter elements
+        const searchInputs = document.querySelectorAll('[data-filter="search"]');
+        const dateInputs = document.querySelectorAll('[data-filter="fecha"]');
+        const estadoSelects = document.querySelectorAll('[data-filter="estado"]');
+        const limpiarButtons = document.querySelectorAll('.btn-limpiar');
+
+        // Setup search filters
+        searchInputs.forEach(input => {
+            input.addEventListener('input', function() {
+                const tab = this.getAttribute('data-tab');
+                filterTable(tab);
+            });
+        });
+
+        // Setup date filters
+        dateInputs.forEach(input => {
+            input.addEventListener('change', function() {
+                const tab = this.getAttribute('data-tab');
+                filterTable(tab);
+            });
+        });
+
+        // Setup estado filters
+        estadoSelects.forEach(select => {
+            select.addEventListener('change', function() {
+                const tab = this.getAttribute('data-tab');
+                filterTable(tab);
+            });
+        });
+
+        // Setup limpiar buttons
+        limpiarButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const tab = this.getAttribute('data-tab');
+                
+                // Clear all filters for this tab
+                const searchInput = document.querySelector(`[data-tab="${tab}"][data-filter="search"]`);
+                const dateInput = document.querySelector(`[data-tab="${tab}"][data-filter="fecha"]`);
+                const estadoSelect = document.querySelector(`[data-tab="${tab}"][data-filter="estado"]`);
+                
+                if (searchInput) searchInput.value = '';
+                if (dateInput) dateInput.value = '';
+                if (estadoSelect) estadoSelect.value = '';
+                
+                // Refilter to show all rows
+                filterTable(tab);
+            });
+        });
+    }
+
+    function filterTable(tab) {
+        const searchInput = document.querySelector(`[data-tab="${tab}"][data-filter="search"]`);
+        const dateInput = document.querySelector(`[data-tab="${tab}"][data-filter="fecha"]`);
+        const estadoSelect = document.querySelector(`[data-tab="${tab}"][data-filter="estado"]`);
+        
+        const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+        const selectedDate = dateInput ? dateInput.value : '';
+        const selectedEstado = estadoSelect ? estadoSelect.value.toLowerCase() : '';
+        
+        const tbody = document.querySelector(`tbody[data-tab="${tab}"]`);
+        if (!tbody) return;
+        
+        const rows = tbody.getElementsByTagName('tr');
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            const text = row.textContent.toLowerCase();
+            
+            // Search filter
+            const matchesSearch = searchTerm === '' || text.includes(searchTerm);
+            
+            // Date filter
+            let matchesDate = true;
+            if (selectedDate !== '') {
+                const fechaCell = row.cells[0];
+                if (fechaCell) {
+                    const fechaText = fechaCell.textContent.trim();
+                    // Parse dd/MM/yyyy format
+                    const parts = fechaText.split('/');
+                    if (parts.length === 3) {
+                        const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                        matchesDate = formattedDate === selectedDate;
+                    } else {
+                        matchesDate = false;
+                    }
+                } else {
+                    matchesDate = false;
+                }
+            }
+            
+            // Estado filter
+            const matchesEstado = selectedEstado === '' || text.includes(selectedEstado);
+            
+            // Show/hide row based on all filters
+            if (matchesSearch && matchesDate && matchesEstado) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    }
+</script>
