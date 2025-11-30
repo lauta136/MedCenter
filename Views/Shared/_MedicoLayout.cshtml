@@ -214,8 +214,8 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Reportes" ? "active" : "")" 
-                       asp-controller="Medico" asp-action="Reportes">
+                    <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" && ViewContext.RouteData.Values["controller"]?.ToString() == "Reportes" ? "active" : "")" 
+                       asp-controller="Reportes" asp-action="Index">
                         <i class="fas fa-chart-line"></i>
                         Reportes
                     </a>

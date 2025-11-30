@@ -51,18 +51,22 @@
                             Reporte de Consultas
                         </h5>
                         <p class="text-muted">Genera un reporte de tus consultas por período</p>
-                        <form class="mt-3">
+                        <form id="formConsultas" class="mt-3">
                             <div class="mb-3">
                                 <label class="form-label">Fecha Desde</label>
-                                <input type="date" class="form-control" required />
+                                <input type="date" id="fechaDesdeMedico" class="form-control" required />
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Fecha Hasta</label>
-                                <input type="date" class="form-control" required />
+                                <input type="date" id="fechaHastaMedico" class="form-control" required />
                             </div>
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="fas fa-download me-2"></i>
-                                Generar Reporte
+                            <button type="button" onclick="descargarConsultasPDF()" class="btn btn-danger w-100 mb-2">
+                                <i class="fas fa-file-pdf me-2"></i>
+                                Descargar PDF
+                            </button>
+                            <button type="button" onclick="descargarConsultasExcel()" class="btn btn-success w-100">
+                                <i class="fas fa-file-excel me-2"></i>
+                                Descargar Excel
                             </button>
                         </form>
                     </div>
@@ -184,3 +188,29 @@
         box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
     }
 </style>
+
+<script>
+    function descargarConsultasPDF() {
+        const fechaDesde = document.getElementById('fechaDesdeMedico').value;
+        const fechaHasta = document.getElementById('fechaHastaMedico').value;
+        
+        if (!fechaDesde || !fechaHasta) {
+            alert('Por favor seleccione ambas fechas');
+            return;
+        }
+        
+        window.location.href = `/Reportes/DescargarReporteMedicoPDF?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`;
+    }
+    
+    function descargarConsultasExcel() {
+        const fechaDesde = document.getElementById('fechaDesdeMedico').value;
+        const fechaHasta = document.getElementById('fechaHastaMedico').value;
+        
+        if (!fechaDesde || !fechaHasta) {
+            alert('Por favor seleccione ambas fechas');
+            return;
+        }
+        
+        window.location.href = `/Reportes/DescargarReporteMedicoExcel?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`;
+    }
+</script>

@@ -6,7 +6,8 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using MedCenter.DTOs;
 using System.Xml;
-using MedCenter.Services.TurnoSv; // Assuming you have a DTO for creating/updating Medicos
+using MedCenter.Services.TurnoSv;
+using MedCenter.Services.MedicoSv; // Assuming you have a DTO for creating/updating Medicos
 
 
 namespace MedCenter.Controllers
@@ -17,10 +18,13 @@ namespace MedCenter.Controllers
     {
         private readonly AppDbContext _context;
         private readonly TurnoService _turnoService;
-        public MedicoController(AppDbContext context, TurnoService turnoService)
+        private readonly MedicoService _medicoService;
+
+        public MedicoController(AppDbContext context, TurnoService turnoService, MedicoService medicoService)
         {
             _context = context;
             _turnoService = turnoService;
+            _medicoService = medicoService;
         }
 
         // ========== ACCIONES CON VISTA (para el dashboard) ==========
@@ -105,114 +109,24 @@ namespace MedCenter.Controllers
             
             return View(misPacientesViews);
         }
+
+        public async Task<IActionResult> GetAll()
+        {
+            var medicos = await _medicoService.GetAll();
+            return Ok(medicos);
+        }
         
 
 
         // ========== API ENDPOINTS (sin vista, devuelven JSON) ==========
         // GET: api/medicos
         //[HttpGet]
-        [HttpGet("api/medicos")]
-        public ActionResult<IEnumerable<MedicoViewDTO>> GetAll()
-        {
-            var medicos = _context.medicos
-             .Include(m => m.idNavigation)
-             .Include(m => m.medicoEspecialidades)
-                 .ThenInclude(me => me.especialidad)
-             .Select(m => new
-             {
-                 Nombre = m.idNavigation.nombre,
-                 Email = m.idNavigation.email,
-                 Matricula = m.matricula,
-                 Especialidades = m.medicoEspecialidades
-                    .Select(me => me.especialidad.nombre ?? "Sin nombre")
-                    .ToList()
-             })
-                .ToList();
+       
 
-            return Ok(medicos);
-        }
+       
 
-        [HttpGet("api/medicos/{id}")]
-        public ActionResult<MedicoViewDTO> GetById(int id)
-        {
-            var medicoDTO = _context.medicos
-            .Where(m => m.id == id)
-            .Select(m => new MedicoViewDTO
-            {
-                Id = m.id,
-                Matricula = m.matricula,
-                Nombre = m.idNavigation.nombre,
-                Email = m.idNavigation.email,
-                Especialidades = m.medicoEspecialidades.Select(me => me.especialidad.nombre!).ToList(),
-                //TurnosIds = m.turnos.Select(t => t.id).ToList()
-            })
-            .FirstOrDefault();
-
-
-
-            if (medicoDTO == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(medicoDTO);
-        }
-
-        // POST: api/medicos
-        [HttpPost("api/medicos")]
-        public ActionResult<Medico> Create([FromBody] Medico newMedico)
-        {
-            if (newMedico == null)
-            {
-                return BadRequest();
-            }
-            _context.medicos.Add(newMedico);
-            _context.SaveChanges();
-            return CreatedAtAction(nameof(GetById), new { id = newMedico.id }, newMedico);
-        }
-
-        // PUT: api/medicos/{id}
-        [HttpPut("{id}")]
-        public ActionResult Update(int id, [FromBody] Medico updatedMedico)
-        {
-            var medico = _context.medicos
-            .Include(m => m.idNavigation)
-            .Include(m => m.medicoEspecialidades)
-                .ThenInclude(me => me.especialidad)
-            .FirstOrDefault(m => m.id == id);
-
-            if (medico == null)
-                return NotFound();
-
-            return Ok(new
-            {
-                Id = medico.id,
-                Nombre = medico.idNavigation.nombre,
-                Email = medico.idNavigation.email,
-                Matricula = medico.matricula,
-                Especialidades = medico.medicoEspecialidades.Select(me => me.especialidad.nombre).ToList()
-            });
-        }
-
-        // DELETE: api/medicos/5
-        [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
-        {
-            var medico = _context.medicos
-                .Include(m => m.idNavigation)
-                .Include(m => m.medicoEspecialidades)
-                .FirstOrDefault(m => m.id == id);
-
-            if (medico == null)
-                return NotFound();
-
-            _context.medicoEspecialidades.RemoveRange(medico.medicoEspecialidades);
-            _context.personas.Remove(medico.idNavigation); // elimina también la persona asociada
-            _context.medicos.Remove(medico);
-
-            _context.SaveChanges();
-            return NoContent();
-        }
+        
+       
         
 
 
