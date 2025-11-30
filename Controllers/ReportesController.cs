@@ -253,5 +253,64 @@ namespace MedCenter.Controllers
                 $"Reporte_Turnos_{DateTime.Now:yyyyMMdd}.xlsx"
             );
         }
+
+        // ==== HISTORIAS CLINICAS REPORTS ====
+
+        // Download PDF - Historias Clínicas
+        [Authorize(Roles = "Medico")]
+        [HttpGet]
+        public async Task<IActionResult> DescargarHistoriasClinicasPDF(string fechaDesde, string fechaHasta)
+        {
+            if (!DateOnly.TryParse(fechaDesde, out var desde) || 
+                !DateOnly.TryParse(fechaHasta, out var hasta))
+            {
+                TempData["ErrorMessage"] = "Fechas inválidas";
+                return RedirectToAction("Index");
+            }
+
+            var entradas = await _reportesService.ObtenerEntradasClinicas(desde, hasta, UserId!.Value);
+
+            if (!entradas.Any())
+            {
+                TempData["ErrorMessage"] = "No hay entradas clínicas en el período seleccionado";
+                return RedirectToAction("Index");
+            }
+
+            var pdfBytes = _reportesService.GenerarPDFHistoriasClinicas(
+                entradas,
+                $"Historias Clínicas - {desde:dd/MM/yyyy} a {hasta:dd/MM/yyyy}"
+            );
+
+            return File(pdfBytes, "application/pdf", $"Historias_Clinicas_{DateTime.Now:yyyyMMdd}.pdf");
+        }
+
+        // Download Excel - Historias Clínicas
+        [Authorize(Roles = "Medico")]
+        [HttpGet]
+        public async Task<IActionResult> DescargarHistoriasClinicasExcel(string fechaDesde, string fechaHasta)
+        {
+            if (!DateOnly.TryParse(fechaDesde, out var desde) || 
+                !DateOnly.TryParse(fechaHasta, out var hasta))
+            {
+                TempData["ErrorMessage"] = "Fechas inválidas";
+                return RedirectToAction("Index");
+            }
+
+            var entradas = await _reportesService.ObtenerEntradasClinicas(desde, hasta, UserId!.Value);
+
+            if (!entradas.Any())
+            {
+                TempData["ErrorMessage"] = "No hay entradas clínicas en el período seleccionado";
+                return RedirectToAction("Index");
+            }
+
+            var excelBytes = _reportesService.GenerarExcelHistoriasClinicas(entradas, "Historias Clínicas");
+
+            return File(
+                excelBytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"Historias_Clinicas_{DateTime.Now:yyyyMMdd}.xlsx"
+            );
+        }
     }
 }

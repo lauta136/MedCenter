@@ -31,4 +31,15 @@ namespace MedCenter.DTOs
         public string ObraSocial { get; set; }
         public string FechaRegistro { get; set; }
     }
+
+    public class EntradaClinicaReporteDTO
+    {
+        public string? Fecha { get; set; }
+        public string? PacienteApellido { get; set; }
+        public string? PacienteNombre { get; set; }
+        public string? PacienteDNI { get; set; }
+        public string? Diagnostico { get; set; }
+        public string? Tratamiento { get; set; }
+        public string? Observaciones { get; set; }
+    }
 }
