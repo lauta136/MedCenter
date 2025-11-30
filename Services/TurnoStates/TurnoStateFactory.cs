@@ -13,6 +13,7 @@ namespace MedCenter.Services.TurnoStates
                 "Reprogramado" => new TurnoReprogramadoState(),
                 "Cancelado" => new TurnoCanceladoState(),
                 "Finalizado" => new TurnoFinalizadoState(),
+                "Ausentado" => new TurnoAusentadoState(),
                 _ => throw new ArgumentException($"Estado desconocido: {nombreEstado}")
             };
         }

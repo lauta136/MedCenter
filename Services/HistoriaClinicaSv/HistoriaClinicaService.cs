@@ -3,6 +3,8 @@ using System.Security.Cryptography.X509Certificates;
 using MedCenter.Data;
 using MedCenter.DTOs;
 using MedCenter.Models;
+using MedCenter.Services.TurnoStates;
+using MedCenter.Services.TurnoSv;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,10 +13,12 @@ namespace MedCenter.Services.HistoriaClinicaSv;
 public class HistoriaClinicaService
 {
     private readonly AppDbContext _context;
+    private readonly TurnoStateService _stateService;
 
-    public HistoriaClinicaService(AppDbContext appDbContext)
+    public HistoriaClinicaService(AppDbContext appDbContext, TurnoStateService stateService)
     {
         _context = appDbContext;
+        _stateService = stateService;
     }
     public async Task<HistoriaClinica> GetHistoriaClinicaPaciente(int id) //creo que no usado, revisar
     {
@@ -73,7 +77,7 @@ public class HistoriaClinicaService
 
         if(turno == null) return new HistoriaServiceResult {success = false, message = "No se encontro el turno asociado"};
 
-        if(turno.estado == "Cancelado") return new HistoriaServiceResult {success = false, message = "El turno no fue llevado a cabo"};
+        if(_stateService.GetEstadoActual(turno).GetNombreEstado() == EstadosTurno.Cancelado.ToString() ) return new HistoriaServiceResult {success = false, message = "El turno no fue llevado a cabo"};
 
         if(turno.entradaClinica_id != null) return new HistoriaServiceResult{success = false, message = "El turno ya tiene una entrada clinica asociada"};
 

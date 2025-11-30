@@ -9,11 +9,13 @@ public interface ITurnoState
     ITurnoState Cancelar(Turno turno, string motivo_cancelacion);
     ITurnoState Reprogramar(Turno turno);
     ITurnoState Finalizar(Turno turno);
+    ITurnoState Ausentar(Turno turno);
 
     bool PuedeReprogramar(Turno turno);
     bool PuedeFinalizar();
     bool PuedeReservar(Turno turno);
     bool PuedeCancelar(Turno turno);
+    bool PuedeMarcarAusente(Turno turno);
 
     string GetDescripcion();
     string GetColorBadge();

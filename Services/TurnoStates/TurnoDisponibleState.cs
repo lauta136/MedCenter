@@ -33,12 +33,9 @@ namespace MedCenter.Services.TurnoStates
             throw new TransicionDeEstadoInvalidaException(GetNombreEstado(), "Finalizar", false);
         }
 
-        public string GetColorBadge()
-        {
-            throw new NotImplementedException();
-        }
+        public string GetColorBadge() => "secondary";
 
-        public string GetDescripcion() => "secondary";
+        public string GetDescripcion() => "Turno disponible para ser reservado";
 
         public string GetNombreEstado()
         {
@@ -53,6 +50,14 @@ namespace MedCenter.Services.TurnoStates
 
         public bool PuedeReservar(Turno turno) => turno.fecha > DateOnly.FromDateTime(DateTime.Now.AddHours(24));
 
+        public ITurnoState Ausentar(Turno turno)
+        {
+            throw new TransicionDeEstadoInvalidaException(GetNombreEstado(), "Ausentar", false);
+        }
 
+        public bool PuedeMarcarAusente(Turno turno)
+        {
+            return false;
+        }
     }
 }

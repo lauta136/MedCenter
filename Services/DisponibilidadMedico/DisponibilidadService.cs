@@ -115,11 +115,11 @@ namespace MedCenter.Services.DisponibilidadMedico
         {
             
 
-            //if (dto.Hora_inicio >= dto.Hora_fin) return new DisponibilidadResult{success = false, message = "La hora de inicio del bloque es mas tarde que la de fin"};
+            if (dto.Hora_inicio >= dto.Hora_fin) return new DisponibilidadResult{success = false, message = "La hora de inicio del bloque es mas tarde que la de fin"};
 
-            //if(dto.Hora_inicio.Hour < 8 || dto.Hora_inicio.Hour > 18) return new DisponibilidadResult{success = false, message = "La hora de inicio es demasiado tarde/temprano"}; //puesto arbitrariamente, con un futuro rol de administrador puede ponerse a mano
+            if(dto.Hora_inicio.Hour < 8 || dto.Hora_inicio.Hour > 18) return new DisponibilidadResult{success = false, message = "La hora de inicio es demasiado tarde/temprano"}; //puesto arbitrariamente, con un futuro rol de administrador puede ponerse a mano
 
-           // if(dto.Hora_fin.Hour < 9 || dto.Hora_fin.Hour > 19) return new DisponibilidadResult{success = false, message = "La hora de fin es demasiado tarde/temprano"}; //puesto arbitrariamente, con un futuro rol de administrador puede ponerse a mano
+            if(dto.Hora_fin.Hour < 9 || dto.Hora_fin.Hour > 20) return new DisponibilidadResult{success = false, message = "La hora de fin es demasiado tarde/temprano"}; //puesto arbitrariamente, con un futuro rol de administrador puede ponerse a mano
 
             if((dto.Hora_fin - dto.Hora_inicio).TotalMinutes < 60) return new DisponibilidadResult{success = false, message = "El bloque no puede ser de menos de 1 hora"};
 
@@ -266,15 +266,14 @@ namespace MedCenter.Services.DisponibilidadMedico
             await _context.SaveChangesAsync();
         }
 
-        public async Task LiberarSlot(int id_slotagenda)
+        public void LiberarSlot(int id_slotagenda)
         {
-            var slot = await _context.slotsagenda.Where(sa => sa.id == id_slotagenda).Include(sa => sa.Turno).FirstOrDefaultAsync();
+            var slotUpdate = new SlotAgenda{id = id_slotagenda, disponible = true};
 
-            slot!.disponible = true;
-            slot!.Turno = null;
-
-            _context.Update(slot);
-            await _context.SaveChangesAsync();
+            _context.Attach(slotUpdate).Property(sa => sa.disponible).IsModified = true;
+            _context.Entry(slotUpdate).Reference(sa => sa.Turno).CurrentValue = null;
+            _context.Entry(slotUpdate).Reference(sa => sa.Turno).IsModified = true;
+            
         }
     }
 }
