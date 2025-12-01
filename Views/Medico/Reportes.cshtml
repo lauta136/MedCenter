@@ -5,6 +5,22 @@
 
 <div class="row">
     <div class="col-12">
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        
+        <!-- Client-side error container -->
+        <div id="clientErrorMessage" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none;">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <span id="clientErrorText"></span>
+            <button type="button" class="btn-close" onclick="clearClientError()"></button>
+        </div>
+        
         <!-- Estadísticas -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-white">
@@ -51,18 +67,22 @@
                             Reporte de Consultas
                         </h5>
                         <p class="text-muted">Genera un reporte de tus consultas por período</p>
-                        <form class="mt-3">
+                        <form id="formConsultas" class="mt-3">
                             <div class="mb-3">
                                 <label class="form-label">Fecha Desde</label>
-                                <input type="date" class="form-control" required />
+                                <input type="date" id="fechaDesdeMedico" class="form-control" required />
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Fecha Hasta</label>
-                                <input type="date" class="form-control" required />
+                                <input type="date" id="fechaHastaMedico" class="form-control" required />
                             </div>
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="fas fa-download me-2"></i>
-                                Generar Reporte
+                            <button type="button" onclick="descargarConsultasPDF()" class="btn btn-danger w-100 mb-2">
+                                <i class="fas fa-file-pdf me-2"></i>
+                                Descargar PDF
+                            </button>
+                            <button type="button" onclick="descargarConsultasExcel()" class="btn btn-success w-100">
+                                <i class="fas fa-file-excel me-2"></i>
+                                Descargar Excel
                             </button>
                         </form>
                     </div>
@@ -77,52 +97,24 @@
                             Historias Clínicas Creadas
                         </h5>
                         <p class="text-muted">Resumen de entradas médicas registradas</p>
-                        <div class="mt-3">
-                            <button class="btn btn-success w-100 mb-2">
-                                <i class="fas fa-download me-2"></i>
-                                Descargar Resumen PDF
+                        <form id="formHistorias" class="mt-3">
+                            <div class="mb-3">
+                                <label class="form-label">Fecha Desde</label>
+                                <input type="date" id="fechaDesdeHistorias" class="form-control" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Fecha Hasta</label>
+                                <input type="date" id="fechaHastaHistorias" class="form-control" required />
+                            </div>
+                            <button type="button" onclick="descargarHistoriasPDF()" class="btn btn-success w-100 mb-2">
+                                <i class="fas fa-file-pdf me-2"></i>
+                                Descargar PDF
                             </button>
-                            <button class="btn btn-outline-success w-100">
+                            <button type="button" onclick="descargarHistoriasExcel()" class="btn btn-outline-success w-100">
                                 <i class="fas fa-file-excel me-2"></i>
-                                Exportar a Excel
+                                Descargar Excel
                             </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-6 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <i class="fas fa-chart-bar me-2 text-info"></i>
-                            Estadísticas por Especialidad
-                        </h5>
-                        <p class="text-muted">Análisis de consultas por especialidad médica</p>
-                        <div class="mt-3">
-                            <button class="btn btn-info w-100">
-                                <i class="fas fa-chart-pie me-2"></i>
-                                Ver Dashboard
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-6 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <i class="fas fa-calendar-alt me-2 text-warning"></i>
-                            Reporte de Disponibilidad
-                        </h5>
-                        <p class="text-muted">Análisis de tu agenda y disponibilidad</p>
-                        <div class="mt-3">
-                            <button class="btn btn-warning w-100">
-                                <i class="fas fa-print me-2"></i>
-                                Imprimir Agenda
-                            </button>
-                        </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -184,3 +176,77 @@
         box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
     }
 </style>
+
+<script>
+    function showClientError(message) {
+        const errorDiv = document.getElementById('clientErrorMessage');
+        const errorText = document.getElementById('clientErrorText');
+        errorText.textContent = message;
+        errorDiv.style.display = 'block';
+        
+        // Scroll to top to show error
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    function clearClientError() {
+        document.getElementById('clientErrorMessage').style.display = 'none';
+    }
+
+    function validarFechas(fechaDesde, fechaHasta) {
+        clearClientError(); // Clear previous errors
+        
+        if (!fechaDesde || !fechaHasta) {
+            showClientError('Por favor seleccione ambas fechas');
+            return false;
+        }
+        
+        if (fechaDesde > fechaHasta) {
+            showClientError('La fecha de inicio no puede ser después de la fecha de fin');
+            return false;
+        }
+        
+        const hoy = new Date().toISOString().split('T')[0];
+        if (fechaDesde > hoy || fechaHasta > hoy) {
+            showClientError('No se pueden seleccionar fechas futuras');
+            return false;
+        }
+        
+        return true;
+    }
+    
+    function descargarConsultasPDF() {
+        const fechaDesde = document.getElementById('fechaDesdeMedico').value;
+        const fechaHasta = document.getElementById('fechaHastaMedico').value;
+        
+        if (!validarFechas(fechaDesde, fechaHasta)) return;
+        
+        window.location.href = `/Reportes/DescargarReporteMedicoPDF?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`;
+    }
+    
+    function descargarConsultasExcel() {
+        const fechaDesde = document.getElementById('fechaDesdeMedico').value;
+        const fechaHasta = document.getElementById('fechaHastaMedico').value;
+        
+        if (!validarFechas(fechaDesde, fechaHasta)) return;
+        
+        window.location.href = `/Reportes/DescargarReporteMedicoExcel?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`;
+    }
+    
+    function descargarHistoriasPDF() {
+        const fechaDesde = document.getElementById('fechaDesdeHistorias').value;
+        const fechaHasta = document.getElementById('fechaHastaHistorias').value;
+        
+        if (!validarFechas(fechaDesde, fechaHasta)) return;
+        
+        window.location.href = `/Reportes/DescargarHistoriasClinicasPDF?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`;
+    }
+    
+    function descargarHistoriasExcel() {
+        const fechaDesde = document.getElementById('fechaDesdeHistorias').value;
+        const fechaHasta = document.getElementById('fechaHastaHistorias').value;
+        
+        if (!validarFechas(fechaDesde, fechaHasta)) return;
+        
+        window.location.href = `/Reportes/DescargarHistoriasClinicasExcel?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`;
+    }
+</script>

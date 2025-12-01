@@ -6,6 +6,8 @@ using MedCenter.Services.DisponibilidadMedico;
 using MedCenter.Services.EspecialidadService;
 using MedCenter.Services.TurnoSv;
 using MedCenter.Services.HistoriaClinicaSv;
+using MedCenter.Services.Reportes;
+using MedCenter.Services.MedicoSv;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +30,8 @@ builder.Services.AddScoped<DisponibilidadService>();
 builder.Services.AddScoped<EspecialidadService>();
 builder.Services.AddScoped<TurnoService>();
 builder.Services.AddScoped<HistoriaClinicaService>();
+builder.Services.AddScoped<ReportesService>();
+builder.Services.AddScoped<MedicoService>();
 
 builder.Services.AddAuthentication("Cookies")
     .AddCookie("Cookies", options =>

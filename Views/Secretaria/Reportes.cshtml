@@ -1,3 +1,4 @@
+@model IEnumerable<MedCenter.DTOs.MedicoViewDTO>
 @{
     ViewData["Title"] = "Reportes";
     Layout = "~/Views/Shared/_SecretariaLayout.cshtml";
@@ -5,6 +6,21 @@
 
 <div class="row">
     <div class="col-12">
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+         <!-- Client-side error container -->
+        <div id="clientErrorMessage" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none;">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <span id="clientErrorText"></span>
+            <button type="button" class="btn-close" onclick="clearClientError()"></button>
+        </div>
+
         <!-- Estadísticas del mes -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-white">
@@ -62,18 +78,22 @@
                             Reporte de Turnos
                         </h5>
                         <p class="text-muted">Genera un reporte detallado de turnos por fecha</p>
-                        <form method="get" asp-action="ReporteTurnos" class="mt-3">
+                        <form id="formTurnos" class="mt-3">
                             <div class="mb-3">
                                 <label class="form-label">Fecha Desde</label>
-                                <input type="date" name="fechaDesde" class="form-control" required />
+                                <input type="date" id="fechaDesde" name="fechaDesde" class="form-control" required />
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Fecha Hasta</label>
-                                <input type="date" name="fechaHasta" class="form-control" required />
+                                <input type="date" id="fechaHasta" name="fechaHasta" class="form-control" required />
                             </div>
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="fas fa-download me-2"></i>
-                                Generar Reporte
+                            <button type="button" onclick="descargarTurnosPDF()" class="btn btn-danger w-100 mb-2">
+                                <i class="fas fa-file-pdf me-2"></i>
+                                Descargar PDF
+                            </button>
+                            <button type="button" onclick="descargarTurnosExcel()" class="btn btn-success w-100">
+                                <i class="fas fa-file-excel me-2"></i>
+                                Descargar Excel
                             </button>
                         </form>
                     </div>
@@ -89,11 +109,11 @@
                         </h5>
                         <p class="text-muted">Listado completo de pacientes registrados</p>
                         <div class="mt-3">
-                            <button class="btn btn-success w-100 mb-2">
-                                <i class="fas fa-download me-2"></i>
+                            <button onclick="descargarPacientesPDF()" class="btn btn-danger w-100 mb-2">
+                                <i class="fas fa-file-pdf me-2"></i>
                                 Descargar Listado PDF
                             </button>
-                            <button class="btn btn-outline-success w-100">
+                            <button onclick="descargarPacientesExcel()" class="btn btn-success w-100">
                                 <i class="fas fa-file-excel me-2"></i>
                                 Exportar a Excel
                             </button>
@@ -106,56 +126,53 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <h5 class="card-title">
-                            <i class="fas fa-user-md me-2 text-info"></i>
-                            Reporte por Médico
+                            <i class="fas fa-filter me-2 text-info"></i>
+                            Reporte Filtrado
                         </h5>
-                        <p class="text-muted">Turnos atendidos por cada médico</p>
+                        <p class="text-muted">Filtra turnos por médico y/o especialidad</p>
                         <form class="mt-3">
                             <div class="mb-3">
-                                <label class="form-label">Seleccionar Médico</label>
-                                <select class="form-select" required>
+                                <label class="form-label">Especialidad</label>
+                                <select class="form-select" id="especialidadId" onchange="filtrarMedicosPorEspecialidad()">
+                                    <option value="">Todas las especialidades</option>
+                                    @foreach (var especialidad in ViewBag.Especialidades)
+                                    {
+                                        <option value="@especialidad.id">@especialidad.nombre</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Médico (opcional)</label>
+                                <select class="form-select" id="medicoId">
                                     <option value="">Todos los médicos</option>
-                                    <!-- Aquí cargarías los médicos dinámicamente -->
+                                    @foreach (var medico in Model)
+                                    {
+                                        <option value="@medico.Id">@medico.Nombre</option>
+                                    }
                                 </select>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Período</label>
-                                <select class="form-select">
-                                    <option>Último mes</option>
-                                    <option>Últimos 3 meses</option>
-                                    <option>Último año</option>
+                                <select class="form-select" id="periodo"> 
+                                    <option value="1">Último mes</option>
+                                    <option value="3">Últimos 3 meses</option>
+                                    <option value="12">Último año</option>
                                 </select>
                             </div>
-                            <button type="submit" class="btn btn-info w-100">
-                                <i class="fas fa-download me-2"></i>
-                                Generar Reporte
+                            <button type="button" onclick="descargarTurnosPDFPorMedico()" class="btn btn-danger w-100 mb-2">
+                                <i class="fas fa-file-pdf me-2"></i>
+                                Descargar PDF
+                            </button>
+                            <button type="button" onclick="descargarTurnosExcelPorMedico()" class="btn btn-success w-100">
+                                <i class="fas fa-file-excel me-2"></i>
+                                Descargar Excel
                             </button>
                         </form>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-6 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <i class="fas fa-chart-bar me-2 text-warning"></i>
-                            Estadísticas Generales
-                        </h5>
-                        <p class="text-muted">Resumen completo de actividad del centro</p>
-                        <div class="mt-3">
-                            <button class="btn btn-warning w-100 mb-2">
-                                <i class="fas fa-chart-pie me-2"></i>
-                                Ver Dashboard Completo
-                            </button>
-                            <button class="btn btn-outline-warning w-100">
-                                <i class="fas fa-print me-2"></i>
-                                Imprimir Resumen
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            
         </div>
     </div>
 </div>
@@ -214,3 +231,170 @@
         box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.25);
     }
 </style>
+
+<script>
+    function showClientError(message){
+
+        const errorDiv = document.getElementById('clientErrorMessage');
+        const errorText = document.getElementById('clientErrorText');
+        errorText.textContent = message;
+        errorDiv.style.display = 'block';
+        
+        // Scroll to top to show error
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    function clearClientError() {
+        document.getElementById('clientErrorMessage').style.display = 'none';
+    }
+    function validarFechas(fechaDesde, fechaHasta){
+        clearClientError();
+        if (!fechaDesde || !fechaHasta) {
+            showClientError('Por favor seleccione ambas fechas');
+            return false;
+        }
+        if (fechaDesde > fechaHasta) {
+            showClientError('La fecha de inicio no puede ser después de la fecha de fin');
+            return false;
+        }
+        
+        const hoy = new Date().toISOString().split('T')[0];
+        if (fechaDesde > hoy || fechaHasta > hoy) {
+            showClientError('No se pueden seleccionar fechas futuras');
+            return false;
+        }
+        
+        return true;
+    }
+    function descargarTurnosPDF() {
+        const fechaDesde = document.getElementById('fechaDesde').value;
+        const fechaHasta = document.getElementById('fechaHasta').value;
+        
+        if (!validarFechas(fechaDesde,fechaHasta)) return;
+         
+        window.location.href = `/Reportes/DescargarReporteTurnosPDF?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`;
+    }
+    
+    function descargarTurnosExcel() {
+        const fechaDesde = document.getElementById('fechaDesde').value;
+        const fechaHasta = document.getElementById('fechaHasta').value;
+        
+        if (!validarFechas(fechaDesde,fechaHasta)) return;
+        
+        window.location.href = `/Reportes/DescargarReporteTurnosExcel?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`;
+    }
+
+    function descargarTurnosPDFPorMedico() {
+        const medicoSelect = document.getElementById('medicoId');
+        const medicoId = medicoSelect.value;
+        const especialidadSelect = document.getElementById('especialidadId');
+        const especialidadId = especialidadSelect.value;
+        const mesesAtras = parseInt(document.getElementById('periodo').value);
+        
+        console.log('MedicoId value:', medicoId, 'Type:', typeof medicoId);
+        console.log('EspecialidadId value:', especialidadId, 'Type:', typeof especialidadId);
+        console.log('Selected option:', medicoSelect.options[medicoSelect.selectedIndex].text);
+        
+        if (!mesesAtras) {
+            showClientError('Por favor seleccione un periodo');
+            return;
+        }
+        
+        // Calculate dates
+        const fechaHasta = new Date();
+        const fechaDesde = new Date();
+        fechaDesde.setMonth(fechaDesde.getMonth() - mesesAtras);
+        
+        const desde = fechaDesde.toISOString().split('T')[0];
+        const hasta = fechaHasta.toISOString().split('T')[0];
+        
+        let url = `/Reportes/DescargarReporteMedicoPDF?fechaDesde=${desde}&fechaHasta=${hasta}`;
+        if (medicoId && medicoId !== "" && medicoId !== "0") {
+            url += `&medicoId=${medicoId}`;
+        }
+        if (especialidadId && especialidadId !== "" && especialidadId !== "0") {
+            url += `&especialidadId=${especialidadId}`;
+        }
+        
+        console.log('Final URL:', url);
+        window.location.href = url;
+    }
+    
+    function descargarTurnosExcelPorMedico() {
+        const medicoSelect = document.getElementById('medicoId');
+        const medicoId = medicoSelect.value;
+        const especialidadSelect = document.getElementById('especialidadId');
+        const especialidadId = especialidadSelect.value;
+        const mesesAtras = parseInt(document.getElementById('periodo').value);
+        
+        console.log('MedicoId value:', medicoId, 'Type:', typeof medicoId);
+        console.log('EspecialidadId value:', especialidadId, 'Type:', typeof especialidadId);
+        console.log('Selected option:', medicoSelect.options[medicoSelect.selectedIndex].text);
+        
+        if (!mesesAtras) {
+            showClientError('Por favor seleccione un periodo');
+            return;
+        }
+        
+        // Calculate dates
+        const fechaHasta = new Date();
+        const fechaDesde = new Date();
+        fechaDesde.setMonth(fechaDesde.getMonth() - mesesAtras);
+        
+        const desde = fechaDesde.toISOString().split('T')[0];
+        const hasta = fechaHasta.toISOString().split('T')[0];
+        
+        let url = `/Reportes/DescargarReporteMedicoExcel?fechaDesde=${desde}&fechaHasta=${hasta}`;
+        if (medicoId && medicoId !== "" && medicoId !== "0") {
+            url += `&medicoId=${medicoId}`;
+        }
+        if (especialidadId && especialidadId !== "" && especialidadId !== "0") {
+            url += `&especialidadId=${especialidadId}`;
+        }
+        
+        console.log('Final URL:', url);
+        window.location.href = url;
+    }
+    
+    function descargarPacientesPDF() {
+        window.location.href = '/Reportes/DescargarPacientesPDF';
+    }
+    
+    function descargarPacientesExcel() {
+        window.location.href = '/Reportes/DescargarPacientesExcel';
+    }
+
+    // Filter doctors by specialty
+    async function filtrarMedicosPorEspecialidad() {
+        const especialidadId = document.getElementById('especialidadId').value;
+        const medicoSelect = document.getElementById('medicoId');
+        
+        // Clear current options except "Todos los médicos"
+        medicoSelect.innerHTML = '<option value="">Todos los médicos</option>';
+        
+        if (!especialidadId || especialidadId === "") {
+            // If no specialty selected, load all doctors
+            const allMedicos = @Html.Raw(Json.Serialize(Model));
+            allMedicos.forEach(medico => {
+                const option = document.createElement('option');
+                option.value = medico.id;
+                option.textContent = medico.nombre;
+                medicoSelect.appendChild(option);
+            });
+        } else {
+            // Fetch doctors for selected specialty
+            try {
+                const response = await fetch(`/Reportes/GetMedicosPorEspecialidad?especialidadId=${especialidadId}`);
+                const medicos = await response.json();
+                
+                medicos.forEach(medico => {
+                    const option = document.createElement('option');
+                    option.value = medico.id;
+                    option.textContent = medico.nombre;
+                    medicoSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error al cargar médicos:', error);
+            }
+        }
+    }
+</script>
