@@ -13,6 +13,14 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         }
+        
+        <!-- Client-side error container -->
+        <div id="clientErrorMessage" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none;">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <span id="clientErrorText"></span>
+            <button type="button" class="btn-close" onclick="clearClientError()"></button>
+        </div>
+        
         <!-- Estadísticas -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-white">
@@ -170,14 +178,47 @@
 </style>
 
 <script>
+    function showClientError(message) {
+        const errorDiv = document.getElementById('clientErrorMessage');
+        const errorText = document.getElementById('clientErrorText');
+        errorText.textContent = message;
+        errorDiv.style.display = 'block';
+        
+        // Scroll to top to show error
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    function clearClientError() {
+        document.getElementById('clientErrorMessage').style.display = 'none';
+    }
+
+    function validarFechas(fechaDesde, fechaHasta) {
+        clearClientError(); // Clear previous errors
+        
+        if (!fechaDesde || !fechaHasta) {
+            showClientError('Por favor seleccione ambas fechas');
+            return false;
+        }
+        
+        if (fechaDesde > fechaHasta) {
+            showClientError('La fecha de inicio no puede ser después de la fecha de fin');
+            return false;
+        }
+        
+        const hoy = new Date().toISOString().split('T')[0];
+        if (fechaDesde > hoy || fechaHasta > hoy) {
+            showClientError('No se pueden seleccionar fechas futuras');
+            return false;
+        }
+        
+        return true;
+    }
+    
     function descargarConsultasPDF() {
         const fechaDesde = document.getElementById('fechaDesdeMedico').value;
         const fechaHasta = document.getElementById('fechaHastaMedico').value;
         
-        if (!fechaDesde || !fechaHasta) {
-            alert('Por favor seleccione ambas fechas');
-            return;
-        }
+        if (!validarFechas(fechaDesde, fechaHasta)) return;
         
         window.location.href = `/Reportes/DescargarReporteMedicoPDF?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`;
     }
@@ -186,10 +227,7 @@
         const fechaDesde = document.getElementById('fechaDesdeMedico').value;
         const fechaHasta = document.getElementById('fechaHastaMedico').value;
         
-        if (!fechaDesde || !fechaHasta) {
-            alert('Por favor seleccione ambas fechas');
-            return;
-        }
+        if (!validarFechas(fechaDesde, fechaHasta)) return;
         
         window.location.href = `/Reportes/DescargarReporteMedicoExcel?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`;
     }
@@ -198,10 +236,7 @@
         const fechaDesde = document.getElementById('fechaDesdeHistorias').value;
         const fechaHasta = document.getElementById('fechaHastaHistorias').value;
         
-        if (!fechaDesde || !fechaHasta) {
-            alert('Por favor seleccione ambas fechas');
-            return;
-        }
+        if (!validarFechas(fechaDesde, fechaHasta)) return;
         
         window.location.href = `/Reportes/DescargarHistoriasClinicasPDF?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`;
     }
@@ -210,10 +245,7 @@
         const fechaDesde = document.getElementById('fechaDesdeHistorias').value;
         const fechaHasta = document.getElementById('fechaHastaHistorias').value;
         
-        if (!fechaDesde || !fechaHasta) {
-            alert('Por favor seleccione ambas fechas');
-            return;
-        }
+        if (!validarFechas(fechaDesde, fechaHasta)) return;
         
         window.location.href = `/Reportes/DescargarHistoriasClinicasExcel?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`;
     }
