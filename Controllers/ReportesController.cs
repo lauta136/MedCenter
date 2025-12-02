@@ -14,12 +14,14 @@ namespace MedCenter.Controllers
         private readonly ReportesService _reportesService;
         private readonly MedicoService _medicoService;
         private readonly EspecialidadService _especialidadService;
+        private readonly ReportDirector _reportDirector;
         
         public ReportesController(ReportesService reportesService, MedicoService medicoService, EspecialidadService especialidadService)
         {
             _reportesService = reportesService;
             _medicoService = medicoService;
             _especialidadService = especialidadService;
+            _reportDirector = new ReportDirector();
         }
 
         // GET: Reportes (View)
@@ -65,33 +67,32 @@ namespace MedCenter.Controllers
         [HttpGet]
         public async Task<IActionResult> DescargarReporteTurnosPDF(string fechaDesde, string fechaHasta)
         {
-            if (!DateOnly.TryParse(fechaDesde, out var desde) || 
-                !DateOnly.TryParse(fechaHasta, out var hasta))
+            if (!DateTime.TryParse(fechaDesde, out var desde) || 
+                !DateTime.TryParse(fechaHasta, out var hasta))
             {
                 TempData["ErrorMessage"] = "Fechas inválidas";
                 return RedirectToAction("Index");
             }
 
-            var turnos = await _reportesService.ObtenerTurnosPorFecha(desde, hasta);
-            
-            // Debug: Log what we got
-            Console.WriteLine($"Total turnos encontrados: {turnos.Count}");
-            foreach(var t in turnos.Take(3)) {
-                Console.WriteLine($"Turno: {t.Fecha} {t.Hora} - Pac: {t.PacienteApellido} {t.PacienteNombre} - Med: {t.MedicoApellido} - Estado: {t.Estado}");
-            }
-            
-            if (!turnos.Any())
+            try
             {
-                TempData["ErrorMessage"] = "No hay turnos en el período seleccionado";
+                // Create PDF builder
+                var builder = new ReportePDFConstructor(_reportesService);
+                
+                // Director constructs the report using the builder
+                _reportDirector.Construct(builder, desde, hasta);
+                
+                // Get the final product
+                var reporte = _reportDirector.GetReporte();
+                var pdfBytes = reporte.GetBytes();
+                
+                return File(pdfBytes, "application/pdf", $"Turnos_{desde:yyyyMMdd}_{hasta:yyyyMMdd}.pdf");
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al generar reporte: {ex.Message}";
                 return RedirectToAction("Index");
             }
-
-            var pdfBytes = _reportesService.GenerarPDFTurnos(
-                turnos, 
-                $"Reporte de Turnos - {desde:dd/MM/yyyy} a {hasta:dd/MM/yyyy}"
-            );
-
-            return File(pdfBytes, "application/pdf", $"Turnos_{desde:yyyyMMdd}_{hasta:yyyyMMdd}.pdf");
         }
 
         // Download Excel - Turnos por fecha
@@ -99,28 +100,36 @@ namespace MedCenter.Controllers
         [HttpGet]
         public async Task<IActionResult> DescargarReporteTurnosExcel(string fechaDesde, string fechaHasta)
         {
-            if (!DateOnly.TryParse(fechaDesde, out var desde) || 
-                !DateOnly.TryParse(fechaHasta, out var hasta))
+            if (!DateTime.TryParse(fechaDesde, out var desde) || 
+                !DateTime.TryParse(fechaHasta, out var hasta))
             {
                 TempData["ErrorMessage"] = "Fechas inválidas";
                 return RedirectToAction("Index");
             }
 
-            var turnos = await _reportesService.ObtenerTurnosPorFecha(desde, hasta);
-            
-            if (!turnos.Any())
+            try
             {
-                TempData["ErrorMessage"] = "No hay turnos en el período seleccionado";
+                // Create Excel builder
+                var builder = new ReporteExcelConstructor(_reportesService);
+                
+                // Director constructs the report using the builder
+                _reportDirector.Construct(builder, desde, hasta);
+                
+                // Get the final product
+                var reporte = _reportDirector.GetReporte();
+                var excelBytes = reporte.GetBytes();
+                
+                return File(
+                    excelBytes, 
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    $"Turnos_{desde:yyyyMMdd}_{hasta:yyyyMMdd}.xlsx"
+                );
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al generar reporte: {ex.Message}";
                 return RedirectToAction("Index");
             }
-
-            var excelBytes = _reportesService.GenerarExcelTurnos(turnos, "Reporte de Turnos");
-
-            return File(
-                excelBytes, 
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                $"Turnos_{desde:yyyyMMdd}_{hasta:yyyyMMdd}.xlsx"
-            );
         }
 
         // Download PDF - Pacientes
@@ -171,12 +180,12 @@ namespace MedCenter.Controllers
         public async Task<IActionResult> DescargarReporteMedicoPDF(int? medicoId, int? especialidadId, string fechaDesde, string fechaHasta)
         {
             // Parse dates
-            DateOnly desde, hasta;
+            DateTime desde, hasta;
             
             if (!string.IsNullOrEmpty(fechaDesde) && !string.IsNullOrEmpty(fechaHasta))
             {
-                if (!DateOnly.TryParse(fechaDesde, out desde) || 
-                    !DateOnly.TryParse(fechaHasta, out hasta))
+                if (!DateTime.TryParse(fechaDesde, out desde) || 
+                    !DateTime.TryParse(fechaHasta, out hasta))
                 {
                     TempData["ErrorMessage"] = "Fechas inválidas";
                     return RedirectToAction("Index");
@@ -185,7 +194,7 @@ namespace MedCenter.Controllers
             else
             {
                 // Default to last month
-                hasta = DateOnly.FromDateTime(DateTime.Now);
+                hasta = DateTime.Now;
                 desde = hasta.AddMonths(-1);
             }
 
@@ -193,20 +202,33 @@ namespace MedCenter.Controllers
             if (User.IsInRole("Medico") && !medicoId.HasValue)
                 medicoId = UserId;
 
-            var turnos = await _reportesService.ObtenerTurnosPorFecha(desde, hasta, medicoId, especialidadId);
-
-            if (!turnos.Any())
+            try
             {
-                TempData["ErrorMessage"] = "No hay turnos en el período seleccionado";
+                // Create PDF builder
+                var builder = new ReportePDFConstructor(_reportesService);
+                
+                // Director constructs the report with filters
+                _reportDirector.Construct(
+                    builder, 
+                    desde, 
+                    hasta,
+                    medicoId,
+                    especialidadId,
+                    User.IsInRole("Medico") ? "Medico" : "Secretaria",
+                    UserId
+                );
+                
+                // Get the final product
+                var reporte = _reportDirector.GetReporte();
+                var pdfBytes = reporte.GetBytes();
+                
+                return File(pdfBytes, "application/pdf", $"Reporte_Turnos_{DateTime.Now:yyyyMMdd}.pdf");
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al generar reporte: {ex.Message}";
                 return RedirectToAction("Index");
             }
-
-            var pdfBytes = _reportesService.GenerarPDFTurnos(
-                turnos,
-                $"Reporte de Turnos - {desde:dd/MM/yyyy} a {hasta:dd/MM/yyyy}"
-            );
-
-            return File(pdfBytes, "application/pdf", $"Reporte_Turnos_{DateTime.Now:yyyyMMdd}.pdf");
         }
 
         // Download Excel - Médico específico
@@ -215,12 +237,12 @@ namespace MedCenter.Controllers
         public async Task<IActionResult> DescargarReporteMedicoExcel(int? medicoId, int? especialidadId, string fechaDesde, string fechaHasta)
         {
             // Parse dates
-            DateOnly desde, hasta;
+            DateTime desde, hasta;
             
             if (!string.IsNullOrEmpty(fechaDesde) && !string.IsNullOrEmpty(fechaHasta))
             {
-                if (!DateOnly.TryParse(fechaDesde, out desde) || 
-                    !DateOnly.TryParse(fechaHasta, out hasta))
+                if (!DateTime.TryParse(fechaDesde, out desde) || 
+                    !DateTime.TryParse(fechaHasta, out hasta))
                 {
                     TempData["ErrorMessage"] = "Fechas inválidas";
                     return RedirectToAction("Index");
@@ -229,7 +251,7 @@ namespace MedCenter.Controllers
             else
             {
                 // Default to last month
-                hasta = DateOnly.FromDateTime(DateTime.Now);
+                hasta = DateTime.Now;
                 desde = hasta.AddMonths(-1);
             }
 
@@ -237,21 +259,37 @@ namespace MedCenter.Controllers
             if (User.IsInRole("Medico") && !medicoId.HasValue)
                 medicoId = UserId;
 
-            var turnos = await _reportesService.ObtenerTurnosPorFecha(desde, hasta, medicoId, especialidadId);
-
-            if (!turnos.Any())
+            try
             {
-                TempData["ErrorMessage"] = "No hay turnos en el período seleccionado";
+                // Create Excel builder
+                var builder = new ReporteExcelConstructor(_reportesService);
+                
+                // Director constructs the report with filters
+                _reportDirector.Construct(
+                    builder, 
+                    desde, 
+                    hasta,
+                    medicoId,
+                    especialidadId,
+                    User.IsInRole("Medico") ? "Medico" : "Secretaria",
+                    UserId
+                );
+                
+                // Get the final product
+                var reporte = _reportDirector.GetReporte();
+                var excelBytes = reporte.GetBytes();
+                
+                return File(
+                    excelBytes,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    $"Reporte_Turnos_{DateTime.Now:yyyyMMdd}.xlsx"
+                );
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al generar reporte: {ex.Message}";
                 return RedirectToAction("Index");
             }
-
-            var excelBytes = _reportesService.GenerarExcelTurnos(turnos, "Reporte de Turnos");
-
-            return File(
-                excelBytes,
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                $"Reporte_Turnos_{DateTime.Now:yyyyMMdd}.xlsx"
-            );
         }
 
         // ==== HISTORIAS CLINICAS REPORTS ====
