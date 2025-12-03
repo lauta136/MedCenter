@@ -45,12 +45,10 @@ public partial class AppDbContext : DbContext
     public DbSet<ObraSocial> obras_sociales { get; set; }
     public DbSet<MedicoObraSocial> medico_obrasocial { get; set; }
     public DbSet<PacienteObraSocial> paciente_obrasocial { get; set; }
-
     public DbSet<TurnoAuditoria> turnoAuditorias { get; set; }
-
     public DbSet<DisponibilidadMedico> disponibilidad_medico { get; set; }
-
     public DbSet<TrazabilidadTurno> trazabilidadTurnos { get; set; }
+    public DbSet<TrazabilidadLogin> trazabilidadLogins{get;set;}
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<EntradaClinica>(entity =>
@@ -375,13 +373,29 @@ public partial class AppDbContext : DbContext
             e.Property(e => e.TurnoId).HasColumnName("turno_id");
             e.Property(e => e.UsuarioId).HasColumnName("usuario_id");
             e.Property(e => e.UsuarioNombre).HasColumnName("usuario_nombre");
-            e.Property(e => e.UsuarioRol).HasColumnName("usuario_rol");
+            e.Property(e => e.UsuarioRol).HasColumnName("usuario_rol").HasConversion<string>();
 
             e.Property(e => e.Accion).HasColumnName("accion");
             e.Property(e => e.Descripcion).HasColumnName("descripcion");
             e.Property(e => e.MomentoAccion).HasColumnName("momento_accion");
 
         });
+        modelBuilder.Entity<TrazabilidadLogin>(e =>
+        {
+            e.ToTable("trazabilidadlogin");
+
+            e.HasKey(e => e.Id);
+            e.Property(e => e.Id).UseIdentityAlwaysColumn();
+
+            e.Property(e => e.UsuarioRol).HasColumnName("usuario_rol").HasConversion<string>();
+            e.Property(e => e.MomentoLogout).HasColumnName("momento_logout");
+            e.Property(e => e.UsuarioId).HasColumnName("usuario_id");
+            e.Property(e => e.UsuarioNombre).HasColumnName("usuario_nombre");
+            e.Property(e => e.MomentoLogin).HasColumnName("momento_login");
+            e.Property(e => e.TipoLogout).HasColumnName("tipo_logout").HasConversion<string>();
+        });
+            
+        
 
         /* modelBuilder.Entity<RoleKey>().HasData(
              new RoleKey { Id = 1, Role = "Medico", HashedKey = medicoKey },

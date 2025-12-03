@@ -45,6 +45,53 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <script>
+            // Session timeout configuration (30 minutes)
+            const TIMEOUT_MINUTES = 30;
+            const TIMEOUT_MS = TIMEOUT_MINUTES * 60 * 1000;
+            let inactivityTimer;
+
+            function resetTimer() {
+                clearTimeout(inactivityTimer);
+                inactivityTimer = setTimeout(handleTimeout, TIMEOUT_MS);
+            }
+
+            async function handleTimeout() {
+                try {
+                    // Call TimeoutLogout endpoint
+                    const response = await fetch('/Auth/TimeoutLogout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                        }
+                    });
+
+                    if (response.ok) {
+                        // Redirect to login page
+                        window.location.href = '/Auth/Login';
+                    }
+                } catch (error) {
+                    console.error('Error during timeout logout:', error);
+                    // Still redirect to login even if request fails
+                    window.location.href = '/Auth/Login';
+                }
+            }
+
+            // Reset timer on user activity
+            document.addEventListener('mousemove', resetTimer);
+            document.addEventListener('keydown', resetTimer);
+            document.addEventListener('click', resetTimer);
+            document.addEventListener('scroll', resetTimer);
+
+            // Initialize timer
+            resetTimer();
+        </script>
+    }
+    
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

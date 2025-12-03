@@ -2,14 +2,23 @@ using MedCenter.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
+using MedCenter.Data;
+using MedCenter.Models;
+using MedCenter.Extensions;
+using MedCenter.Services.TurnoSv;
+using Org.BouncyCastle.Bcpg;
+using Microsoft.EntityFrameworkCore;
 
 public class AuthController : Controller
 {
     private readonly AuthService _authService;
-    
-    public AuthController(AuthService authService)
+    private readonly AppDbContext _context;
+
+    public AuthController(AuthService authService, AppDbContext context)
     {
         _authService = authService;
+        _context = context;
+        
     }
     
     // GET: /Auth/Login
@@ -36,7 +45,7 @@ public class AuthController : Controller
             {
                 new Claim(ClaimTypes.NameIdentifier, result.UserId.Value.ToString()),
                 new Claim(ClaimTypes.Email, result.UserName!),
-                new Claim(ClaimTypes.Role, result.Role!),
+                new Claim(ClaimTypes.Role, result.Role!.ToString()),
                 new Claim(ClaimTypes.Name, result.UserName)
             };
 
@@ -48,15 +57,25 @@ public class AuthController : Controller
 
             // Guardar también en sesión si querés
             HttpContext.Session.SetInt32("UserId", result.UserId.Value);
-            HttpContext.Session.SetString("UserRole", result.Role!);
+            HttpContext.Session.SetString("UserRole", result.Role!.ToString());
             HttpContext.Session.SetString("UserEmail", result.UserName!);
 
-            // Redirigir según rol
-            return result.Role switch
+            _context.trazabilidadLogins.Add(new TrazabilidadLogin
             {
-                "Medico" => RedirectToAction("Dashboard", "Medico"),
-                "Secretaria" => RedirectToAction("Dashboard", "Secretaria"),
-                "Paciente" => RedirectToAction("Dashboard", "Paciente"),
+                UsuarioNombre = result.UserName,
+                UsuarioId = result.UserId.Value,
+                UsuarioRol = result.Role.Value.ToString().ToRolUsuario(),
+                MomentoLogin = DateTime.UtcNow
+            });
+
+            await _context.SaveChangesAsync();
+
+            // Redirigir según rol
+            return result.Role.Value.ToString().ToRolUsuario() switch
+            {
+                RolUsuario.Medico => RedirectToAction("Dashboard", "Medico"),
+                RolUsuario.Secretaria => RedirectToAction("Dashboard", "Secretaria"),
+                RolUsuario.Paciente => RedirectToAction("Dashboard", "Paciente"),
                 _ => RedirectToAction("Index", "Home")
             };
         }
@@ -97,8 +116,37 @@ public class AuthController : Controller
     [HttpPost]
     public async Task<IActionResult> Logout()
     {
+        await LogoutInternalAsync(TipoLogout.Manual);
+        return RedirectToAction("Login");
+    }
+
+    // POST: /Auth/TimeoutLogout
+    [HttpPost]
+    public async Task<IActionResult> TimeoutLogout()
+    {
+        await LogoutInternalAsync(TipoLogout.Timeout);
+        return Ok(new { success = true });
+    }
+
+    private async Task LogoutInternalAsync(TipoLogout tipoLogout)
+    {
+        var userIdClaim = HttpContext.Session.GetInt32("UserId");
+        
+        if (userIdClaim.HasValue)
+        {
+            var entity = await _context.trazabilidadLogins
+                .Where(tl => tl.UsuarioId == userIdClaim && tl.MomentoLogout == null)
+                .FirstOrDefaultAsync();
+
+            if (entity != null)
+            {
+                entity.MomentoLogout = DateTime.UtcNow;
+                entity.TipoLogout = tipoLogout;
+                await _context.SaveChangesAsync();
+            }
+        }
+
         await HttpContext.SignOutAsync("Cookies");
         HttpContext.Session.Clear();
-        return RedirectToAction("Login");
     }
 }

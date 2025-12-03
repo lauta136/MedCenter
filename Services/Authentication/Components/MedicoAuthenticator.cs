@@ -1,6 +1,7 @@
 using MedCenter.Data;
 using MedCenter.DTOs;
 using MedCenter.Models;
+using MedCenter.Services.TurnoSv;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 namespace MedCenter.Services.Authentication.Components
@@ -45,7 +46,7 @@ namespace MedCenter.Services.Authentication.Components
             return new AuthResult
             {
                 Success = true,
-                Role = "Medico",
+                Role = RolUsuario.Medico,
                 UserName = persona.nombre,
                 UserId = persona.id,
                 UserMail = persona.email
@@ -132,7 +133,7 @@ namespace MedCenter.Services.Authentication.Components
                 return new AuthResult
                 {
                     Success = true,
-                    Role = "Medico",
+                    Role = RolUsuario.Medico,
                     UserId = medico.id,
                     UserName = persona.nombre,
                     UserMail = persona.email

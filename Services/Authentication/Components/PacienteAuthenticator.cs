@@ -1,6 +1,7 @@
 using MedCenter.Data;
 using MedCenter.DTOs;
 using MedCenter.Models;
+using MedCenter.Services.TurnoSv;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualBasic;
 using System.Linq;
@@ -29,7 +30,7 @@ namespace MedCenter.Services.Authentication.Components
             if (paciente != null)
             {
                 if (_hashService.VerifyPassword(password, paciente.idNavigation.contraseña))
-                    return new AuthResult { Success = true, Role = "Paciente", UserName = paciente.idNavigation.nombre, UserId = paciente.idNavigation.id, UserMail = paciente.idNavigation.email };
+                    return new AuthResult { Success = true, Role = RolUsuario.Paciente, UserName = paciente.idNavigation.nombre, UserId = paciente.idNavigation.id, UserMail = paciente.idNavigation.email };
                 else
                     return new AuthResult { Success = false, ErrorMessage = "La contraseña es incorrecta" };
             }
@@ -90,7 +91,7 @@ namespace MedCenter.Services.Authentication.Components
                     UserId = paciente.id,
                     UserName = persona.nombre,
                     UserMail = persona.email,
-                    Role = "Paciente"
+                    Role = RolUsuario.Paciente
                 };
             }
             catch (Exception ex)

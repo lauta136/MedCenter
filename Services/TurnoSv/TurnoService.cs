@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore.Design;
 using MedCenter.Services.TurnoStates;
 using System.Runtime.Serialization;
 using MedCenter.Migrations;
+using DocumentFormat.OpenXml.Office.CustomUI;
 
 namespace MedCenter.Services.TurnoSv;
 
@@ -89,7 +90,8 @@ public class TurnoService
             UsuarioNombre = usuarioNombre,
             MomentoAccion = DateTime.UtcNow,
             Accion = accion,
-            Descripcion = descripcion
+            Descripcion = descripcion,
+            UsuarioRol = RolUsuario.System
         });
     }
 

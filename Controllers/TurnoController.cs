@@ -207,7 +207,7 @@ public class TurnoController : BaseController
         
         int pacienteFinalId;
 
-        if (UserRole == "Secretaria")
+        if (UserRole == RolUsuario.Secretaria)
         {
             if (!pacienteElegidoId.HasValue)
             {
@@ -230,7 +230,7 @@ public class TurnoController : BaseController
             especialidad_id = dto.EspecialidadId
         };
 
-        if (UserRole == RolUsuario.Secretaria.ToString())
+        if (UserRole == RolUsuario.Secretaria)
             turno.secretaria_id = UserId;
 
         _context.turnos.Add(turno);
@@ -276,7 +276,7 @@ public class TurnoController : BaseController
         {
             TurnoId = turno.id,
             UsuarioId = UserId.Value,
-            UsuarioRol = UserRole,
+            UsuarioRol = UserRole.Value,
             UsuarioNombre = UserName,
             MomentoAccion = DateTime.UtcNow,
             Accion = "INSERT",
@@ -395,7 +395,7 @@ public class TurnoController : BaseController
             TurnoId = turno.id,
             UsuarioId = UserId.Value,
             UsuarioNombre = UserName,
-            UsuarioRol = UserRole,
+            UsuarioRol = UserRole.Value,
             MomentoAccion = DateTime.UtcNow,
             Accion = "UPDATE",
             Descripcion = User.IsInRole("Secretaria") ? $"La secretaria {UserName} reprogramo un turno" : $"El paciente {UserName} reprogramo un turno"
@@ -705,7 +705,7 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
             if (!result.success)
             {
                 TempData["ErrorMessage"] = result.message;
-                return RedirectToAction("Dashboard", UserRole);
+                return RedirectToAction("Dashboard", UserRole.Value.ToString());
             }
 
             var view = User.IsInRole("Paciente") ? "~/Views/Paciente/ConfirmarCancelacion.cshtml"
@@ -792,7 +792,7 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
         {
             TurnoId = turno.id,
             UsuarioId = UserId.Value,
-            UsuarioRol = UserRole,
+            UsuarioRol = UserRole.Value,
             UsuarioNombre = UserName,
             MomentoAccion = DateTime.UtcNow,
             Accion = "CANCEL",
@@ -900,7 +900,7 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
         IQueryable<Turno> query = _context.turnos.Include(t => t.medico).ThenInclude(m => m.idNavigation)
                                     .Include(t => t.especialidad);
 
-        if(UserRole == RolUsuario.Paciente.ToString())
+        if(UserRole == RolUsuario.Paciente)
         {
             query = query.Where(t => t.paciente_id == UserId );
         }
@@ -928,7 +928,7 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
                     EsProximo = t.fecha.Value.ToDateTime(t.hora.Value) <= DateTime.Now.AddHours(24)
                                 && t.fecha.Value.ToDateTime(t.hora.Value) > DateTime.Now
                 };
-            if(UserRole == RolUsuario.Secretaria.ToString())
+            if(UserRole == RolUsuario.Secretaria)
             {
                 turnoDTO.PacienteNombre = t.paciente.idNavigation.nombre;
             }
