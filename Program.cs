@@ -9,6 +9,10 @@ using MedCenter.Services.HistoriaClinicaSv;
 using MedCenter.Services.Reportes;
 using MedCenter.Services.MedicoSv;
 using MedCenter.Services;
+using MedCenter.Services.Authentication;
+using MedCenter.Services.Authentication.Components;
+using MedCenter.Services.EmailService;
+using Microsoft.Extensions.Caching.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,13 +30,19 @@ builder.Services.AddSession(options =>
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<PasswordHashService>();
 builder.Services.AddScoped<DisponibilidadService>();
 builder.Services.AddScoped<EspecialidadService>();
 builder.Services.AddScoped<TurnoService>();
 builder.Services.AddScoped<HistoriaClinicaService>();
 builder.Services.AddScoped<ReportesService>();
 builder.Services.AddScoped<MedicoService>();
+builder.Services.AddScoped<PasswordRecoveryService>();
+builder.Services.AddScoped<EmailService>();
+
+builder.Services.AddMemoryCache();
 
 // Add background service for session cleanup
 builder.Services.AddHostedService<SessionCleanupService>();

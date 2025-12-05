@@ -1,0 +1,200 @@
+@{
+    ViewData["Title"] = "Ingresar Código";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - MedCenter</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        body { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .card { 
+            border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: fadeIn 0.5s;
+            background-color: white !important;
+        }
+        @@keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .code-inputs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .code-input {
+            width: 50px;
+            height: 60px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            background-color: white !important;
+            color: #212529 !important;
+        }
+        .code-input:focus {
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
+            outline: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-primary:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-5">
+                <div class="card">
+                    <div class="card-body p-5">
+                        <div class="text-center mb-4">
+                            <i class="fas fa-envelope-open-text fa-3x text-success mb-3"></i>
+                            <h3>📧 Código Enviado</h3>
+                            <p class="text-muted">
+                                Revisa tu correo: <strong>@ViewBag.MaskedEmail</strong>
+                            </p>
+                        </div>
+
+                        @if (TempData["SuccessMessage"] != null)
+                        {
+                            <div class="alert alert-success alert-dismissible fade show">
+                                <i class="fas fa-check-circle me-2"></i>
+                                @TempData["SuccessMessage"]
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        }
+                        @if (TempData["ErrorMessage"] != null)
+                        {
+                            <div class="alert alert-danger alert-dismissible fade show">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                @TempData["ErrorMessage"]
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        }
+
+                        <form method="post" asp-action="ValidarCodigo" id="codeForm">
+                            <input type="hidden" name="email" value="@ViewBag.Email" />
+                            
+                            <div class="mb-4">
+                                <label class="form-label text-center d-block fw-bold">
+                                    Ingresa el código de 6 dígitos
+                                </label>
+                                <div class="code-inputs">
+                                    <input type="text" class="form-control code-input" maxlength="1" data-index="0" />
+                                    <input type="text" class="form-control code-input" maxlength="1" data-index="1" />
+                                    <input type="text" class="form-control code-input" maxlength="1" data-index="2" />
+                                    <input type="text" class="form-control code-input" maxlength="1" data-index="3" />
+                                    <input type="text" class="form-control code-input" maxlength="1" data-index="4" />
+                                    <input type="text" class="form-control code-input" maxlength="1" data-index="5" />
+                                </div>
+                                <input type="hidden" name="code" id="fullCode" />
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">
+                                <i class="fas fa-check me-2"></i>Validar Código
+                            </button>
+                        </form>
+
+                        <div class="text-center">
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i> El código expira en 10 minutos
+                            </small>
+                        </div>
+
+                        <hr class="my-3">
+
+                        <div class="text-center">
+                            <a href="/Auth/RecuperarPassword" class="text-decoration-none">
+                                <i class="fas fa-redo me-1"></i> Solicitar nuevo código
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const inputs = document.querySelectorAll('.code-input');
+        const form = document.getElementById('codeForm');
+        const fullCodeInput = document.getElementById('fullCode');
+
+        inputs.forEach((input, index) => {
+            // Auto-focus next input
+            input.addEventListener('input', (e) => {
+                if (e.target.value.length === 1 && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+                updateFullCode();
+            });
+
+            // Backspace to previous input
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
+                    inputs[index - 1].focus();
+                }
+            });
+
+            // Only allow numbers
+            input.addEventListener('keypress', (e) => {
+                if (!/[0-9]/.test(e.key)) {
+                    e.preventDefault();
+                }
+            });
+
+            // Paste support (paste full code)
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const paste = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                paste.split('').forEach((char, i) => {
+                    if (inputs[i]) inputs[i].value = char;
+                });
+                updateFullCode();
+                if (paste.length === 6) {
+                    inputs[5].focus();
+                }
+            });
+        });
+
+        function updateFullCode() {
+            const code = Array.from(inputs).map(i => i.value).join('');
+            fullCodeInput.value = code;
+        }
+
+        // Auto-submit when all 6 digits entered
+        inputs[5].addEventListener('input', () => {
+            if (Array.from(inputs).every(i => i.value)) {
+                setTimeout(() => form.submit(), 300);
+            }
+        });
+
+        // Focus first input on load
+        inputs[0].focus();
+    </script>
+</body>
+</html>

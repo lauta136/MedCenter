@@ -5,20 +5,22 @@ using Microsoft.AspNetCore.Authentication;
 using MedCenter.Data;
 using MedCenter.Models;
 using MedCenter.Extensions;
-using MedCenter.Services.TurnoSv;
-using Org.BouncyCastle.Bcpg;
 using Microsoft.EntityFrameworkCore;
+using MedCenter.Services;
+using MedCenter.Services.Authentication;
+using MedCenter.Services.TurnoSv;
 
 public class AuthController : Controller
 {
     private readonly AuthService _authService;
     private readonly AppDbContext _context;
+    private readonly PasswordRecoveryService _passwordRecoveryService;
 
-    public AuthController(AuthService authService, AppDbContext context)
+    public AuthController(AuthService authService, AppDbContext context, PasswordRecoveryService passwordRecoveryService)
     {
         _authService = authService;
         _context = context;
-        
+        _passwordRecoveryService = passwordRecoveryService;
     }
     
     // GET: /Auth/Login
@@ -122,6 +124,136 @@ public class AuthController : Controller
         
         ModelState.AddModelError("", result.ErrorMessage!);
         return View(model);
+    }
+
+    // GET: /Auth/RecuperarPassword - Step 1: Email entry
+    [HttpGet]
+    public IActionResult RecuperarPassword()
+    {
+        return View();
+    }
+
+    // POST: /Auth/RecuperarPassword - Step 1: Send code to email
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RecuperarPassword(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            TempData["ErrorMessage"] = "Por favor ingresa tu correo electrónico.";
+            return View();
+        }
+
+        var result = await _passwordRecoveryService.SendRecoveryCodeAsync(email);
+        
+        if (!result)
+        {
+            TempData["ErrorMessage"] = "Error al enviar el correo. Por favor intenta más tarde.";
+            return View();
+        }
+
+        // Always show success (don't reveal if email exists)
+        TempData["SuccessMessage"] = "Si el correo existe, recibirás un código de recuperación.";
+        TempData["RecoveryEmail"] = email;
+        
+        return RedirectToAction("IngresarCodigo");
+    }
+
+    // GET: /Auth/IngresarCodigo - Step 2: Code entry page
+    [HttpGet]
+    public IActionResult IngresarCodigo()
+    {
+        var email = TempData["RecoveryEmail"] as string;
+        if (string.IsNullOrEmpty(email))
+        {
+            return RedirectToAction("RecuperarPassword");
+        }
+
+        ViewBag.Email = email;
+        ViewBag.MaskedEmail = _passwordRecoveryService.MaskEmail(email);
+        TempData.Keep("RecoveryEmail"); // Keep for next request
+        return View();
+    }
+
+    // POST: /Auth/ValidarCodigo - Step 2: Validate code
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult ValidarCodigo(string email, string code)
+    {
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(code))
+        {
+            TempData["ErrorMessage"] = "Código inválido.";
+            TempData["RecoveryEmail"] = email;
+            return RedirectToAction("IngresarCodigo");
+        }
+
+        if (_passwordRecoveryService.ValidateRecoveryCode(email, code, out int userId, out string? errorMessage))
+        {
+            TempData["RecoveryEmail"] = email;
+            TempData["RecoveryCode"] = code;
+            return RedirectToAction("RestablecerPassword");
+        }
+
+        TempData["ErrorMessage"] = errorMessage ?? "Código inválido o expirado.";
+        TempData["RecoveryEmail"] = email;
+        return RedirectToAction("IngresarCodigo");
+    }
+
+    // GET: /Auth/RestablecerPassword - Step 3: New password form
+    [HttpGet]
+    public IActionResult RestablecerPassword()
+    {
+        var email = TempData["RecoveryEmail"] as string;
+        var code = TempData["RecoveryCode"] as string;
+
+        if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(code))
+        {
+            return RedirectToAction("RecuperarPassword");
+        }
+
+        ViewBag.Email = email;
+        ViewBag.Code = code;
+        TempData.Keep("RecoveryEmail"); // Keep for POST
+        TempData.Keep("RecoveryCode"); // Keep for POST
+        return View();
+    }
+
+    // POST: /Auth/RestablecerPassword - Step 3: Update password
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RestablecerPassword(string email, string code, string newPassword, string confirmPassword)
+    {
+        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
+        {
+            TempData["ErrorMessage"] = "La contraseña debe tener al menos 6 caracteres.";
+            TempData["RecoveryEmail"] = email;
+            TempData["RecoveryCode"] = code;
+            return RedirectToAction("RestablecerPassword");
+        }
+
+        if (newPassword != confirmPassword)
+        {
+            TempData["ErrorMessage"] = "Las contraseñas no coinciden.";
+            TempData["RecoveryEmail"] = email;
+            TempData["RecoveryCode"] = code;
+            return RedirectToAction("RestablecerPassword");
+        }
+
+        if (await _passwordRecoveryService.ResetPasswordAsync(email, code, newPassword))
+        {
+            TempData["SuccessMessage"] = "Contraseña restablecida exitosamente. Ya puedes iniciar sesión.";
+            return RedirectToAction("Login");
+        }
+
+        TempData["ErrorMessage"] = "No se pudo restablecer la contraseña. El código puede haber expirado.";
+        return RedirectToAction("RecuperarPassword");
+    }
+    
+    [HttpPost]
+    public async Task<IActionResult> IngresarCodigoRecuperacion(int codigoIngresado,string mail)
+    {
+        // This method is deprecated - use ValidarCodigo instead
+        return RedirectToAction("RecuperarPassword");
     }
     
     // POST: /Auth/Logout
