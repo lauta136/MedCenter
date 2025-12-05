@@ -18,7 +18,7 @@ public class TrazabilidadTurno
     public DateTime MomentoAccion { get; set; }
     [Required]
     [MaxLength(50)]
-    public string Accion { get; set; }
+    public AccionesTurno Accion { get; set; }
     [Required]
     [MaxLength(200)]
     public string Descripcion { get; set; } //por que se hizo la accion

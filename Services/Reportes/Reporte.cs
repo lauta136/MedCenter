@@ -20,10 +20,18 @@ public class Reporte(TipoReporte tipoReporte)
     /// </summary>
     public byte[] GetBytes()
     {
+        // For summary reports, return Statistics PDF (no Data part)
+        if (this[ParteReporte.Data] == null && this[ParteReporte.Statistics] is byte[] statsBytes)
+        {
+            return statsBytes;
+        }
+        
+        // For normal reports, return Data PDF
         if (this[ParteReporte.Data] is byte[] bytes)
         {
             return bytes;
         }
+        
         throw new InvalidOperationException("El reporte no contiene datos válidos");
     }
     

@@ -348,9 +348,12 @@ public partial class AppDbContext : DbContext
             e.Property(e => e.Id).UseIdentityAlwaysColumn().HasColumnName("id");
 
             e.Property(e => e.UsuarioNombre).HasColumnName("usuario_nombre").IsRequired();
+            e.Property(e => e.PacienteDNI).HasColumnName("paciente_dni");
+            e.Property(e => e.PacienteNombre). HasColumnName("paciente_nombre");
+            e.Property(e => e.MedicoNombre). HasColumnName("medico_nombre");
             e.Property(e => e.TurnoId).HasColumnName("turno_id").IsRequired();
-            e.Property(e => e.EstadoAnterior).HasColumnName("estado_anterior");
-            e.Property(e => e.EstadoNuevo).HasColumnName("estado_nuevo");
+            e.Property(e => e.EstadoAnterior).HasColumnName("estado_anterior").HasConversion<string>();
+            e.Property(e => e.EstadoNuevo).HasColumnName("estado_nuevo").HasConversion<string>();
             e.Property(e => e.FechaAnterior).HasColumnName("fecha_anterior");
             e.Property(e => e.FechaNueva).HasColumnName("fecha_nueva");
             e.Property(e => e.HoraAnterior).HasColumnName("hora_anterior");
@@ -358,7 +361,7 @@ public partial class AppDbContext : DbContext
             e.Property(e => e.MomentoAccion).HasColumnName("momento_accion");
             e.Property(e => e.SlotIdAnterior).HasColumnName("slot_id_anterior");
             e.Property(e => e.SlotIdNuevo).HasColumnName("slot_id_nuevo");
-            e.Property(e => e.Accion).HasColumnName("accion").IsRequired();
+            e.Property(e => e.Accion).HasColumnName("accion").IsRequired().HasConversion<string>();
             e.Property(e => e.MotivoCancelacion).HasColumnName("motivo_cancelacion");
 
         });
@@ -375,7 +378,7 @@ public partial class AppDbContext : DbContext
             e.Property(e => e.UsuarioNombre).HasColumnName("usuario_nombre");
             e.Property(e => e.UsuarioRol).HasColumnName("usuario_rol").HasConversion<string>();
 
-            e.Property(e => e.Accion).HasColumnName("accion");
+            e.Property(e => e.Accion).HasColumnName("accion").HasConversion<string>();
             e.Property(e => e.Descripcion).HasColumnName("descripcion");
             e.Property(e => e.MomentoAccion).HasColumnName("momento_accion");
 

@@ -1,10 +1,12 @@
+using MedCenter.Services.TurnoSv;
+
 public class TurnoAuditoria
 {
     public int Id { get; set; }
     public int TurnoId { get; set; }
     public string UsuarioNombre { get; set; }
     public DateTime MomentoAccion { get; set; }
-    public string Accion { get; set; } // INSERT, UPDATE, DELETE (soft)
+    public AccionesTurno Accion { get; set; } // INSERT, UPDATE, DELETE (soft)
     
     // ========================================
     // CAMPOS EDITABLES (tienen anterior/nuevo)
@@ -15,8 +17,8 @@ public class TurnoAuditoria
     public TimeOnly? HoraAnterior { get; set; }
     public TimeOnly? HoraNueva { get; set; }
     
-    public string? EstadoAnterior { get; set; }
-    public string? EstadoNuevo { get; set; }
+    public EstadosTurno? EstadoAnterior { get; set; }
+    public EstadosTurno? EstadoNuevo { get; set; }
     
     
     // ========================================
@@ -24,7 +26,8 @@ public class TurnoAuditoria
     // ========================================
     // Se guardan solo en INSERT para tener contexto
     public int PacienteId { get; set; }
-    public string PacienteNombre { get; set; }
+    public required string PacienteNombre { get; set; }
+    public string PacienteDNI{get;set;}
     
     public int MedicoId { get; set; }
     public string MedicoNombre { get; set; }

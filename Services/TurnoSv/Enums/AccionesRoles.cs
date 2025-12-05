@@ -13,6 +13,7 @@ public enum AccionesTurno
     NOSHOW,
     UPDATE,
     INSERT,
+    CANCEL
 }
 
 public enum EstadosTurno

@@ -89,6 +89,14 @@
 
             // Initialize timer
             resetTimer();
+
+            // Handle browser/tab close - use sendBeacon for reliability
+            window.addEventListener('beforeunload', function(event) {
+                // Use sendBeacon API for better reliability when closing tab/browser
+                // This works even if the page is being unloaded
+                const data = new FormData();
+                navigator.sendBeacon('/Auth/TimeoutLogout', data);
+            });
         </script>
     }
     

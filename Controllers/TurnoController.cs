@@ -16,6 +16,7 @@ using MedCenter.Services.EspecialidadService;
 using MedCenter.Services.TurnoSv;
 using System.Reflection.Metadata.Ecma335;
 using Microsoft.VisualBasic;
+using MedCenter.Extensions;
 
 
 
@@ -249,7 +250,7 @@ public class TurnoController : BaseController
 
         await _context.turnos.Entry(turno).Reference(t => t.especialidad).LoadAsync();
         */
-        var pacNombre = await _context.pacientes.Where(p => p.id == turno.paciente_id).Include(p => p.idNavigation).Select(p => new { p.idNavigation.nombre }).FirstOrDefaultAsync();
+        var pacInfo = await _context.pacientes.Where(p => p.id == turno.paciente_id).Include(p => p.idNavigation).Select(p => new { p.idNavigation.nombre, p.dni,p.id }).FirstOrDefaultAsync();
         var medNombre = await _context.medicos.Where(m => m.id == turno.medico_id).Include(m => m.idNavigation).Select(m => new { m.idNavigation.nombre }).FirstOrDefaultAsync();
         var espNombre = await _context.especialidades.Where(e => e.id == turno.especialidad_id).Select(e => new { e.nombre }).FirstOrDefaultAsync();
 
@@ -258,13 +259,14 @@ public class TurnoController : BaseController
         {
             TurnoId = turno.id, //Es nulo porque no fue guardado con SaveChangesAsync
             UsuarioNombre = UserName,
-            MomentoAccion = DateTime.UtcNow,
-            Accion = "INSERT",
+            MomentoAccion = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
+            Accion = AccionesTurno.INSERT,
             FechaNueva = turno.fecha,
             HoraNueva = turno.hora,
-            EstadoNuevo = _stateService.GetEstadoActual(turno).GetNombreEstado(),
+            EstadoNuevo = _stateService.GetEstadoActual(turno).GetNombreEstado().ToEstadoTurno(),
             PacienteId = turno.paciente_id.Value,
-            PacienteNombre = pacNombre.nombre,
+            PacienteNombre = pacInfo.nombre,
+            PacienteDNI = pacInfo.dni,
             MedicoId = turno.medico_id.Value,
             MedicoNombre = medNombre.nombre,
             EspecialidadId = turno.especialidad_id.Value,
@@ -278,8 +280,8 @@ public class TurnoController : BaseController
             UsuarioId = UserId.Value,
             UsuarioRol = UserRole.Value,
             UsuarioNombre = UserName,
-            MomentoAccion = DateTime.UtcNow,
-            Accion = "INSERT",
+            MomentoAccion = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
+            Accion = AccionesTurno.INSERT,
             Descripcion = User.IsInRole("Secretaria") ? $"La secretaria {UserName} reservo un turno" : $"El paciente {UserName} reservo un turno"
         });
 
@@ -372,16 +374,17 @@ public class TurnoController : BaseController
         {
             TurnoId = turno.id,
             UsuarioNombre = UserName,
-            MomentoAccion = DateTime.UtcNow,
-            Accion = "UPDATE",
+            MomentoAccion = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
+            Accion = AccionesTurno.UPDATE,
             FechaNueva = nuevoSlot.fecha,
             FechaAnterior = turno.fecha,
             HoraNueva = nuevoSlot.horainicio,
             HoraAnterior = turno.hora,
-            EstadoNuevo = "Reprogramado",
-            EstadoAnterior = _stateService.GetEstadoActual(turno).GetNombreEstado(),
+            EstadoNuevo = EstadosTurno.Reprogramado,
+            EstadoAnterior = _stateService.GetEstadoActual(turno).GetNombreEstado().ToEstadoTurno(),
             PacienteId = turno.paciente_id.Value,
             PacienteNombre = turno.paciente.idNavigation.nombre,
+            PacienteDNI = turno.paciente.dni,
             MedicoId = turno.medico_id.Value,
             MedicoNombre = turno.medico.idNavigation.nombre,
             EspecialidadId = turno.especialidad_id.Value,
@@ -396,8 +399,8 @@ public class TurnoController : BaseController
             UsuarioId = UserId.Value,
             UsuarioNombre = UserName,
             UsuarioRol = UserRole.Value,
-            MomentoAccion = DateTime.UtcNow,
-            Accion = "UPDATE",
+            MomentoAccion = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
+            Accion = AccionesTurno.UPDATE,
             Descripcion = User.IsInRole("Secretaria") ? $"La secretaria {UserName} reprogramo un turno" : $"El paciente {UserName} reprogramo un turno"
         });
 
@@ -769,16 +772,17 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
         {
             TurnoId = turno.id,
             UsuarioNombre = UserName,
-            MomentoAccion = DateTime.UtcNow,
-            Accion = "CANCEL",
+            MomentoAccion = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
+            Accion = AccionesTurno.CANCEL,
             FechaAnterior = turno.fecha,
             FechaNueva = turno.fecha,
             HoraAnterior = turno.hora,
             HoraNueva = turno.hora,
-            EstadoAnterior = _stateService.GetEstadoActual(turno).GetNombreEstado(),
-            EstadoNuevo = "Cancelado",
+            EstadoAnterior = _stateService.GetEstadoActual(turno).GetNombreEstado().ToEstadoTurno(),
+            EstadoNuevo = EstadosTurno.Cancelado,
             PacienteId = turno.paciente_id.Value,
             PacienteNombre = turno.paciente.idNavigation.nombre,
+            PacienteDNI = turno.paciente.dni,
             MedicoId = turno.medico_id.Value,
             MedicoNombre = turno.medico.idNavigation.nombre,
             EspecialidadId = turno.especialidad_id.Value,
@@ -794,8 +798,8 @@ public async Task<IActionResult> GetDiasConDisponibilidad(int medicoId)
             UsuarioId = UserId.Value,
             UsuarioRol = UserRole.Value,
             UsuarioNombre = UserName,
-            MomentoAccion = DateTime.UtcNow,
-            Accion = "CANCEL",
+            MomentoAccion = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
+            Accion = AccionesTurno.CANCEL,
             Descripcion = User.IsInRole("Secretaria") ? $"La secretaria {UserName} cancelo un turno" : $"El paciente {UserName} cancelo un turno"
         });
 

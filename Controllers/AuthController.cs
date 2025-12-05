@@ -60,6 +60,18 @@ public class AuthController : Controller
             HttpContext.Session.SetString("UserRole", result.Role!.ToString());
             HttpContext.Session.SetString("UserEmail", result.UserName!);
 
+            // Close any existing open sessions for this user (prevent multiple simultaneous sessions)
+            var existingSessions = await _context.trazabilidadLogins
+                .Where(tl => tl.UsuarioId == result.UserId.Value && tl.MomentoLogout == null)
+                .ToListAsync();
+            
+            foreach (var session in existingSessions)
+            {
+                session.MomentoLogout = DateTime.UtcNow;
+                session.TipoLogout = TipoLogout.Forzado;  // Forced logout due to new login
+            }
+
+            // Create new session
             _context.trazabilidadLogins.Add(new TrazabilidadLogin
             {
                 UsuarioNombre = result.UserName,

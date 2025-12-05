@@ -5,5 +5,8 @@ public enum TipoReporte
     PacientesSecretaria,
     TurnosFiltradosSecretaria,
     TurnosMedico,
-    HistoriasMedico
+    HistoriasMedico,
+    AuditoriaTurnos,
+    TurnosPorMedico,
+    AuditoriaLogins
 }

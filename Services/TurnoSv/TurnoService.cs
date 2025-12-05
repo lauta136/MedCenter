@@ -11,6 +11,7 @@ using MedCenter.Services.TurnoStates;
 using System.Runtime.Serialization;
 using MedCenter.Migrations;
 using DocumentFormat.OpenXml.Office.CustomUI;
+using MedCenter.Extensions;
 
 namespace MedCenter.Services.TurnoSv;
 
@@ -45,7 +46,7 @@ public class TurnoService
 
         foreach(Turno turno in turnosAFinalizar)
         {
-            RegistrarCambioEstadoTerminal(turno, AccionesTurno.FINALIZE.ToString(),EstadosTurno.Finalizado.ToString(),"El turno ha finalizado", RolUsuario.System.ToString());
+            RegistrarCambioEstadoTerminal(turno, AccionesTurno.FINALIZE,EstadosTurno.Finalizado,"El turno ha finalizado", RolUsuario.System.ToString());
             //_dispoService.LiberarSlot(turno.slot_id.Value);
             turno.slot_id = null;
             _stateService.Finalizar(turno);
@@ -53,7 +54,7 @@ public class TurnoService
 
         foreach(Turno turno in turnosAAusentar)
         {
-            RegistrarCambioEstadoTerminal(turno, AccionesTurno.NOSHOW.ToString(),EstadosTurno.Ausentado.ToString(),"El paciente no atendio al turno", RolUsuario.System.ToString());
+            RegistrarCambioEstadoTerminal(turno, AccionesTurno.NOSHOW,EstadosTurno.Ausentado,"El paciente no atendio al turno", RolUsuario.System.ToString());
             //_dispoService.LiberarSlot(turno.slot_id.Value);
             turno.slot_id = null;
             _stateService.MarcarAusente(turno);
@@ -63,7 +64,7 @@ public class TurnoService
 
     }
 
-    private void RegistrarCambioEstadoTerminal(Turno turno, string accion, string estadoNuevo, string descripcion, string usuarioNombre)
+    private void RegistrarCambioEstadoTerminal(Turno turno, AccionesTurno accion, EstadosTurno estadoNuevo, string descripcion, string usuarioNombre)
     {
         _context.turnoAuditorias.Add(new TurnoAuditoria
         {
@@ -73,11 +74,11 @@ public class TurnoService
             Accion = accion,
             FechaAnterior = turno.fecha,
             HoraAnterior = turno.hora,
-            EstadoAnterior = _stateService.GetEstadoActual(turno).GetNombreEstado(),
+            EstadoAnterior = _stateService.GetEstadoActual(turno).GetNombreEstado().ToEstadoTurno(),
             EstadoNuevo = estadoNuevo,
             PacienteId = turno.paciente_id.Value,
             PacienteNombre = turno.paciente.idNavigation.nombre,
-            MedicoId = turno.medico_id.Value,
+            PacienteDNI = turno.paciente.dni,
             MedicoNombre = turno.medico.idNavigation.nombre,
             EspecialidadId = turno.especialidad_id.Value,
             EspecialidadNombre = turno.especialidad.nombre,

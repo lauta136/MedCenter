@@ -13,4 +13,13 @@ public static class StringExtensions
 
         throw new ArgumentException($"Invalid RolUsuario value: '{str}'", nameof(str));
     }
+
+    public static EstadosTurno ToEstadoTurno(this string str)
+    {
+        if(Enum.TryParse<EstadosTurno>(str, true, out EstadosTurno estado))
+        {
+            return estado;
+        }
+        throw new ArgumentException($"Invalid EstadosTurno value: '{str}'", nameof(str));
+    }
 }

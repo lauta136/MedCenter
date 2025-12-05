@@ -1,3 +1,5 @@
+using MedCenter.Services.TurnoSv;
+
 namespace MedCenter.Services.Reportes;
 
 /// <summary>
@@ -14,6 +16,15 @@ public abstract class ReporteConstructor
     protected int? EspecialidadId { get; private set; }
     protected string? UserRole { get; private set; }
     protected int? UserId { get; private set; }
+    
+    // Audit-specific filters
+    protected string? UsuarioNombre { get; private set; }
+    protected AccionesTurno? Accion { get; private set; }
+    protected int? PacienteId { get; private set; }
+    
+    // Login audit filters
+    protected string? TipoLogoutStr { get; private set; }
+    protected string? RolStr { get; private set; }
     
     /// <summary>
     /// The product being built
@@ -52,10 +63,30 @@ public abstract class ReporteConstructor
         UserId = userId;
     }
     
+    /// <summary>
+    /// Set audit-specific filters
+    /// </summary>
+    public void SetAuditFilters(string? usuarioNombre = null, AccionesTurno? accion = null, int? pacienteId = null)
+    {
+        UsuarioNombre = usuarioNombre;
+        Accion = accion;
+        PacienteId = pacienteId;
+    }
+    
+    /// <summary>
+    /// Set login audit-specific filters
+    /// </summary>
+    public void SetLoginAuditFilters(string? usuarioNombre = null, string? tipoLogout = null, string? rol = null)
+    {
+        UsuarioNombre = usuarioNombre;
+        TipoLogoutStr = tipoLogout;
+        RolStr = rol;
+    }
+    
     // Abstract construction steps - each builder implements these differently
     public abstract void BuildHeader();
-    public abstract void BuildData();
-    public abstract void BuildStatistics();
+    public abstract Task BuildData();
+    public abstract Task BuildStatistics();
     public abstract void BuildFooter();
     public abstract void BuildFormat();
 }

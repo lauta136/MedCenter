@@ -19,15 +19,15 @@ public class ReportePDFConstructor : ReporteConstructor
         Reporte[ParteReporte.Header] = "Reporte de Turnos - PDF";
     }
     
-    public override void BuildData()
+    public override async Task BuildData()
     {
         // Get data based on filters and user role
-        var turnos = _reportesService.ObtenerTurnosPorFecha(
+        var turnos = await _reportesService.ObtenerTurnosPorFecha(
             DateOnly.FromDateTime(FechaDesde), 
             DateOnly.FromDateTime(FechaHasta), 
             MedicoId, 
             EspecialidadId
-        ).Result;
+        );
         
         // Generate PDF
         var pdfBytes = _reportesService.GenerarPDFTurnos(
@@ -38,9 +38,33 @@ public class ReportePDFConstructor : ReporteConstructor
         Reporte[ParteReporte.Data] = pdfBytes;
     }
     
-    public override void BuildStatistics()
+    public override async Task BuildStatistics()
     {
-        Reporte[ParteReporte.Statistics] = "Incluye estadísticas en PDF";
+        // For summary reports, generate a standalone statistics PDF
+        // For detailed reports, statistics are appended to existing data PDF
+        
+        var stats = await _reportesService.ObtenerEstadisticasMes(
+            FechaDesde.Month,
+            FechaDesde.Year,
+            MedicoId
+        );
+        
+        // If Data part is empty, create standalone statistics PDF (Summary Report)
+        if (Reporte[ParteReporte.Data] == null)
+        {
+            var statsPdfBytes = _reportesService.GenerarPDFEstadisticasSimples(
+                stats,
+                $"Resumen Estadístico de Turnos - {FechaDesde:MMMM yyyy}",
+                FechaDesde,
+                FechaHasta
+            );
+            Reporte[ParteReporte.Statistics] = statsPdfBytes;
+        }
+        else
+        {
+            // Statistics already included in detailed PDF
+            Reporte[ParteReporte.Statistics] = $"Total: {stats.TurnosMes} turnos, Cancelados: {stats.TurnosCancelados}";
+        }
     }
     
     public override void BuildFooter()

@@ -19,15 +19,15 @@ public class ReporteExcelConstructor : ReporteConstructor
         Reporte[ParteReporte.Header] = "Reporte de Turnos - Excel";
     }
     
-    public override void BuildData()
+    public override async Task BuildData()
     {
         // Get data based on filters and user role
-        var turnos = _reportesService.ObtenerTurnosPorFecha(
+        var turnos = await _reportesService.ObtenerTurnosPorFecha(
             DateOnly.FromDateTime(FechaDesde), 
             DateOnly.FromDateTime(FechaHasta), 
             MedicoId, 
             EspecialidadId
-        ).Result;
+        );
         
         // Generate Excel
         var excelBytes = _reportesService.GenerarExcelTurnos(
@@ -38,9 +38,11 @@ public class ReporteExcelConstructor : ReporteConstructor
         Reporte[ParteReporte.Data] = excelBytes;
     }
     
-    public override void BuildStatistics()
+    public override async Task BuildStatistics()
     {
+        // Excel doesn't support summary-only reports for now
         Reporte[ParteReporte.Statistics] = "Incluye estadísticas en Excel";
+        await Task.CompletedTask;
     }
     
     public override void BuildFooter()

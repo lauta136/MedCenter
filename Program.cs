@@ -8,6 +8,7 @@ using MedCenter.Services.TurnoSv;
 using MedCenter.Services.HistoriaClinicaSv;
 using MedCenter.Services.Reportes;
 using MedCenter.Services.MedicoSv;
+using MedCenter.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,12 +34,28 @@ builder.Services.AddScoped<HistoriaClinicaService>();
 builder.Services.AddScoped<ReportesService>();
 builder.Services.AddScoped<MedicoService>();
 
+// Add background service for session cleanup
+builder.Services.AddHostedService<SessionCleanupService>();
+
 builder.Services.AddAuthentication("Cookies")
     .AddCookie("Cookies", options =>
     {
         options.LoginPath = "/Auth/Login"; // ruta donde redirige si no está logueado
         options.LogoutPath = "/Auth/Logout";
         options.AccessDeniedPath = "/Auth/AccessDenied"; // opcional
+        
+        // Session timeout and sliding expiration
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+        options.SlidingExpiration = true;  // Resets timer on activity
+        
+        // Security settings for medical app
+        options.Cookie.HttpOnly = true;  // Prevent JavaScript access (XSS protection)
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;  // HTTPS only
+        options.Cookie.SameSite = SameSiteMode.Strict;  // CSRF protection
+        options.Cookie.IsEssential = true;
+        
+        // Session cookie (deleted when browser closes) - no persistence
+        // options.Cookie.MaxAge is null by default = session cookie
     });
 
 var app = builder.Build();
@@ -56,10 +73,10 @@ app.UseStaticFiles();
 
 app.UseRouting();
 app.UseAuthentication();
-app.UseAuthorization();
 
-// 🔥 ACTIVA el sistema de sesión aquí:
+// ACTIVA el sistema de sesión aquí:
 app.UseSession();
+
 app.UseAuthorization();
 
 app.MapStaticAssets();
