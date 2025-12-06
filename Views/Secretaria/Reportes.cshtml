@@ -322,7 +322,13 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Usuario (opcional)</label>
-                                <input type="text" id="usuarioNombreLogin" class="form-control" placeholder="Nombre de usuario" />
+                                <select class="form-select" id="usuarioNombreLogin">
+                                    <option value="">Todos los Usuarios</option>
+                                    @foreach (var usuario in ViewBag.usuarios)
+                                    {
+                                        <option value="@usuario.Nombre">@usuario.Nombre</option>
+                                    }
+                                </select>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Tipo de Logout (opcional)</label>
@@ -687,7 +693,8 @@
     function descargarAuditoriaLoginsPDF() {
         const fechaDesde = document.getElementById('fechaDesdeAuditLogin').value;
         const fechaHasta = document.getElementById('fechaHastaAuditLogin').value;
-        const usuarioNombre = document.getElementById('usuarioNombreLogin').value;
+        const usuarioSelect = document.getElementById('usuarioNombreLogin');
+        const usuarioNombre = usuarioSelect.value;
         const tipoLogout = document.getElementById('tipoLogoutLogin').value;
         const rol = document.getElementById('rolLogin').value;
 
@@ -696,7 +703,7 @@
         }
          
         let url = `/Reportes/DescargarAuditoriaLoginsPDF?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`;
-        if (usuarioNombre && usuarioNombre !== "") {
+        if (usuarioNombre && usuarioNombre !== "" && usuarioNombre !== "Todos los Usuarios") {
             url += `&usuarioNombre=${encodeURIComponent(usuarioNombre)}`;
         }
         if (tipoLogout && tipoLogout !== "") {
@@ -712,7 +719,8 @@
     function descargarAuditoriaLoginsExcel() {
         const fechaDesde = document.getElementById('fechaDesdeAuditLogin').value;
         const fechaHasta = document.getElementById('fechaHastaAuditLogin').value;
-        const usuarioNombre = document.getElementById('usuarioNombreLogin').value;
+        const usuarioSelect = document.getElementById('usuarioNombreLogin');
+        const usuarioNombre = usuarioSelect.value;
         const tipoLogout = document.getElementById('tipoLogoutLogin').value;
         const rol = document.getElementById('rolLogin').value;
         
@@ -721,7 +729,7 @@
         }
         
         let url = `/Reportes/DescargarAuditoriaLoginsExcel?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`;
-        if (usuarioNombre && usuarioNombre !== "") {
+        if (usuarioNombre && usuarioNombre !== "" && usuarioNombre !== "Todos los Usuarios") {
             url += `&usuarioNombre=${encodeURIComponent(usuarioNombre)}`;
         }
         if (tipoLogout && tipoLogout !== "") {
