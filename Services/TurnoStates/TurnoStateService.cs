@@ -1,4 +1,5 @@
 using MedCenter.Models;
+using MedCenter.Services.TurnoSv;
 
 namespace MedCenter.Services.TurnoStates
 {
@@ -6,7 +7,7 @@ namespace MedCenter.Services.TurnoStates
     {
         public ITurnoState GetEstadoActual(Turno turno)
         {
-            return TurnoStateFactory.CrearEstado(turno.estado ?? "Disponible");
+            return TurnoStateFactory.CrearEstado(turno.estado ?? EstadosTurno.Disponible.ToString());
         }
 
         public void Reservar(Turno turno)

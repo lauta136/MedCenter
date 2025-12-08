@@ -5,6 +5,7 @@ using MedCenter.Models;
 using MedCenter.DTOs;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using MedCenter.Services.TurnoStates;
+using MedCenter.Services.TurnoSv;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Security.Cryptography;
 using System.Security.Claims;
@@ -13,7 +14,6 @@ using System.Net.WebSockets;
 using MedCenter.Controllers;
 using MedCenter.Services.DisponibilidadMedico;
 using MedCenter.Services.EspecialidadService;
-using MedCenter.Services.TurnoSv;
 using System.Reflection.Metadata.Ecma335;
 using Microsoft.VisualBasic;
 using MedCenter.Extensions;
@@ -43,7 +43,7 @@ public class TurnoController : BaseController
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        var turnos = await _context.turnos.Where(t => t.estado == "Reservado" || t.estado == "Reprogramado")
+        var turnos = await _context.turnos.Where(t => t.estado == EstadosTurno.Reservado.ToString() || t.estado == EstadosTurno.Reprogramado.ToString())
             .Select(t => new TurnoViewDTO
             {
                 Id = t.id,

@@ -45,7 +45,7 @@ namespace MedCenter.Controllers
             if (secretaria == null)
                 return NotFound();
 
-            var turnosHoy = await _context.turnos.Where(t => t.estado == "Reservado" && t.fecha.Value.Day == DateTime.Now.Day)
+            var turnosHoy = await _context.turnos.Where(t => t.estado == EstadosTurno.Reservado.ToString() && t.fecha.Value.Day == DateTime.Now.Day)
                          .OrderBy(t => t.hora)
                          .Include(t => t.medico)
                          .ThenInclude(m => m.idNavigation)
@@ -67,8 +67,8 @@ namespace MedCenter.Controllers
 
             // Estadísticas
             ViewBag.TotalTurnosHoy = turnosHoy.Count();
-            ViewBag.TurnosConfirmados = turnosHoy.Count(t => t.Estado == "Reservado");
-            ViewBag.TurnosCancelados = await _context.turnos.CountAsync(t => t.estado == "Cancelado");
+            ViewBag.TurnosConfirmados = turnosHoy.Count(t => t.Estado == EstadosTurno.Reservado.ToString());
+            ViewBag.TurnosCancelados = await _context.turnos.CountAsync(t => t.estado == EstadosTurno.Cancelado.ToString());
             ViewBag.TotalPacientes = await _context.pacientes.CountAsync();
             ViewBag.UserName = UserName;
 
@@ -300,7 +300,7 @@ namespace MedCenter.Controllers
                 .CountAsync(); // Aquí deberías filtrar por fecha de creación si tienes ese campo
 
             var turnosCancelados = await _context.turnos
-                .Where(t => t.fecha >= inicioMes && t.fecha <= hoy && t.estado == "Cancelado")
+                .Where(t => t.fecha >= inicioMes && t.fecha <= hoy && t.estado == EstadosTurno.Cancelado.ToString())
                 .CountAsync();
 
             ViewBag.TurnosMes = turnosMes;

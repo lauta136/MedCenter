@@ -18,9 +18,10 @@ public enum AccionesTurno
 
 public enum EstadosTurno
 {
-    Ausentado,
-    Cancelado,
+    Disponible,
     Reservado,
     Reprogramado,
-    Finalizado
+    Cancelado,
+    Finalizado,
+    Ausentado
 }

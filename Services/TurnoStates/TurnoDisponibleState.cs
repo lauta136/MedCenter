@@ -1,6 +1,7 @@
 using MedCenter.Models;
 using MedCenter.Services.TurnoStates; // Add this if TurnoReservadoState is in this namespace
 using MedCenter;
+using MedCenter.Services.TurnoSv;
 
 namespace MedCenter.Services.TurnoStates
 {
@@ -9,12 +10,12 @@ namespace MedCenter.Services.TurnoStates
 
         public ITurnoState Reservar(Turno turno)
         {
-            if(turno.fecha!.Value > DateOnly.FromDateTime(DateTime.Now.AddHours(24)))
-            {
-                turno.estado = "Reservado";
+            //if(turno.fecha!.Value > DateOnly.FromDateTime(DateTime.Now.AddHours(24)))
+            //{
+                turno.estado = EstadosTurno.Reservado.ToString();
                 return new TurnoReservadoState();
-            }
-            else throw new TransicionDeEstadoInvalidaException(GetNombreEstado(),"Reservar", true);
+            //}
+            //else throw new TransicionDeEstadoInvalidaException(GetNombreEstado(),"Reservar", true);
 
         }
 
@@ -39,7 +40,7 @@ namespace MedCenter.Services.TurnoStates
 
         public string GetNombreEstado()
         {
-            return "Disponible";
+            return EstadosTurno.Disponible.ToString();
         }
 
         public bool PuedeCancelar(Turno turno) => false;

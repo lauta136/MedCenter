@@ -61,7 +61,7 @@ namespace MedCenter.Controllers
 
             ViewBag.UserName = UserName;
             ViewBag.TotalTurnosHoy = turnosHoy.Count();
-            ViewBag.TurnosFinalizados = turnosHoy.Where(t => t.Estado == "Finalizado").Count();
+            ViewBag.TurnosFinalizados = turnosHoy.Where(t => t.Estado == EstadosTurno.Finalizado.ToString()).Count();
 
             await _turnoService.FinalizarAusentarTurnosPasados();
             

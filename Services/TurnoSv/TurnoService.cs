@@ -59,8 +59,8 @@ public class TurnoService
         if (slot == null)
             return (false,"No se encontro el horario");
 
-        if(slot.fecha <= DateOnly.FromDateTime(DateTime.Now)) 
-            return (false,  "No pueden reservarse turnos para el dia actual o hacia el pasado, hagalo con mas antelacion");
+       // if(slot.fecha <= DateOnly.FromDateTime(DateTime.Now)) 
+         //   return (false,  "No pueden reservarse turnos para el dia actual o hacia el pasado, hagalo con mas antelacion");
         
         int pacienteFinalId;
 
@@ -150,7 +150,7 @@ public class TurnoService
                                                   .Include(t => t.especialidad)
                                                   .Include(t => t.EntradaClinica)
                                                   .Where(t => t.slot != null && t.slot.disponible == false && t.fecha.Value.ToDateTime(t.slot.horafin.Value).AddMinutes(30) < DateTime.Now
-                                                   && (t.estado == "Reservado"|| t.estado == "Reprogramado"))
+                                                   && (t.estado == EstadosTurno.Reservado.ToString() || t.estado == EstadosTurno.Reprogramado.ToString()))
                                                   .ToListAsync();
             
         List<Turno> turnosAAusentar = turnosPasados.Where(t => t.EntradaClinica == null).ToList();
@@ -276,22 +276,25 @@ public class TurnoService
         // Guardar el ID del slot viejo ANTES de cambiarlo
         var slotViejoId = turno.slot_id.Value;
 
+        // Actualizar el turno con el nuevo slot
         turno.slot_id = nuevoSlotId;
-        turno.slot = nuevoSlot;  //Tengo que ponerlo, sino como EF prioriza las propiedades de navegacion ve lo de abajo y piensa que el turno no debe apuntar a ningun slot
         turno.fecha = nuevoSlot.fecha;
         turno.hora = nuevoSlot.horainicio;
         turno.medico_id = nuevoSlot.medico_id;
         _stateService.Reprogramar(turno);
+        
+        // Marcar explícitamente que slot_id cambió
+        _context.Entry(turno).Property(t => t.slot_id).IsModified = true;
 
         // Marcar el nuevo slot como no disponible
         nuevoSlot.disponible = false;
 
-        // Liberar el slot viejo (usando el ID guardado)
-        var slotViejo = new SlotAgenda { id = slotViejoId, disponible = true};
-        _context.Attach(slotViejo);
-        _context.Entry(slotViejo).Property(sa => sa.disponible).IsModified = true;
-        //_context.Entry(slotViejo).Reference(sa => sa.Turno).CurrentValue = null; ya se rompe la relacion cambiando la Fk y prop de nav desde la otra entidad
-       // _context.Entry(slotViejo).Reference(sa => sa.Turno).IsModified = true;
+        // Liberar el slot viejo - cargar desde DB para tracking correcto
+        var slotViejo = await _context.slotsagenda.FindAsync(slotViejoId);
+        if (slotViejo != null)
+        {
+            slotViejo.disponible = true;
+        }
 
         await _context.SaveChangesAsync();
 

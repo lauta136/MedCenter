@@ -1,18 +1,19 @@
 @model IEnumerable<MedCenter.DTOs.TurnoViewDTO>
+@using MedCenter.Services.TurnoSv
 
 @{
     var turnosGestionables = Model.Where(t => 
-        (t.Estado == "Reservado" || t.Estado == "Reprogramado") && 
+        (t.Estado == EstadosTurno.Reservado.ToString() || t.Estado == EstadosTurno.Reprogramado.ToString()) && 
         !t.EsProximo).ToList();
     
     var turnosProximos = Model.Where(t => 
-        (t.Estado == "Reservado" || t.Estado == "Reprogramado") && 
+        (t.Estado == EstadosTurno.Reservado.ToString() || t.Estado == EstadosTurno.Reprogramado.ToString()) && 
         t.EsProximo).ToList();
     
     var turnosHistorial = Model.Where(t => 
-        t.Estado == "Finalizado" || 
-        t.Estado == "Cancelado" || 
-        t.Estado == "Ausentado").ToList();
+        t.Estado == EstadosTurno.Finalizado.ToString() || 
+        t.Estado == EstadosTurno.Cancelado.ToString() || 
+        t.Estado == EstadosTurno.Ausentado.ToString()).ToList();
 
     var isPaciente = User.IsInRole("Paciente");
 }
@@ -147,13 +148,13 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                @if (turno.Estado == "Reservado")
+                                                @if (turno.Estado == EstadosTurno.Reservado.ToString())
                                                 {
                                                     <span class="badge bg-success">
                                                         <i class="fas fa-check me-1"></i>@turno.Estado
                                                     </span>
                                                 }
-                                                else if (turno.Estado == "Reprogramado")
+                                                else if (turno.Estado == EstadosTurno.Reprogramado.ToString())
                                                 {
                                                     <span class="badge bg-warning text-dark">
                                                         <i class="fas fa-sync me-1"></i>@turno.Estado
@@ -270,13 +271,13 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                @if (turno.Estado == "Reservado")
+                                                @if (turno.Estado == EstadosTurno.Reservado.ToString())
                                                 {
                                                     <span class="badge bg-success">
                                                         <i class="fas fa-check me-1"></i>@turno.Estado
                                                     </span>
                                                 }
-                                                else if (turno.Estado == "Reprogramado")
+                                                else if (turno.Estado == EstadosTurno.Reprogramado.ToString())
                                                 {
                                                     <span class="badge bg-warning text-dark">
                                                         <i class="fas fa-sync me-1"></i>@turno.Estado
@@ -401,19 +402,19 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                @if (turno.Estado == "Finalizado")
+                                                @if (turno.Estado == EstadosTurno.Finalizado.ToString())
                                                 {
                                                     <span class="badge bg-primary">
                                                         <i class="fas fa-check-circle me-1"></i>@turno.Estado
                                                     </span>
                                                 }
-                                                else if (turno.Estado == "Cancelado")
+                                                else if (turno.Estado == EstadosTurno.Cancelado.ToString())
                                                 {
                                                     <span class="badge bg-danger">
                                                         <i class="fas fa-times-circle me-1"></i>@turno.Estado
                                                     </span>
                                                 }
-                                                else if (turno.Estado == "Ausentado")
+                                                else if (turno.Estado == EstadosTurno.Ausentado.ToString())
                                                 {
                                                     <span class="badge bg-dark">
                                                         <i class="fas fa-user-slash me-1"></i>@turno.Estado

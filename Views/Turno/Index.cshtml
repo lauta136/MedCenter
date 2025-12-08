@@ -1,4 +1,5 @@
 ﻿@model IEnumerable<MedCenter.DTOs.TurnoViewDTO>
+@using MedCenter.Services.TurnoSv
 @{
     ViewData["Title"] = "Gestión de Turnos";
 }
@@ -78,7 +79,7 @@
                                         <span class="badge @badgeClass">
                                             <i class="fas @icon me-1"></i>@turno.Estado
                                         </span>
-                                        @if (turno.Estado == "Reprogramado")
+                                        @if (turno.Estado == EstadosTurno.Reprogramado.ToString())
                                         {
                                             <small class="text-muted d-block mt-1">
                                                 <i class="fas fa-info-circle"></i> No puede reprogramarse nuevamente
@@ -95,7 +96,7 @@
                                             </a>
                                             
                                             <!-- Reprogramar (solo si está Reservado) -->
-                                            @if (turno.Estado == "Reservado")
+                                            @if (turno.Estado == EstadosTurno.Reservado.ToString())
                                             {
                                                 <a asp-action="Edit" asp-route-id="@turno.Id" 
                                                    class="btn btn-outline-warning btn-sm" 
@@ -105,7 +106,7 @@
                                             }
                                             
                                             <!-- Botón deshabilitado si ya fue reprogramado -->
-                                            @if (turno.Estado == "Reprogramado")
+                                            @if (turno.Estado == EstadosTurno.Reprogramado.ToString())
                                             {
                                                 <button class="btn btn-outline-secondary btn-sm" 
                                                         disabled 
@@ -115,7 +116,7 @@
                                             }
                                             
                                             <!-- Cancelar (si está Reservado o Reprogramado) -->
-                                            @if (turno.Estado == "Reservado" || turno.Estado == "Reprogramado")
+                                            @if (turno.Estado == EstadosTurno.Reservado.ToString() || turno.Estado == EstadosTurno.Reprogramado.ToString())
                                             {
                                                 <a asp-action="Cancel" asp-route-id="@turno.Id" 
                                                    class="btn btn-outline-danger btn-sm" 

@@ -1,4 +1,5 @@
 using MedCenter.Models;
+using MedCenter.Services.TurnoSv;
 
 namespace MedCenter.Services.TurnoStates
 {
@@ -11,27 +12,27 @@ namespace MedCenter.Services.TurnoStates
         }
         public ITurnoState Reprogramar(Turno turno)
         {
-            turno.estado = "Reprogramado";
+            turno.estado = EstadosTurno.Reprogramado.ToString();
             return new TurnoReprogramadoState();
         }
 
         public ITurnoState Cancelar(Turno turno, string motivo_cancelacion)
         {  
-            turno.estado = "Cancelado";
+            turno.estado = EstadosTurno.Cancelado.ToString();
             turno.motivo_cancelacion = motivo_cancelacion;
             return new TurnoCanceladoState();
         }
 
         public ITurnoState Finalizar(Turno turno)
         {
-            turno.estado = "Finalizado";
+            turno.estado = EstadosTurno.Finalizado.ToString();
             return new TurnoFinalizadoState();
         }
 
         public string GetColorBadge() => "success";
         public string GetDescripcion() => "Turno confirmado y pendiente de atención";
 
-        public string GetNombreEstado() => "Reservado";
+        public string GetNombreEstado() => EstadosTurno.Reservado.ToString();
 
         public bool PuedeCancelar(Turno turno) => true;
 
@@ -43,7 +44,7 @@ namespace MedCenter.Services.TurnoStates
 
         public ITurnoState Ausentar(Turno turno)
         {
-            turno.estado = "Ausentado";
+            turno.estado = EstadosTurno.Ausentado.ToString();
             return new TurnoAusentadoState();
         }
 

@@ -38,7 +38,7 @@ namespace MedCenter.Controllers
             // Obtener próximos turnos
             var turnos = await _context.turnos
                 .Where(t => t.paciente_id == UserId && 
-                           (t.estado == "Reservado" || t.estado == "Reprogramado") &&
+                           (t.estado == EstadosTurno.Reservado.ToString() || t.estado == EstadosTurno.Reprogramado.ToString()) &&
                            t.fecha >= DateOnly.FromDateTime(DateTime.Now))
                 .Include(t => t.medico)
                     .ThenInclude(m => m.idNavigation)
@@ -79,7 +79,7 @@ namespace MedCenter.Controllers
 
             var turnos = await _context.turnos
                 .Where(t => t.paciente_id == UserId &&
-                           t.estado == "Reservado" &&
+                           t.estado == EstadosTurno.Reservado.ToString() &&
                            t.fecha >= DateOnly.FromDateTime(DateTime.Now))
                 .Include(t => t.medico)
                     .ThenInclude(m => m.idNavigation)

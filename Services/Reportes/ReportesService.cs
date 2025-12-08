@@ -77,12 +77,12 @@ namespace MedCenter.Services.Reportes
             var turnosMes = await queryTurnos.CountAsync();
 
             var turnosCancelados = await queryTurnos
-                .Where(t => t.estado == "Cancelado")
+                .Where(t => t.estado == EstadosTurno.Cancelado.ToString())
                 .CountAsync();
 
             var pacientesAtendidos = medicoId.HasValue 
                 ? await queryTurnos
-                    .Where(t => t.estado == "Finalizado")
+                    .Where(t => t.estado == EstadosTurno.Finalizado.ToString())
                     .Select(t => t.paciente_id)
                     .Distinct()
                     .CountAsync()
@@ -129,10 +129,10 @@ namespace MedCenter.Services.Reportes
                 return new EstadisticasAvanzadasDTO();
 
             // Totales por estado (estado es string en el modelo)
-            var completados = turnos.Count(t => t.estado == "Finalizado");
-            var cancelados = turnos.Count(t => t.estado == "Cancelado");
+            var completados = turnos.Count(t => t.estado == EstadosTurno.Finalizado.ToString());
+            var cancelados = turnos.Count(t => t.estado == EstadosTurno.Cancelado.ToString());
             var pendientes = turnos.Count(t => t.estado == "Pendiente");
-            var noShow = turnos.Count(t => t.estado == "Ausentado");
+            var noShow = turnos.Count(t => t.estado == EstadosTurno.Ausentado.ToString());
 
             // KPIs calculados (procesamiento de información)
             var tasaCancelacion = totalTurnos > 0 ? (decimal)cancelados / totalTurnos * 100 : 0;
@@ -149,7 +149,7 @@ namespace MedCenter.Services.Reportes
                 .GroupBy(t => t.especialidad?.nombre ?? "Sin especialidad")
                 .ToDictionary(
                     g => g.Key,
-                    g => g.Count() > 0 ? (decimal)g.Count(t => t.estado == "Cancelado") / g.Count() * 100 : 0
+                    g => g.Count() > 0 ? (decimal)g.Count(t => t.estado == EstadosTurno.Cancelado.ToString()) / g.Count() * 100 : 0
                 );
 
             // Top performers: Médicos más efectivos (completados / total)
@@ -161,7 +161,7 @@ namespace MedCenter.Services.Reportes
                 .GroupBy(t => $"{t.medico?.idNavigation?.nombre}")
                 .ToDictionary(
                     g => g.Key,
-                    g => g.Count() > 0 ? (decimal)g.Count(t => t.estado == "Finalizado") / g.Count() * 100 : 0
+                    g => g.Count() > 0 ? (decimal)g.Count(t => t.estado == EstadosTurno.Finalizado.ToString()) / g.Count() * 100 : 0
                 );
 
             // Tendencias: Distribución por día de semana
@@ -680,16 +680,16 @@ namespace MedCenter.Services.Reportes
                     // Estado with color
                     var estadoColor = turno.Estado switch
                     {
-                        "Reservado" => new BaseColor(34, 197, 94),      // Green
-                        "Cancelado" => new BaseColor(239, 68, 68),      // Red
-                        "Finalizado" => new BaseColor(59, 130, 246),    // Blue
-                        "Reprogramado" => new BaseColor(251, 191, 36),  // Yellow
-                        "Ausentado" => new BaseColor(156, 163, 175),    // Gray
-                        "Disponible" => new BaseColor(255, 255, 255),   // White
+                        var s when s == EstadosTurno.Reservado.ToString() => new BaseColor(34, 197, 94),      // Green
+                        var s when s == EstadosTurno.Cancelado.ToString() => new BaseColor(239, 68, 68),      // Red
+                        var s when s == EstadosTurno.Finalizado.ToString() => new BaseColor(59, 130, 246),    // Blue
+                        var s when s == EstadosTurno.Reprogramado.ToString() => new BaseColor(251, 191, 36),  // Yellow
+                        var s when s == EstadosTurno.Ausentado.ToString() => new BaseColor(156, 163, 175),    // Gray
+                        var s when s == EstadosTurno.Disponible.ToString() => new BaseColor(255, 255, 255),   // White
                         _ => new BaseColor(255, 255, 255)
                     };
                     
-                    var estadoFont = turno.Estado != "Disponible" ? whiteCellFont : cellFont;
+                    var estadoFont = turno.Estado != EstadosTurno.Disponible.ToString() ? whiteCellFont : cellFont;
                     PdfPCell estadoCell = new PdfPCell(new Phrase(turno.Estado, estadoFont));
                     estadoCell.BackgroundColor = estadoColor;
                     table.AddCell(estadoCell);
@@ -931,15 +931,15 @@ namespace MedCenter.Services.Reportes
                     var estadoCell = worksheet.Cell(row, 9);
                     estadoCell.Style.Fill.BackgroundColor = turno.Estado switch
                     {
-                        "Reservado" => XLColor.FromHtml("#22C55E"),      // Green
-                        "Cancelado" => XLColor.FromHtml("#EF4444"),      // Red
-                        "Finalizado" => XLColor.FromHtml("#3B82F6"),     // Blue
-                        "Reprogramado" => XLColor.FromHtml("#FBBF24"),   // Yellow
-                        "Ausentado" => XLColor.FromHtml("#9CA3AF"),      // Gray
-                        "Disponible" => XLColor.White,                    // White
+                        var s when s == EstadosTurno.Reservado.ToString() => XLColor.FromHtml("#22C55E"),      // Green
+                        var s when s == EstadosTurno.Cancelado.ToString() => XLColor.FromHtml("#EF4444"),      // Red
+                        var s when s == EstadosTurno.Finalizado.ToString() => XLColor.FromHtml("#3B82F6"),     // Blue
+                        var s when s == EstadosTurno.Reprogramado.ToString() => XLColor.FromHtml("#FBBF24"),   // Yellow
+                        var s when s == EstadosTurno.Ausentado.ToString() => XLColor.FromHtml("#9CA3AF"),      // Gray
+                        var s when s == EstadosTurno.Disponible.ToString() => XLColor.White,                    // White
                         _ => XLColor.White
                     };
-                    if (turno.Estado != "Disponible")
+                    if (turno.Estado != EstadosTurno.Disponible.ToString())
                         estadoCell.Style.Font.FontColor = XLColor.White;
 
                     row++;
