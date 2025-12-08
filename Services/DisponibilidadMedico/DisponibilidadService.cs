@@ -154,7 +154,7 @@ namespace MedCenter.Services.DisponibilidadMedico
         public async Task LimpiarSlotsPasados()
         {
             DateOnly fechaLimite = DateOnly.FromDateTime(DateTime.Now.AddDays(-7));
-            await _context.slotsagenda.Include(s => s.Turno).Where(s => s.disponible == true && s.fecha < fechaLimite && s.Turno == null).ExecuteDeleteAsync();
+            await _context.slotsagenda.Include(sa => sa.Turno).Where(s => s.disponible == true && s.fecha < fechaLimite && s.Turno == null).ExecuteDeleteAsync();
         }
         
         public async Task<Dictionary<DateOnly,Colores>> GetColoresSemaforo(int id_medico)

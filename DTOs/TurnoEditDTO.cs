@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using MedCenter.Services.TurnoSv;
 
 namespace MedCenter.DTOs
 {
@@ -20,5 +21,9 @@ namespace MedCenter.DTOs
 
         public int EspecialidadId { get; set; }
         public string? EspecialidadNombre { get; set; }
+
+        public EstadosTurno? Estado {get;set;}
+        public string? DescripcionEstado{get;set;}
+
     }
 }

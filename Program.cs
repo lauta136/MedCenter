@@ -43,6 +43,7 @@ builder.Services.AddScoped<PasswordRecoveryService>();
 builder.Services.AddScoped<EmailService>();
 
 builder.Services.AddMemoryCache();
+builder.Services.AddHttpContextAccessor();
 
 // Add background service for session cleanup
 builder.Services.AddHostedService<SessionCleanupService>();

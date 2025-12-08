@@ -1,19 +1,38 @@
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        setupFilters();
-    });
+    // Use immediate execution or check if DOM is already loaded
+    (function() {
+        console.log('Script loaded, readyState:', document.readyState);
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupFilters);
+        } else {
+            // DOM already loaded
+            setupFilters();
+        }
+    })();
 
     function setupFilters() {
+        console.log('setupFilters called');
+        
         // Get all filter elements
         const searchInputs = document.querySelectorAll('[data-filter="search"]');
         const dateInputs = document.querySelectorAll('[data-filter="fecha"]');
         const estadoSelects = document.querySelectorAll('[data-filter="estado"]');
         const limpiarButtons = document.querySelectorAll('.btn-limpiar');
 
+        console.log('Found elements:', {
+            searchInputs: searchInputs.length,
+            dateInputs: dateInputs.length,
+            estadoSelects: estadoSelects.length,
+            limpiarButtons: limpiarButtons.length
+        });
+
         // Setup search filters
         searchInputs.forEach(input => {
+            console.log('Attaching input listener to:', input);
             input.addEventListener('input', function() {
                 const tab = this.getAttribute('data-tab');
+                console.log('Search input changed for tab:', tab);
                 filterTable(tab);
             });
         });
@@ -22,6 +41,7 @@
         dateInputs.forEach(input => {
             input.addEventListener('change', function() {
                 const tab = this.getAttribute('data-tab');
+                console.log('Date changed for tab:', tab);
                 filterTable(tab);
             });
         });
@@ -30,6 +50,7 @@
         estadoSelects.forEach(select => {
             select.addEventListener('change', function() {
                 const tab = this.getAttribute('data-tab');
+                console.log('Estado changed for tab:', tab);
                 filterTable(tab);
             });
         });
@@ -55,6 +76,8 @@
     }
 
     function filterTable(tab) {
+        console.log('filterTable called for tab:', tab);
+        
         const searchInput = document.querySelector(`[data-tab="${tab}"][data-filter="search"]`);
         const dateInput = document.querySelector(`[data-tab="${tab}"][data-filter="fecha"]`);
         const estadoSelect = document.querySelector(`[data-tab="${tab}"][data-filter="estado"]`);
@@ -63,10 +86,15 @@
         const selectedDate = dateInput ? dateInput.value : '';
         const selectedEstado = estadoSelect ? estadoSelect.value.toLowerCase() : '';
         
+        console.log('Filter values:', { searchTerm, selectedDate, selectedEstado });
+        
         const tbody = document.querySelector(`tbody[data-tab="${tab}"]`);
+        console.log('Found tbody:', tbody);
+        
         if (!tbody) return;
         
         const rows = tbody.getElementsByTagName('tr');
+        console.log('Found rows:', rows.length);
         
         for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
