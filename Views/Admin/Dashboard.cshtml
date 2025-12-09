@@ -1,0 +1,182 @@
+@model IEnumerable<dynamic>
+@{
+    ViewData["Title"] = "Panel de Administración";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="fw-semibold">
+                    <i class="fas fa-users-cog me-2 text-primary"></i>
+                    Panel de Administración
+                </h2>
+                <a href="@Url.Action("CreateUser", "Admin")" class="btn btn-primary">
+                    <i class="fas fa-user-plus me-2"></i>Crear Usuario
+                </a>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 fw-semibold">
+                        <i class="fas fa-users me-2 text-primary"></i>
+                        Usuarios del Sistema
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Rol</th>
+                                        <th class="text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var usuario in Model)
+                                    {
+                                        <tr>
+                                            <td>@usuario.id</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm bg-light rounded-circle me-2 d-flex align-items-center justify-content-center">
+                                                        <i class="fas fa-user text-muted"></i>
+                                                    </div>
+                                                    @usuario.nombre
+                                                </div>
+                                            </td>
+                                            <td>@usuario.email</td>
+                                            <td>
+                                                @if (usuario.Rol == "Medico")
+                                                {
+                                                    <span class="badge bg-primary">
+                                                        <i class="fas fa-user-md me-1"></i>Médico
+                                                    </span>
+                                                }
+                                                else if (usuario.Rol == "Secretaria")
+                                                {
+                                                    <span class="badge bg-info">
+                                                        <i class="fas fa-user-tie me-1"></i>Secretaria
+                                                    </span>
+                                                }
+                                                else if (usuario.Rol == "Paciente")
+                                                {
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-hospital-user me-1"></i>Paciente
+                                                    </span>
+                                                }
+                                                else if (usuario.Rol == "Admin")
+                                                {
+                                                    <span class="badge bg-danger">
+                                                        <i class="fas fa-user-shield me-1"></i>Admin
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">
+                                                        <i class="fas fa-question me-1"></i>@usuario.Rol
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td class="text-end">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a href="@Url.Action("EditUser", "Admin", new { id = usuario.id })" 
+                                                       class="btn btn-outline-primary" 
+                                                       title="Editar Rol">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <form asp-action="DeleteUser" asp-route-id="@usuario.id" method="post" class="d-inline"
+                                                          onsubmit="return confirm('¿Está seguro de eliminar este usuario?')">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No hay usuarios registrados en el sistema</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title fw-semibold mb-3">
+                        <i class="fas fa-key me-2 text-warning"></i>
+                        Administración de Roles
+                    </h5>
+                    <p class="text-muted">
+                        Para administrar las claves de acceso de los roles del sistema, visite la sección de 
+                        <a href="@Url.Action("ManageRoles", "Admin")" class="text-decoration-none">
+                            Gestión de Roles <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-sm {
+        width: 36px;
+        height: 36px;
+    }
+
+    .icon-box {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        font-size: 1.5rem;
+    }
+
+    .table > tbody > tr > td {
+        vertical-align: middle;
+    }
+</style>

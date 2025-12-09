@@ -59,8 +59,8 @@ public class TurnoService
         if (slot == null)
             return (false,"No se encontro el horario");
 
-       // if(slot.fecha <= DateOnly.FromDateTime(DateTime.Now)) 
-         //   return (false,  "No pueden reservarse turnos para el dia actual o hacia el pasado, hagalo con mas antelacion");
+        if(slot.fecha <= DateOnly.FromDateTime(DateTime.Now)) 
+            return (false,  "No pueden reservarse turnos para el dia actual o hacia el pasado, hagalo con mas antelacion");
         
         int pacienteFinalId;
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using MedCenter.Model;
 
 namespace MedCenter.Models;
 
@@ -18,6 +19,8 @@ public partial class Persona
     public virtual Medico? Medico { get; set; }
 
     public virtual Paciente? Paciente { get; set; }
+
+    public virtual Admin? Admin {get;set;}
 
     public virtual ICollection<ReporteEstadistico> reportesestadisticos { get; set; } = new List<ReporteEstadistico>();
 

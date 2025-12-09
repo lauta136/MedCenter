@@ -1,3 +1,5 @@
+namespace MedCenter.Models;
+
 public class RoleKey
 {
     public int Id { get; set; }

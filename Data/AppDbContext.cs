@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using MedCenter.Models;
 using Microsoft.EntityFrameworkCore;
 using MedCenter.Services.Authentication.Components;
+using MedCenter.Model;
+using DocumentFormat.OpenXml.Bibliography;
 
 namespace MedCenter.Data;
 
@@ -49,6 +51,7 @@ public partial class AppDbContext : DbContext
     public DbSet<DisponibilidadMedico> disponibilidad_medico { get; set; }
     public DbSet<TrazabilidadTurno> trazabilidadTurnos { get; set; }
     public DbSet<TrazabilidadLogin> trazabilidadLogins{get;set;}
+    public DbSet<Admin> admins{get;set;}
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<EntradaClinica>(entity =>
@@ -397,7 +400,20 @@ public partial class AppDbContext : DbContext
             e.Property(e => e.MomentoLogin).HasColumnName("momento_login");
             e.Property(e => e.TipoLogout).HasColumnName("tipo_logout").HasConversion<string>();
         });
+
+        modelBuilder.Entity<Admin>( e =>
+        {
+            e.ToTable("admins");
+
+            e.HasKey(e => e.Id);
+            e.Property(e => e.Id).ValueGeneratedNever().HasColumnName("id");
+            e.Property(e => e.Fecha_ingreso).HasColumnName("fecha_ingreso");
+            e.Property(e => e.Cargo).HasColumnName("cargo");
+            e.Property(e => e.Activo).HasDefaultValue(true).HasColumnName("activo");
             
+            e.HasOne<Persona>(e => e.IdNavigation)
+            .WithOne(e => e.Admin).HasForeignKey<Admin>(e => e.Id);
+        });
         
 
         /* modelBuilder.Entity<RoleKey>().HasData(

@@ -60,6 +60,7 @@
                                         <option value="Paciente">Paciente</option>
                                         <option value="Medico">Médico</option>
                                         <option value="Secretaria">Secretaria</option>
+                                        <option value="Admin">Administrador</option>
                                     </select>
                                     <span asp-validation-for="Role" class="text-danger small"></span>
                                 </div>
@@ -153,6 +154,26 @@
                                                 <span asp-validation-for="ClaveSecretaria" class="text-danger small"></span>
                                             </div>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos para Admin -->
+                        <div id="adminFields" class="role-fields" style="display: none;">
+                            <div class="card bg-light border-0 mb-4">
+                                <div class="card-body">
+                                    <h5 class="card-title text-danger mb-3">
+                                        <i class="fas fa-user-shield me-2"></i>Información de Administrador
+                                    </h5>
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        <strong>Atención:</strong> Esta opción es solo para administradores del sistema.
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <label asp-for="ClaveMedico" class="form-label">Clave de Administrador <span class="text-danger">*</span></label>
+                                        <input asp-for="ClaveMedico" type="password" class="form-control" placeholder="Ingrese la clave de administrador" />
+                                        <small class="form-text text-muted">Requiere clave especial de administrador (CLAVE_ADMIN_789)</small>
                                     </div>
                                 </div>
                             </div>
@@ -282,6 +303,9 @@ form#registerForm select.form-select:focus {
                     submitBtn.disabled = false;
                 } else if (selectedRole === 'Secretaria') {
                     document.getElementById('secretariaFields').style.display = 'block';
+                    submitBtn.disabled = false;
+                } else if (selectedRole === 'Admin') {
+                    document.getElementById('adminFields').style.display = 'block';
                     submitBtn.disabled = false;
                 } else {
                     submitBtn.disabled = true;

@@ -1,4 +1,5 @@
 using MedCenter.Data;
+using MedCenter.Models;
 using Microsoft.EntityFrameworkCore;
 using MedCenter.Services.Authentication.Components;
 
@@ -11,43 +12,33 @@ public static class DbInitializer
             // Asegurar que la base de datos está creada y las migraciones aplicadas
             await context.Database.MigrateAsync();
 
-            // Si ya hay datos de roles, no hacer nada
-            if (await context.role_keys.AnyAsync())
-            {
-                Console.WriteLine("Los datos de roles ya existen en la base de datos.");
-                return;
-            }
-
             Console.WriteLine("Inicializando datos de roles...");
 
             var passwordHasher = new PasswordHashService();
-            var medicoPlainKey = configuration["RoleKeys:Medico"];
-            var secretariaPlainKey = configuration["RoleKeys:Secretaria"];
+            var adminPlainKey = configuration["RoleKeys:Admin"];
 
-            // Validar que las claves estén configuradas
-            if (string.IsNullOrEmpty(medicoPlainKey) || string.IsNullOrEmpty(secretariaPlainKey))
+            // Validar que la clave esté configurada
+            if (string.IsNullOrEmpty(adminPlainKey))
             {
-                throw new InvalidOperationException("Las claves de rol no están configuradas en appsettings.json");
+                throw new InvalidOperationException("La clave de Admin no está configurada en appsettings.json");
             }
 
-            var roles = new[]
+            // Solo agregar Admin si no existe (Medico y Secretaria ya existen)
+            if (!await context.role_keys.AnyAsync(r => r.Role == "Admin"))
             {
-                new RoleKey 
-                { 
-                    Id = 1,
-                    Role = "Medico", 
-                    HashedKey = passwordHasher.HashPassword(medicoPlainKey) 
-                },
-                new RoleKey 
-                { 
-                    Id = 2,
-                    Role = "Secretaria", 
-                    HashedKey = passwordHasher.HashPassword(secretariaPlainKey) 
-                }
-            };
-
-            await context.role_keys.AddRangeAsync(roles);
-            await context.SaveChangesAsync();
+                // Obtener el siguiente ID disponible
+                var maxId = await context.role_keys.MaxAsync(r => (int?)r.Id) ?? 0;
+                var nextId = maxId + 1;
+                
+                var hashedKey = passwordHasher.HashPassword(adminPlainKey);
+                await context.Database.ExecuteSqlAsync(
+                    $"INSERT INTO role_keys (\"Id\", role, hashed_key) VALUES ({nextId}, 'Admin', {hashedKey})");
+                Console.WriteLine("Rol Admin agregado.");
+            }
+            else
+            {
+                Console.WriteLine("Rol Admin ya existe.");
+            }
 
             Console.WriteLine("Datos de roles inicializados correctamente.");
         }
