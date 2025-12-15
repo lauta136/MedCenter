@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using DocumentFormat.OpenXml.Presentation;
 using MedCenter.Attributes;
 
 namespace MedCenter.DTOs
@@ -36,8 +37,14 @@ namespace MedCenter.DTOs
 
         // Campos específicos para Secretaria
         public string? Legajo { get; set; }
+
+        //Campos especificos para Admin
+
+        public string? Cargo{get;set;}
+
         // Claves específicas para roles administrativos
         public string? ClaveSecretaria { get; set; } //DESPUES VER SI INCLUIR ROL ADMINISTRATIVO
         public string? ClaveMedico { get; set; }
+        public string? ClaveAdmin {get;set;}
     }
 }

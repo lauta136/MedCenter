@@ -1,5 +1,6 @@
 using MedCenter.Data;
 using MedCenter.DTOs;
+using MedCenter.Model;
 using MedCenter.Models;
 using MedCenter.Services.TurnoSv;
 using Microsoft.EntityFrameworkCore;
@@ -22,31 +23,23 @@ namespace MedCenter.Services.Authentication.Components
         public async Task<AuthResult> AuthenticateAsync(string username, string password)
         {
             // Admin es una persona sin rol específico (sin Medico, Secretaria, ni Paciente)
-            var persona = await _context.personas
-                .Include(p => p.Medico)
-                .Include(p => p.Secretaria)
-                .Include(p => p.Paciente)
-                .FirstOrDefaultAsync(p => p.email == username);
+            var admin = await _context.admins
+                .Include(a => a.IdNavigation)
+                .FirstOrDefaultAsync(p => p.IdNavigation.email == username);
 
-            if (persona != null)
+            if (admin != null)
             {
-                // Verificar que no tenga ningún rol específico (es Admin)
-                bool esAdmin = persona.Medico == null && persona.Secretaria == null && persona.Paciente == null;
-                
-                if (esAdmin)
-                {
-                    if (_hashService.VerifyPassword(password, persona.contraseña))
-                        return new AuthResult 
-                        { 
-                            Success = true, 
-                            Role = RolUsuario.Admin, 
-                            UserName = persona.nombre, 
-                            UserId = persona.id, 
-                            UserMail = persona.email 
-                        };
-                    else
-                        return new AuthResult { Success = false, ErrorMessage = "La contraseña es incorrecta" };
-                }
+                if (_hashService.VerifyPassword(password, admin.IdNavigation.contraseña))
+                    return new AuthResult 
+                    { 
+                        Success = true, 
+                        Role = RolUsuario.Admin, 
+                        UserName = admin.IdNavigation.nombre, 
+                        UserId = admin.Id, 
+                        UserMail = admin.IdNavigation.email 
+                    };
+                else
+                    return new AuthResult { Success = false, ErrorMessage = "La contraseña es incorrecta" };
             }
             
             return new AuthResult { Success = false, ErrorMessage = "No se ha encontrado una cuenta de administrador con el email proporcionado" };
@@ -54,7 +47,7 @@ namespace MedCenter.Services.Authentication.Components
 
         public async Task<AuthResult> RegisterAsync(RegisterDTO dto)
         {
-            if (dto.Role != "Admin")
+            if (dto.Role != RolUsuario.Admin.ToString())
                 return new AuthResult { Success = false, ErrorMessage = "Rol incorrecto para este autenticador" };
 
             // Verificar si ya existe el email
@@ -62,14 +55,18 @@ namespace MedCenter.Services.Authentication.Components
             if (emailExists)
                 return new AuthResult { Success = false, ErrorMessage = "El email ya está registrado" };
 
+            // Validar que el cargo esté presente
+            if (string.IsNullOrWhiteSpace(dto.Cargo))
+                return new AuthResult { Success = false, ErrorMessage = "Debe ingresar el cargo del administrador" };
+
             // Validar la clave de Admin desde el formulario
-            var adminKeyFromForm = dto.ClaveMedico;
+            var adminKeyFromForm = dto.ClaveAdmin;
             
             if (string.IsNullOrEmpty(adminKeyFromForm))
                 return new AuthResult { Success = false, ErrorMessage = "Debe ingresar la clave de administrador" };
             
             // Debug: verificar si existe la clave de Admin en la BD
-            var adminRoleKey = await _context.role_keys.FirstOrDefaultAsync(rk => rk.Role == "Admin");
+            var adminRoleKey = await _context.role_keys.FirstOrDefaultAsync(rk => rk.Role == RolUsuario.Admin.ToString());
             if (adminRoleKey == null)
                 return new AuthResult { Success = false, ErrorMessage = "Error: No existe la clave de rol Admin en la base de datos. Contacte al administrador del sistema." };
             
@@ -89,9 +86,18 @@ namespace MedCenter.Services.Authentication.Components
 
                 _context.personas.Add(persona);
                 await _context.SaveChangesAsync();
-
-                // Admin no necesita tabla específica, solo la persona sin roles
                 
+                Admin admin = new Admin
+                {
+                    Id = persona.id,
+                    Fecha_ingreso = DateOnly.FromDateTime(DateTime.UtcNow),
+                    Cargo = dto.Cargo,
+                    IdNavigation = persona
+                };
+
+                _context.admins.Add(admin);
+                await _context.SaveChangesAsync();
+
                 await transaction.CommitAsync();
 
                 return new AuthResult 
