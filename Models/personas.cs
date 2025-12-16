@@ -23,6 +23,8 @@ public partial class Persona
     public virtual Admin? Admin {get;set;}
 
     public virtual ICollection<ReporteEstadistico> reportesestadisticos { get; set; } = new List<ReporteEstadistico>();
-
+    
+    public virtual ICollection<PersonaPermiso> PersonaPermisos{get;set;}
     public virtual Secretaria? Secretaria { get; set; }
+
 }

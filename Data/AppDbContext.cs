@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using MedCenter.Services.Authentication.Components;
 using MedCenter.Model;
 using DocumentFormat.OpenXml.Bibliography;
+using MedCenter.Services.TurnoSv;
+using MedCenter.Enums;
 
 namespace MedCenter.Data;
 
@@ -52,6 +54,7 @@ public partial class AppDbContext : DbContext
     public DbSet<TrazabilidadTurno> trazabilidadTurnos { get; set; }
     public DbSet<TrazabilidadLogin> trazabilidadLogins{get;set;}
     public DbSet<Admin> admins{get;set;}
+    public DbSet<Permiso> permisos {get;set;}
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<EntradaClinica>(entity =>
@@ -412,9 +415,58 @@ public partial class AppDbContext : DbContext
             e.Property(e => e.Activo).HasDefaultValue(true).HasColumnName("activo");
             
             e.HasOne<Persona>(e => e.IdNavigation)
-            .WithOne(e => e.Admin).HasForeignKey<Admin>(e => e.Id);
+            .WithOne(e => e.Admin).HasForeignKey<Admin>(e => e.Id)
+            .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("admins_id_fkey");
         });
         
+        modelBuilder.Entity<Permiso>(e =>
+        {
+            e.ToTable("permisos");
+            e.HasKey(e => e.Id).HasName("permiso_pkey");
+            e.Property(e => e.Id).UseIdentityAlwaysColumn();
+
+            e.Property(e => e.Nombre).HasColumnName("nombre");
+            e.HasIndex(e => e.Nombre).IsUnique().HasDatabaseName("IX_Permisos_Nombre");
+;
+            e.Property<Recurso>(e => e.Recurso).HasColumnName("recurso").HasConversion<string>();
+            e.Property<AccionUsuario>(e => e.Accion).HasColumnName("accion").HasConversion<string>();
+            e.Property(e => e.Descripcion).HasColumnName("descripcion");
+
+        });
+
+        modelBuilder.Entity<PersonaPermiso>(e =>
+        {
+           e.ToTable("persona_permiso");
+
+
+           e.HasKey(e => new {e.PermisoId, e.PersonaId}).HasName("persona_permiso_pkey");
+           //e.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+           e.Property(e => e.PermisoId).HasColumnName("permiso_id");
+           e.Property(e => e.PersonaId).HasColumnName("persona_id");
+
+           e.HasOne<Permiso>(e => e.Permiso).WithMany(p => p.PersonaPermisos)
+           .HasForeignKey(e => e.PermisoId).HasConstraintName("persona_permiso_permiso_fkey")
+           .OnDelete(DeleteBehavior.Cascade); 
+
+           e.HasOne(e => e.Persona).WithMany(p => p.PersonaPermisos)
+           .HasForeignKey(e => e.PersonaId).HasConstraintName("persona_permiso_persona_fkey")
+           .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<RolPermiso>(e =>
+        {
+           e.ToTable("rol_permiso");
+
+           e.HasKey(e => new{e.PermisoId, e.RolNombre}).HasName("rol_permiso_pkey");
+           e.Property(e => e.RolNombre).HasColumnName("rol_nombre");
+           e.Property(e => e.PermisoId).HasColumnName("permiso_id");
+
+           e.HasOne<Permiso>(e => e.Permiso).WithMany(p => p.RolPermisos)
+           .HasForeignKey(e => e.PermisoId).HasConstraintName("rol_permiso_permiso_fkey")
+           .OnDelete(DeleteBehavior.Cascade); 
+
+        });
 
         /* modelBuilder.Entity<RoleKey>().HasData(
              new RoleKey { Id = 1, Role = "Medico", HashedKey = medicoKey },
@@ -422,6 +474,7 @@ public partial class AppDbContext : DbContext
          OnModelCreatingPartial(modelBuilder);
          */
     }
+
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
