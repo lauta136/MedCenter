@@ -55,6 +55,7 @@ public partial class AppDbContext : DbContext
     public DbSet<TrazabilidadLogin> trazabilidadLogins{get;set;}
     public DbSet<Admin> admins{get;set;}
     public DbSet<Permiso> permisos {get;set;}
+    public DbSet<RolPermiso> rolPermisos{get;set;}
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<EntradaClinica>(entity =>
@@ -433,6 +434,8 @@ public partial class AppDbContext : DbContext
             e.Property<AccionUsuario>(e => e.Accion).HasColumnName("accion").HasConversion<string>();
             e.Property(e => e.Descripcion).HasColumnName("descripcion");
 
+            e.HasMany(e => e.PermisosHijos).WithOne(p => p.PermisoPadre).HasForeignKey(p => p.PermisoPadreId);
+
         });
 
         modelBuilder.Entity<PersonaPermiso>(e =>
@@ -459,7 +462,7 @@ public partial class AppDbContext : DbContext
            e.ToTable("rol_permiso");
 
            e.HasKey(e => new{e.PermisoId, e.RolNombre}).HasName("rol_permiso_pkey");
-           e.Property(e => e.RolNombre).HasColumnName("rol_nombre");
+           e.Property(e => e.RolNombre).HasColumnName("rol_nombre").HasConversion<string>();
            e.Property(e => e.PermisoId).HasColumnName("permiso_id");
 
            e.HasOne<Permiso>(e => e.Permiso).WithMany(p => p.RolPermisos)

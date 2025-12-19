@@ -3,6 +3,7 @@ using System;
 using MedCenter.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MedCenter.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251218233035_JerarquiaPermisos")]
+    partial class JerarquiaPermisos
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -456,8 +459,8 @@ namespace MedCenter.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("permiso_id");
 
-                    b.Property<string>("RolNombre")
-                        .HasColumnType("text")
+                    b.Property<int>("RolNombre")
+                        .HasColumnType("integer")
                         .HasColumnName("rol_nombre");
 
                     b.HasKey("PermisoId", "RolNombre")

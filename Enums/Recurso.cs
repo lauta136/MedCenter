@@ -2,10 +2,13 @@ namespace MedCenter.Enums;
 
 public enum Recurso
 {
-    USUARIO,
-    TURNO,
-    ENTRADACLINICA,
-    HISTORIACLINICA,
-    ROL,
-    PERMISO
+    Medico,
+    Paciente,
+    Secretaria,
+    Turno,
+    EntradaClinica,
+    HistoriaClinica,
+    Rol,
+    Permiso,
+    Reporte
 }
