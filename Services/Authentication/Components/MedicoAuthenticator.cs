@@ -1,3 +1,4 @@
+using DocumentFormat.OpenXml.Office2010.Excel;
 using MedCenter.Data;
 using MedCenter.DTOs;
 using MedCenter.Models;
@@ -127,7 +128,18 @@ namespace MedCenter.Services.Authentication.Components
                     });
                 }
 
+
+                var ids= await _context.rolPermisos.Where(rp => rp.RolNombre == RolUsuario.Medico).Select(p => p.PermisoId).ToListAsync();
+                
+                var personaPermisos = ids.Select(id => new PersonaPermiso
+                {
+                    PermisoId = id,
+                    PersonaId = persona.id
+                });
+                
+                await _context.personaPermisos.AddRangeAsync(personaPermisos);
                 await _context.SaveChangesAsync();
+
                 await transaction.CommitAsync();
 
                 return new AuthResult

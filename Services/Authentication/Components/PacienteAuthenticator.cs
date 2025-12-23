@@ -82,6 +82,15 @@ namespace MedCenter.Services.Authentication.Components
                 };
 
                 await _context.pacientes.AddAsync(paciente);
+                var ids= await _context.rolPermisos.Where(rp => rp.RolNombre == RolUsuario.Paciente).Select(p => p.PermisoId).ToListAsync();
+                
+                var personaPermisos = ids.Select(id => new PersonaPermiso
+                {
+                    PermisoId = id,
+                    PersonaId = persona.id
+                });
+                
+                await _context.personaPermisos.AddRangeAsync(personaPermisos);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 

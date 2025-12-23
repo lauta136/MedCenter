@@ -56,6 +56,8 @@ public partial class AppDbContext : DbContext
     public DbSet<Admin> admins{get;set;}
     public DbSet<Permiso> permisos {get;set;}
     public DbSet<RolPermiso> rolPermisos{get;set;}
+    public DbSet<PersonaPermiso> personaPermisos{get;set;}
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<EntradaClinica>(entity =>

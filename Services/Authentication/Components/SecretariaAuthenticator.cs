@@ -52,7 +52,7 @@ namespace MedCenter.Services.Authentication.Components
 
             var transaction = await _context.Database.BeginTransactionAsync();
 
-            try
+           try
             {
                 Persona persona = new Persona
                 {
@@ -72,8 +72,17 @@ namespace MedCenter.Services.Authentication.Components
                 };
 
                 _context.secretarias.Add(secretaria);
-
+                var ids= await _context.rolPermisos.Where(rp => rp.RolNombre == RolUsuario.Secretaria).Select(p => p.PermisoId).ToListAsync();
+                
+                var personaPermisos = ids.Select(id => new PersonaPermiso
+                {
+                    PermisoId = id,
+                    PersonaId = persona.id
+                });
+                
+                await _context.personaPermisos.AddRangeAsync(personaPermisos);
                 await _context.SaveChangesAsync();
+
                 await transaction.CommitAsync();
 
                 return new AuthResult { Success = true, Role = RolUsuario.Secretaria, UserId = persona.id, UserName = persona.nombre, UserMail = persona.email };
@@ -83,6 +92,7 @@ namespace MedCenter.Services.Authentication.Components
                 await transaction.RollbackAsync();
                 return new AuthResult { Success = false, ErrorMessage = "Error interno del servidor al crear la secretaria" };
             }
+            
         }
     }
 }

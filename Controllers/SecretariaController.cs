@@ -265,8 +265,6 @@ namespace MedCenter.Controllers
              
         }
 
-       
-        
         public async Task<IActionResult> GenerarSlotsAgenda(int medico_id)
         {
             DisponibilidadResult result = await _dispoService.GenerarSlotsAgenda(medico_id);
