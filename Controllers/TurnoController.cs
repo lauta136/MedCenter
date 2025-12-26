@@ -17,7 +17,7 @@ using MedCenter.Services.EspecialidadService;
 using System.Reflection.Metadata.Ecma335;
 using Microsoft.VisualBasic;
 using MedCenter.Extensions;
-
+using MedCenter.Attributes;
 
 
 // Heredamos de Controller para poder trabajar con Vistas Razor
@@ -90,6 +90,7 @@ public class TurnoController : BaseController
         return Json(slots);
     }
 
+    [RequiredPermission("turno:create")]
     public async Task<IActionResult> Reservar()
     {
         var especialidades = await _especialidadService.GetEspecialidadesCargadas();
@@ -209,6 +210,7 @@ public class TurnoController : BaseController
         return Json(new { success = true, message = "Turno creado exitosamente" });*/
     }
     
+    [RequiredPermission("turno:edit")]
     public async Task<IActionResult> Reprogramar(int? id)
     {
         if (id == null) return NotFound();
@@ -312,7 +314,8 @@ public class TurnoController : BaseController
         });
         return Json(dtos);
     }
-
+    
+    [RequiredPermission("turno:delete")]
     public async Task<IActionResult> Cancelar(int id)
     {
         
@@ -344,6 +347,7 @@ public class TurnoController : BaseController
         
     }
     
+    [RequiredPermission("turno:manage")]
     public async Task<IActionResult> GestionarTurnos()
     {
         ViewBag.UserName = UserName;

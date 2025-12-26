@@ -21,7 +21,7 @@ public class RequiredPermission : Attribute, IAsyncAuthorizationFilter
         // Check if user is authenticated
         if (!context.HttpContext.User.Identity?.IsAuthenticated ?? true)
         {
-            context.Result = new UnauthorizedResult();
+            context.Result = new RedirectToActionResult("AccessDenied", "Access", null);
             return;
         }
 
@@ -30,7 +30,7 @@ public class RequiredPermission : Attribute, IAsyncAuthorizationFilter
         
         if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
         {
-            context.Result = new UnauthorizedResult();
+            context.Result = new RedirectToActionResult("AccessDenied", "Access", null);
             return;
         }
 
@@ -44,7 +44,7 @@ public class RequiredPermission : Attribute, IAsyncAuthorizationFilter
 
         if (!hasPermission)
         {
-            context.Result = new ForbidResult();
+            context.Result = new RedirectToActionResult("AccessDenied", "Access", null);
         }
     }
 }

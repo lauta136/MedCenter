@@ -53,7 +53,6 @@ public partial class AppDbContext : DbContext
     public DbSet<DisponibilidadMedico> disponibilidad_medico { get; set; }
     public DbSet<TrazabilidadTurno> trazabilidadTurnos { get; set; }
     public DbSet<TrazabilidadLogin> trazabilidadLogins{get;set;}
-    public DbSet<Admin> admins{get;set;}
     public DbSet<Permiso> permisos {get;set;}
     public DbSet<RolPermiso> rolPermisos{get;set;}
     public DbSet<PersonaPermiso> personaPermisos{get;set;}
@@ -405,22 +404,6 @@ public partial class AppDbContext : DbContext
             e.Property(e => e.UsuarioNombre).HasColumnName("usuario_nombre");
             e.Property(e => e.MomentoLogin).HasColumnName("momento_login");
             e.Property(e => e.TipoLogout).HasColumnName("tipo_logout").HasConversion<string>();
-        });
-
-        modelBuilder.Entity<Admin>( e =>
-        {
-            e.ToTable("admins");
-
-            e.HasKey(e => e.Id);
-            e.Property(e => e.Id).ValueGeneratedNever().HasColumnName("id");
-            e.Property(e => e.Fecha_ingreso).HasColumnName("fecha_ingreso");
-            e.Property(e => e.Cargo).HasColumnName("cargo");
-            e.Property(e => e.Activo).HasDefaultValue(true).HasColumnName("activo");
-            
-            e.HasOne<Persona>(e => e.IdNavigation)
-            .WithOne(e => e.Admin).HasForeignKey<Admin>(e => e.Id)
-            .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("admins_id_fkey");
         });
         
         modelBuilder.Entity<Permiso>(e =>

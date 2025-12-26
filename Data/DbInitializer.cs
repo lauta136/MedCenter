@@ -10,50 +10,11 @@ public static class DbInitializer
         
         // Asegurar que la base de datos está creada y las migraciones aplicadas
         await context.Database.MigrateAsync();
-        await SeedRoleKeys(context,configuration);
+        //await SeedRoleKeys(context,configuration);
         await SeedPermisos(context,configuration);
     }
 
-    public static async Task SeedRoleKeys(AppDbContext context, IConfiguration configuration)
-    {
-        try
-        {
-         Console.WriteLine("Inicializando datos de roles...");
-
-            var passwordHasher = new PasswordHashService();
-            var adminPlainKey = configuration["RoleKeys:Admin"];
-
-            // Validar que la clave esté configurada
-            if (string.IsNullOrEmpty(adminPlainKey))
-            {
-                throw new InvalidOperationException("La clave de Admin no está configurada en appsettings.json");
-            }
-
-            // Solo agregar Admin si no existe (Medico y Secretaria ya existen)
-            if (!await context.role_keys.AnyAsync(r => r.Role == "Admin"))
-            {
-                // Obtener el siguiente ID disponible
-                var maxId = await context.role_keys.MaxAsync(r => (int?)r.Id) ?? 0;
-                var nextId = maxId + 1;
-                
-                var hashedKey = passwordHasher.HashPassword(adminPlainKey);
-                await context.Database.ExecuteSqlAsync(
-                    $"INSERT INTO role_keys (\"Id\", role, hashed_key) VALUES ({nextId}, 'Admin', {hashedKey})");
-                Console.WriteLine("Rol Admin agregado.");
-            }
-            else
-            {
-                Console.WriteLine("Rol Admin ya existe.");
-            }
-
-            Console.WriteLine("Datos de roles inicializados correctamente.");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error al inicializar la base de datos: {ex.Message}");
-            throw;
-        }
-    }
+    
 
     public static async Task SeedPermisos(AppDbContext context, IConfiguration configuration)
     {
@@ -72,6 +33,13 @@ public static class DbInitializer
                     Descripcion = "Agendar turnos",
                     Recurso = MedCenter.Enums.Recurso.Turno,
                     Accion = MedCenter.Enums.AccionUsuario.Create
+                },
+                new Permiso
+                {
+                    Nombre = "turno:manage",
+                    Descripcion = "Gestionar turnos",
+                    Recurso = MedCenter.Enums.Recurso.Turno,
+                    Accion = MedCenter.Enums.AccionUsuario.Manage
                 },
                 new Permiso
                 {
@@ -136,6 +104,13 @@ public static class DbInitializer
                     Recurso = MedCenter.Enums.Recurso.Paciente,
                     Accion = MedCenter.Enums.AccionUsuario.Update
                 },
+                new Permiso
+                {
+                    Nombre = "paciente:view",
+                    Descripcion = "Ver lista de pacientes",
+                    Recurso = MedCenter.Enums.Recurso.Paciente,
+                    Accion = MedCenter.Enums.AccionUsuario.View
+                },
                  new Permiso
                 {
                     Nombre = "secretaria:create",
@@ -166,6 +141,13 @@ public static class DbInitializer
                 },
                 new Permiso
                 {
+                    Nombre = "reporte:create_turnos_resumen",
+                    Descripcion = "Crear reporte resumido de turnos",
+                    Recurso = MedCenter.Enums.Recurso.Reporte,
+                    Accion = MedCenter.Enums.AccionUsuario.Create
+                },
+                new Permiso
+                {
                     Nombre = "reporte:create_audit_turno",
                     Descripcion = "Crear reporte de auditoria de turnos",
                     Recurso = MedCenter.Enums.Recurso.Reporte,
@@ -175,13 +157,6 @@ public static class DbInitializer
                 {
                     Nombre = "reporte:create_ejecutivo",
                     Descripcion = "Crear reporte ejecutivo, con calculos",
-                    Recurso = MedCenter.Enums.Recurso.Reporte,
-                    Accion = MedCenter.Enums.AccionUsuario.Create
-                },
-                new Permiso
-                {
-                    Nombre = "reporte:create_turnos_para_medico",
-                    Descripcion = "Crear reporte de turnos desde la perspectiva del medico correspondiente",
                     Recurso = MedCenter.Enums.Recurso.Reporte,
                     Accion = MedCenter.Enums.AccionUsuario.Create
                 },
@@ -254,7 +229,34 @@ public static class DbInitializer
                     Recurso = MedCenter.Enums.Recurso.Permiso,
                     Accion = MedCenter.Enums.AccionUsuario.Delete
                 },
-                
+                new Permiso
+                {
+                    Nombre = "disponibilidad:view",
+                    Descripcion = "Consultar la disponibilidad",
+                    Recurso = MedCenter.Enums.Recurso.Disponibilidad,
+                    Accion = MedCenter.Enums.AccionUsuario.View
+                },
+                new Permiso
+                {
+                    Nombre = "bloque_disponibilidad:create",
+                    Descripcion = "Crear un bloque de disponibilidad",
+                    Recurso = MedCenter.Enums.Recurso.BloqueDisponibilidad,
+                    Accion = MedCenter.Enums.AccionUsuario.Create
+                },
+                new Permiso
+                {
+                    Nombre = "bloque_disponibilidad:delete",
+                    Descripcion = "Eliminar un bloque de disponibilidad",
+                    Recurso = MedCenter.Enums.Recurso.BloqueDisponibilidad,
+                    Accion = MedCenter.Enums.AccionUsuario.Delete
+                },
+                new Permiso
+                {
+                    Nombre = "slots_agenda:create",
+                    Descripcion = "Generar slots de agenda de acuerdo con los bloques de disponibilidad activos",
+                    Recurso = MedCenter.Enums.Recurso.SlotsAgenda,
+                    Accion = MedCenter.Enums.AccionUsuario.Create
+                },
             };
             await context.permisos.AddRangeAsync(permisos);
 
@@ -279,7 +281,7 @@ public static class DbInitializer
                 new RolPermiso
                 {
                     RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Medico,
-                    PermisoId = permisos.Where(p => p.Nombre == "reporte:create_turnos_para_medico").Select(p => p.Id).FirstOrDefault(),
+                    PermisoId = permisos.Where(p => p.Nombre == "reporte:create_turnos_filtrado").Select(p => p.Id).FirstOrDefault(),
                 },
                 new RolPermiso
                 {
@@ -300,6 +302,11 @@ public static class DbInitializer
                 new RolPermiso
                 {
                     RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Paciente,
+                    PermisoId = permisos.Where(p => p.Nombre == "turno:manage").Select(p => p.Id).FirstOrDefault(),
+                },
+                new RolPermiso
+                {
+                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Paciente,
                     PermisoId = permisos.Where(p => p.Nombre == "turno:edit").Select(p => p.Id).FirstOrDefault(),
                 },
                 new RolPermiso
@@ -312,6 +319,11 @@ public static class DbInitializer
                 {
                     RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Secretaria,
                     PermisoId = permisos.Where(p => p.Nombre == "turno:create").Select(p => p.Id).FirstOrDefault(),
+                },
+                new RolPermiso
+                {
+                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Secretaria,
+                    PermisoId = permisos.Where(p => p.Nombre == "turno:manage").Select(p => p.Id).FirstOrDefault(),
                 },
                 new RolPermiso
                 {
@@ -345,6 +357,11 @@ public static class DbInitializer
                 },
                 new RolPermiso
                 {
+                  RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Secretaria,
+                  PermisoId = permisos.Where(p => p.Nombre == "reporte:create_turnos_resumen").Select(p => p.Id).FirstOrDefault()  
+                },
+                new RolPermiso
+                {
                     RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Secretaria,
                     PermisoId = permisos.Where(p => p.Nombre == "reporte:create_ejecutivo").Select(p => p.Id).FirstOrDefault(),
                 },
@@ -373,142 +390,12 @@ public static class DbInitializer
                     RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Secretaria,
                     PermisoId = permisos.Where(p => p.Nombre == "paciente:edit").Select(p => p.Id).FirstOrDefault(),
                 },
-                //permisos admin - tiene todos los permisos
                 new RolPermiso
                 {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["turno:create"]
+                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Secretaria,
+                    PermisoId = permisos.Where(p => p.Nombre == "disponibilidad:view").Select(p => p.Id).FirstOrDefault(),
                 },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["turno:delete"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["turno:delete_premium"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["turno:edit"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["turno:edit_premium"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["medico:create"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["medico:edit"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["medico:delete"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["paciente:create"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["paciente:edit"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["secretaria:create"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["secretaria:edit"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["secretaria:delete"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["reporte:create_audit_login"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["reporte:create_audit_turno"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["reporte:create_ejecutivo"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["reporte:create_turnos_para_medico"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["reporte:create_turnos_general"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["reporte:create_turnos_filtrado"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["reporte:create_entradas_creadas"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["reporte:create_pacientes_todos"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["rol:create"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["rol:delete"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["entrada_clinica:create"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["historia_clinica:create"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["permiso:create"]
-                },
-                new RolPermiso
-                {
-                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
-                    PermisoId = dic["permiso:delete"]
-                },
+               
             };
 
             await context.rolPermisos.AddRangeAsync(rolespermiso);

@@ -15,7 +15,6 @@ public class AuthService
         _authComposite.Add(new MedicoAuthenticator(context, hashService,roleKeyValidationService));
         _authComposite.Add(new PacienteAuthenticator(context, hashService));
         _authComposite.Add(new SecretariaAuthenticator(context, hashService,roleKeyValidationService));
-        _authComposite.Add(new AdminAuthenticator(context, hashService,roleKeyValidationService));
     }
     
     public async Task<AuthResult> LoginAsync(string username, string password)

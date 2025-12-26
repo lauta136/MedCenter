@@ -90,8 +90,6 @@ public class AuthController : Controller
                 RolUsuario.Medico => RedirectToAction("Dashboard", "Medico"),
                 RolUsuario.Secretaria => RedirectToAction("Dashboard", "Secretaria"),
                 RolUsuario.Paciente => RedirectToAction("Dashboard", "Paciente"),
-                RolUsuario.Admin => RedirectToAction("Dashboard", "Admin"),
-                _ => RedirectToAction("Index", "Home")
             };
         }
 

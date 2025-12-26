@@ -6,6 +6,7 @@ using MedCenter.DTOs;
 using System.Security.Claims;
 using MedCenter.Services.TurnoSv;
 using MedCenter.Services.TurnoStates;
+using MedCenter.Attributes;
 
 namespace MedCenter.Controllers
 {
@@ -67,6 +68,7 @@ namespace MedCenter.Controllers
         }
 
         // GET: Paciente/SolicitarTurno
+        [RequiredPermission("turno:create")]
         public async Task<IActionResult> SolicitarTurno()
         {
             ViewBag.UserName = UserName;

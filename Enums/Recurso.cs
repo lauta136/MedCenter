@@ -10,5 +10,8 @@ public enum Recurso
     HistoriaClinica,
     Rol,
     Permiso,
-    Reporte
+    Reporte,
+    Disponibilidad,
+    BloqueDisponibilidad,
+    SlotsAgenda
 }

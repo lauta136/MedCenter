@@ -9,6 +9,7 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using MedCenter.Data;
 using Microsoft.EntityFrameworkCore;
 using DocumentFormat.OpenXml.Office2016.Excel;
+using MedCenter.Attributes;
 
 namespace MedCenter.Controllers
 {
@@ -100,7 +101,8 @@ namespace MedCenter.Controllers
         // ==== SECRETARIA REPORTS ====
 
         // Download PDF - Turnos por fecha
-        [Authorize(Roles = nameof(RolUsuario.Secretaria))]
+        //[Authorize(Roles = nameof(RolUsuario.Secretaria))]
+        [RequiredPermission("reporte:create_turnos_general")]
         [HttpGet]
         public async Task<IActionResult> DescargarReporteTurnosPDF(string fechaDesde, string fechaHasta)
         {
@@ -133,7 +135,8 @@ namespace MedCenter.Controllers
         }
 
         // Download Excel - Turnos por fecha
-        [Authorize(Roles = nameof(RolUsuario.Secretaria))]
+        //[Authorize(Roles = nameof(RolUsuario.Secretaria))]
+        [RequiredPermission("reporte:create_turnos_general")]
         [HttpGet]
         public async Task<IActionResult> DescargarReporteTurnosExcel(string fechaDesde, string fechaHasta)
         {
@@ -170,7 +173,8 @@ namespace MedCenter.Controllers
         }
 
         // NEW: SUMMARY REPORT - Only statistics, no detailed data (like constructSUV in Car example)
-        [Authorize(Roles = nameof(RolUsuario.Secretaria))]
+        //[Authorize(Roles = nameof(RolUsuario.Secretaria))]
+        [RequiredPermission("reporte:create_turnos_resumen")]
         [HttpGet]
         public async Task<IActionResult> DescargarResumenTurnosPDF(string fechaDesde, string fechaHasta)
         {
@@ -201,7 +205,8 @@ namespace MedCenter.Controllers
         }
 
         // NEW: EXECUTIVE REPORT - Statistics first, then data (optimized for high-level overview)
-        [Authorize(Roles = nameof(RolUsuario.Secretaria))]
+        //[Authorize(Roles = nameof(RolUsuario.Secretaria))]
+        [RequiredPermission("reporte:create_ejecutivo")]
         [HttpGet]
         public async Task<IActionResult> DescargarReporteEjecutivoPDF(string fechaDesde, string fechaHasta)
         {
@@ -232,7 +237,8 @@ namespace MedCenter.Controllers
             }
         }
 
-        [Authorize(Roles = nameof(RolUsuario.Secretaria))]
+        [RequiredPermission("reporte:create_audit_turno")]
+        //[Authorize(Roles = nameof(RolUsuario.Secretaria))]
         [HttpGet]
         public async Task<IActionResult> DescargarAuditoriaTurnosPDF(string fechaDesde, string fechaHasta, string? usuarioNombre, AccionesTurno? accion, int? pacienteId, int? medicoId)
         {
@@ -264,7 +270,8 @@ namespace MedCenter.Controllers
             }
         }
 
-        [Authorize(Roles = nameof(RolUsuario.Secretaria))]
+       //[Authorize(Roles = nameof(RolUsuario.Secretaria))]
+        [RequiredPermission("reporte:create_audit_turno")]
         [HttpGet]
         public async Task<IActionResult> DescargarReporteAuditoriaTurnosExcel(string fechaDesde, string fechaHasta, string? usuarioNombre, AccionesTurno? accion, int? pacienteId, int? medicoId)
         {
@@ -301,7 +308,8 @@ namespace MedCenter.Controllers
         }
 
         // Download PDF - Pacientes
-        [Authorize(Roles = nameof(RolUsuario.Secretaria))]
+        //[Authorize(Roles = nameof(RolUsuario.Secretaria))]
+        [RequiredPermission("reporte:create_pacientes_todos")]
         [HttpGet]
         public async Task<IActionResult> DescargarPacientesPDF()
         {
@@ -319,7 +327,8 @@ namespace MedCenter.Controllers
         }
 
         // Download Excel - Pacientes
-        [Authorize(Roles = nameof(RolUsuario.Secretaria))]
+        //[Authorize(Roles = nameof(RolUsuario.Secretaria))]
+        [RequiredPermission("reporte:create_pacientes_todos")]
         [HttpGet]
         public async Task<IActionResult> DescargarPacientesExcel()
         {
@@ -343,7 +352,8 @@ namespace MedCenter.Controllers
         // ==== MEDICO REPORTS ====
 
         // Download PDF - Médico específico
-        [Authorize(Roles = $"{nameof(RolUsuario.Secretaria)},{nameof(RolUsuario.Medico)}")]
+        //[Authorize(Roles = $"{nameof(RolUsuario.Secretaria)},{nameof(RolUsuario.Medico)}")]
+        [RequiredPermission("reporte:create_turnos_filtrado")]
         [HttpGet]
         public async Task<IActionResult> DescargarReporteMedicoPDF(int? medicoId, int? especialidadId, string fechaDesde, string fechaHasta)
         {
@@ -392,7 +402,8 @@ namespace MedCenter.Controllers
         }
 
         // Download Excel - Médico específico
-        [Authorize(Roles = $"{nameof(RolUsuario.Secretaria)},{nameof(RolUsuario.Medico)}")]
+        //[Authorize(Roles = $"{nameof(RolUsuario.Secretaria)},{nameof(RolUsuario.Medico)}")]
+        [RequiredPermission("reporte:create_turnos_filtrado")]
         [HttpGet]
         public async Task<IActionResult> DescargarReporteMedicoExcel(int? medicoId, int? especialidadId, string fechaDesde, string fechaHasta)
         {
@@ -447,7 +458,8 @@ namespace MedCenter.Controllers
         // ==== HISTORIAS CLINICAS REPORTS ====
 
         // Download PDF - Historias Clínicas
-        [Authorize(Roles = nameof(RolUsuario.Medico))]
+        //[Authorize(Roles = nameof(RolUsuario.Medico))]
+        [RequiredPermission("reporte:create_entradas_creadas")]
         [HttpGet]
         public async Task<IActionResult> DescargarHistoriasClinicasPDF(string fechaDesde, string fechaHasta)
         {
@@ -505,6 +517,7 @@ namespace MedCenter.Controllers
 
         // Download PDF - Auditoría Logins
         [Authorize(Roles = nameof(RolUsuario.Secretaria))]
+        [RequiredPermission("reporte:create_audit_login")]
         [HttpGet]
         public async Task<IActionResult> DescargarAuditoriaLoginsPDF(
             string fechaDesde, 
@@ -538,6 +551,7 @@ namespace MedCenter.Controllers
 
         // Download Excel - Auditoría Logins
         [Authorize(Roles = nameof(RolUsuario.Secretaria))]
+        [RequiredPermission("reporte:create_audit_login")]
         [HttpGet]
         public async Task<IActionResult> DescargarAuditoriaLoginsExcel(
             string fechaDesde, 

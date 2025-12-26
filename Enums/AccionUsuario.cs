@@ -5,4 +5,7 @@ public enum AccionUsuario
     Create,
     Update,
     Delete,
+    Manage,
+    View,
+
 }

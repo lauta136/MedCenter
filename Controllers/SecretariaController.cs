@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using MedCenter.Services.DisponibilidadMedico;
 using MedCenter.Services.TurnoSv;
 using MedCenter.Services.TurnoStates;
+using MedCenter.Attributes;
 
 namespace MedCenter.Controllers
 {
@@ -78,19 +79,10 @@ namespace MedCenter.Controllers
             return View(turnosHoy);
         }
 
-        // GET: Secretaria/AsignarTurno
-        public async Task<IActionResult> AsignarTurno()
-        {
-            return View();
-        }
-
-        // GET: Secretaria/AsignarTurno
-        public async Task<IActionResult> CancelarTurno(int? id)
-        {
-            return View();
-        }
+        
 
         // GET: Secretaria/ConsultarDisponibilidad
+        [RequiredPermission("disponibilidad:view")]
         public async Task<IActionResult> ConsultarDisponibilidad()
         {
             var especialidades = await _context.especialidades.ToListAsync();
@@ -99,6 +91,7 @@ namespace MedCenter.Controllers
         }
 
         // GET: Secretaria/Pacientes
+        [RequiredPermission("paciente:view")]
         public async Task<IActionResult> Pacientes()
         {
             var pacientes = await _context.pacientes.Include(p => p.idNavigation)
@@ -115,6 +108,7 @@ namespace MedCenter.Controllers
         }
 
         //GET: Secretaria/NuevoPaciente
+        [RequiredPermission("paciente:create")]
         public async Task<IActionResult> NuevoPaciente()
         {
             ViewBag.UserName = UserName;
@@ -174,6 +168,7 @@ namespace MedCenter.Controllers
             return View(medicos);
         }
 
+        [RequiredPermission("disponibilidad:view")]
         [HttpGet]
         public async Task<IActionResult> GestionarDisponibilidad(int medico_id)
         {
@@ -197,6 +192,7 @@ namespace MedCenter.Controllers
             return View(disponibilidad);
         }
 
+        [RequiredPermission("bloque_disponibilidad:create")]
         [HttpPost]
         public async Task<IActionResult> AgregarBloqueDisponibilidad(int medico_id, ManipularDisponibilidadDTO dto)
         {
@@ -245,6 +241,7 @@ namespace MedCenter.Controllers
             
         }
         */
+        [RequiredPermission("bloque_disponibilidad:delete")]
         [HttpPost]
         public async Task<IActionResult> CancelarBloqueDisponibilidad(int medico_id, ManipularDisponibilidadDTO dto, int dispo_id)
         {
@@ -264,7 +261,8 @@ namespace MedCenter.Controllers
             return RedirectToAction(nameof(GestionarDisponibilidad), new { medico_id = medico_id });
              
         }
-
+        
+        [RequiredPermission("slots_agenda:create")]
         public async Task<IActionResult> GenerarSlotsAgenda(int medico_id)
         {
             DisponibilidadResult result = await _dispoService.GenerarSlotsAgenda(medico_id);
@@ -308,76 +306,6 @@ namespace MedCenter.Controllers
 
             return View();
         }
-
-        // GET: Secretaria/SolicitudesTurnos
-        public async Task<IActionResult> SolicitudesTurnos()
-{
-    // TODO: Implementar lógica para obtener solicitudes pendientes de pacientes
-    // Filtrar turnos con estado "Pendiente" o similar
-    
-    ViewBag.UserName = UserName;
-    return View();
-}
-
-        // POST: Secretaria/AprobarTurno
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AprobarTurno(int turnoId)
-{
-    // TODO: Implementar lógica para aprobar solicitud de turno
-    // Cambiar estado del turno a "Reservado"
-    
-    TempData["SuccessMessage"] = "Turno aprobado exitosamente";
-    return RedirectToAction("Dashboard");
-}
-
-        // POST: Secretaria/RechazarTurno
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RechazarTurno(int turnoId, string motivo)
-        {
-            // TODO: Implementar lógica para rechazar solicitud de turno
-            // Cambiar estado del turno a "Rechazado" o eliminar
-            // Notificar al paciente del rechazo con el motivo
-    
-            TempData["SuccessMessage"] = "Turno rechazado";
-            return RedirectToAction("Dashboard");
-        }
-
-// GET: Secretaria/SolicitudesReprogramacion
-public async Task<IActionResult> SolicitudesReprogramacion()
-{
-    // TODO: Implementar lógica para obtener solicitudes de reprogramación
-    // Necesitarás una tabla adicional para guardar estas solicitudes
-    
-    ViewBag.UserName = UserName;
-    return View();
-}
-
-// POST: Secretaria/AprobarReprogramacion
-[HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> AprobarReprogramacion(int solicitudId)
-{
-    // TODO: Implementar lógica para aprobar reprogramación
-    // Actualizar el turno con la nueva fecha/hora
-    // Marcar solicitud como procesada
-    
-    TempData["SuccessMessage"] = "Reprogramación aprobada exitosamente";
-    return RedirectToAction("Dashboard");
-}
-
-// POST: Secretaria/RechazarReprogramacion
-[HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> RechazarReprogramacion(int solicitudId, string motivo)
-{
-    // TODO: Implementar lógica para rechazar reprogramación
-    // Mantener el turno original
-    // Notificar al paciente del rechazo
-    
-    TempData["SuccessMessage"] = "Reprogramación rechazada";
-    return RedirectToAction("Dashboard");
-}
+        
     }
 }
