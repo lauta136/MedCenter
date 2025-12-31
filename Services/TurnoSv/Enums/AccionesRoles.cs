@@ -5,6 +5,7 @@ public enum RolUsuario
     Paciente,
     Medico,
     Secretaria,
+    Admin
 }
 
 public enum AccionesTurno

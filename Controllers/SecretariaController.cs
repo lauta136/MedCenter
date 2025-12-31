@@ -11,6 +11,7 @@ using MedCenter.Services.DisponibilidadMedico;
 using MedCenter.Services.TurnoSv;
 using MedCenter.Services.TurnoStates;
 using MedCenter.Attributes;
+using MedCenter.Services.AdminService;
 
 namespace MedCenter.Controllers
 {
@@ -23,15 +24,16 @@ namespace MedCenter.Controllers
         private readonly TurnoStateService _stateService;
         private DisponibilidadService _dispoService;
         private readonly TurnoService _turnoService;
+        private readonly AdminService _adminService;
 
-
-        public SecretariaController(AppDbContext context, AuthService auth, DisponibilidadService disponibilidadService, TurnoStateService turnoStateService, TurnoService turnoService)
+        public SecretariaController(AppDbContext context, AuthService auth, DisponibilidadService disponibilidadService, TurnoStateService turnoStateService, TurnoService turnoService, AdminService adminService)
         {
             _context = context;
             _authService = auth;
             _dispoService = disponibilidadService;
             _stateService = turnoStateService;
             _turnoService = turnoService;
+            _adminService = adminService;
         }
 
        
@@ -72,6 +74,7 @@ namespace MedCenter.Controllers
             ViewBag.TurnosCancelados = await _context.turnos.CountAsync(t => t.estado == EstadosTurno.Cancelado.ToString());
             ViewBag.TotalPacientes = await _context.pacientes.CountAsync();
             ViewBag.UserName = UserName;
+            ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
 
             await _turnoService.FinalizarAusentarTurnosPasados();
 
@@ -87,6 +90,7 @@ namespace MedCenter.Controllers
         {
             var especialidades = await _context.especialidades.ToListAsync();
             ViewBag.UserName = UserName;
+            ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
             return View(especialidades);
         }
 
@@ -104,6 +108,8 @@ namespace MedCenter.Controllers
                             })
                             .ToListAsync();
             ViewBag.UserName = UserName;
+            ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
+
             return View(pacientes);
         }
 
@@ -112,7 +118,7 @@ namespace MedCenter.Controllers
         public async Task<IActionResult> NuevoPaciente()
         {
             ViewBag.UserName = UserName;
-
+            ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
             return View(new RegisterDTO { Role = "Paciente" }); //Para que en el POST ya tenga el rol correcto
 
         }
@@ -165,6 +171,7 @@ namespace MedCenter.Controllers
                 .ToListAsync();
 
             ViewBag.UserName = UserName;
+            ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
             return View(medicos);
         }
 
@@ -188,6 +195,7 @@ namespace MedCenter.Controllers
             ViewBag.UserName = UserName;
             ViewBag.MedicoId = medico_id;
             ViewBag.MedicoNombre = medico.idNavigation.nombre;
+            ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
 
             return View(disponibilidad);
         }
@@ -278,6 +286,7 @@ namespace MedCenter.Controllers
                 .ToListAsync();
 
             ViewBag.UserName = UserName;
+            ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
             return View(obrasSociales);
         }
 
@@ -303,6 +312,7 @@ namespace MedCenter.Controllers
             ViewBag.PacientesNuevosMes = pacientesNuevosMes;
             ViewBag.TurnosCancelados = turnosCancelados;
             ViewBag.UserName = UserName;
+            ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
 
             return View();
         }

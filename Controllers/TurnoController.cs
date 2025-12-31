@@ -18,7 +18,7 @@ using System.Reflection.Metadata.Ecma335;
 using Microsoft.VisualBasic;
 using MedCenter.Extensions;
 using MedCenter.Attributes;
-
+using MedCenter.Services.AdminService;
 
 // Heredamos de Controller para poder trabajar con Vistas Razor
 public class TurnoController : BaseController
@@ -28,13 +28,16 @@ public class TurnoController : BaseController
     private DisponibilidadService _disponibilidadService;
     private EspecialidadService _especialidadService;
     private readonly TurnoService _turnoService;
-    public TurnoController(AppDbContext context, TurnoStateService turnoStateService, DisponibilidadService disponibilidadService, EspecialidadService especialidadService, TurnoService turnoService)
+    
+    private readonly AdminService _adminService;
+    public TurnoController(AppDbContext context, TurnoStateService turnoStateService, DisponibilidadService disponibilidadService, EspecialidadService especialidadService, TurnoService turnoService, AdminService adminService)
     {
         _context = context;
         _stateService = turnoStateService;
         _disponibilidadService = disponibilidadService;
         _especialidadService = especialidadService;
         _turnoService = turnoService;
+        _adminService = adminService;
     }
 
    
@@ -96,6 +99,7 @@ public class TurnoController : BaseController
         var especialidades = await _especialidadService.GetEspecialidadesCargadas();
         ViewBag.UserName = UserName;
         ViewBag.EsSecretaria = User.IsInRole(RolUsuario.Secretaria.ToString());
+        ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
 
         if (User.IsInRole(RolUsuario.Secretaria.ToString()))
         {
@@ -238,6 +242,7 @@ public class TurnoController : BaseController
                 ViewBag.EstadoActual = result.turnoDto.Estado.ToString();
                 ViewBag.DescripcionEstado = result.turnoDto.DescripcionEstado;
                 ViewBag.UserName = UserName;
+                ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
 
                 return View("~/Views/Shared/Turnos/ReprogramarTurno.cshtml",result.turnoDto);
             }
@@ -320,6 +325,7 @@ public class TurnoController : BaseController
     {
         
         ViewBag.UserName = UserName;
+        ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
 
         TurnoSvCancelResult result = await _turnoService.PuedeCancelarReglas(id);
 
@@ -351,6 +357,7 @@ public class TurnoController : BaseController
     public async Task<IActionResult> GestionarTurnos()
     {
         ViewBag.UserName = UserName;
+        ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
 
         await _turnoService.FinalizarAusentarTurnosPasados();
         await _disponibilidadService.LimpiarSlotsPasados();

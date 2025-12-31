@@ -13,6 +13,7 @@ using MedCenter.Services.Authentication;
 using MedCenter.Services.Authentication.Components;
 using MedCenter.Services.EmailService;
 using Microsoft.Extensions.Caching.Memory;
+using MedCenter.Services.AdminService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,6 +42,7 @@ builder.Services.AddScoped<ReportesService>();
 builder.Services.AddScoped<MedicoService>();
 builder.Services.AddScoped<PasswordRecoveryService>();
 builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<AdminService>();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();

@@ -1,11 +1,14 @@
 using MedCenter.Extensions;
 using MedCenter.Services.TurnoSv;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using System.Security.Claims;
+using MedCenter.Services.AdminService;
 
 public class BaseController : Controller
 {
- protected int? UserId => User.Identity?.IsAuthenticated == true 
+
+    protected int? UserId => User.Identity?.IsAuthenticated == true 
         ? int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0") 
         : null;
         
@@ -14,4 +17,5 @@ public class BaseController : Controller
     protected bool IsAuthenticated => User.Identity?.IsAuthenticated == true;
     //protected bool IsRole(string role) => UserRole == role;
     protected IActionResult RedirectToLogin() => RedirectToAction("Login", "Auth");
+
 }

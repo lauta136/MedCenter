@@ -217,17 +217,17 @@ public static class DbInitializer
                 },
                 new Permiso
                 {
-                    Nombre = "permiso:create",
-                    Descripcion = "Crear permiso",
+                    Nombre = "permiso:assign",
+                    Descripcion = "Asignar permiso",
                     Recurso = MedCenter.Enums.Recurso.Permiso,
-                    Accion = MedCenter.Enums.AccionUsuario.Create
+                    Accion = MedCenter.Enums.AccionUsuario.Assign
                 },
                  new Permiso
                 {
-                    Nombre = "permiso:delete",
-                    Descripcion = "Eliminar permiso",
+                    Nombre = "permiso:remove",
+                    Descripcion = "Remover permiso",
                     Recurso = MedCenter.Enums.Recurso.Permiso,
-                    Accion = MedCenter.Enums.AccionUsuario.Delete
+                    Accion = MedCenter.Enums.AccionUsuario.Remove
                 },
                 new Permiso
                 {
@@ -395,7 +395,47 @@ public static class DbInitializer
                     RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Secretaria,
                     PermisoId = permisos.Where(p => p.Nombre == "disponibilidad:view").Select(p => p.Id).FirstOrDefault(),
                 },
-               
+               //Admin secretaria
+               new RolPermiso
+                {
+                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
+                    PermisoId = permisos.Where(p => p.Nombre == "medico:create").Select(p => p.Id).FirstOrDefault(),
+                },
+                new RolPermiso
+                {
+                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
+                    PermisoId = permisos.Where(p => p.Nombre == "medico:edit").Select(p => p.Id).FirstOrDefault(),
+                },
+                new RolPermiso
+                {
+                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
+                    PermisoId = permisos.Where(p => p.Nombre == "medico:delete").Select(p => p.Id).FirstOrDefault(),
+                },
+                new RolPermiso
+                {
+                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
+                    PermisoId = permisos.Where(p => p.Nombre == "secretaria:create").Select(p => p.Id).FirstOrDefault(),
+                },
+                new RolPermiso
+                {
+                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
+                    PermisoId = permisos.Where(p => p.Nombre == "secretaria:delete").Select(p => p.Id).FirstOrDefault(),
+                },
+                new RolPermiso
+                {
+                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
+                    PermisoId = permisos.Where(p => p.Nombre == "secretaria:edit").Select(p => p.Id).FirstOrDefault(),
+                },
+                new RolPermiso
+                {
+                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
+                    PermisoId = permisos.Where(p => p.Nombre == "permiso:assign").Select(p => p.Id).FirstOrDefault(),
+                },
+                new RolPermiso
+                {
+                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
+                    PermisoId = permisos.Where(p => p.Nombre == "permiso:remove").Select(p => p.Id).FirstOrDefault(),
+                },
             };
 
             await context.rolPermisos.AddRangeAsync(rolespermiso);

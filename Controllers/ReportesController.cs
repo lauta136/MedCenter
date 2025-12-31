@@ -10,6 +10,7 @@ using MedCenter.Data;
 using Microsoft.EntityFrameworkCore;
 using DocumentFormat.OpenXml.Office2016.Excel;
 using MedCenter.Attributes;
+using MedCenter.Services.AdminService;
 
 namespace MedCenter.Controllers
 {
@@ -21,12 +22,14 @@ namespace MedCenter.Controllers
         private readonly EspecialidadService _especialidadService;
         private readonly ReportDirector _reportDirector;
         private readonly AppDbContext _context;
-        public ReportesController(ReportesService reportesService, MedicoService medicoService, EspecialidadService especialidadService, AppDbContext context)
+        private readonly AdminService _adminService;
+        public ReportesController(ReportesService reportesService, MedicoService medicoService, EspecialidadService especialidadService, AppDbContext context, AdminService adminService)
         {
             _reportesService = reportesService;
             _medicoService = medicoService;
             _especialidadService = especialidadService;
             _reportDirector = new ReportDirector();
+            _adminService = adminService;
             _context = context;
         }
 
@@ -53,6 +56,7 @@ namespace MedCenter.Controllers
 
             var usuarios = await GetAllUsuarios();
             ViewBag.usuarios = usuarios;
+            ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
 
             if (User.IsInRole(RolUsuario.Medico.ToString()))
                 return View("~/Views/Medico/Reportes.cshtml", medicos);

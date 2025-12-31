@@ -7,5 +7,7 @@ public enum AccionUsuario
     Delete,
     Manage,
     View,
+    Assign,
+    Remove
 
 }
