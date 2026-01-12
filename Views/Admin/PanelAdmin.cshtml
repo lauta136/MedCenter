@@ -1,0 +1,1090 @@
+@model MedCenter.DTOs.PermissionManagementViewModel
+@using MedCenter.Services.TurnoSv
+@{
+    ViewData["Title"] = "Panel de Administración de Permisos";
+    Layout = "~/Views/Shared/_SecretariaLayout.cshtml";
+}
+
+<style>
+    .permission-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        margin: 0.25rem;
+        border-radius: 1rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    .permission-badge-create { background-color: #10b981; color: white; }
+    .permission-badge-update { background-color: #3b82f6; color: white; }
+    .permission-badge-delete { background-color: #ef4444; color: white; }
+    .permission-badge-view { background-color: #8b5cf6; color: white; }
+    .permission-badge-manage { background-color: #f59e0b; color: white; }
+    .permission-badge-assign { background-color: #06b6d4; color: white; }
+    .permission-badge-remove { background-color: #ec4899; color: white; }
+    
+    .role-badge {
+        display: inline-block;
+        padding: 0.35rem 0.9rem;
+        margin: 0.25rem;
+        border-radius: 0.5rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    
+    .role-badge-admin { background-color: #dc2626; color: white; }
+    .role-badge-medico { background-color: #2563eb; color: white; }
+    .role-badge-secretaria { background-color: #059669; color: white; }
+    .role-badge-paciente { background-color: #7c3aed; color: white; }
+    
+    .group-card {
+        border: 2px solid #e5e7eb;
+        border-radius: 0.75rem;
+        transition: all 0.3s;
+    }
+    
+    .group-card:hover {
+        border-color: #10b981;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+    }
+    
+    .user-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        transition: all 0.2s;
+        background-color: white;
+    }
+    
+    .user-card:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    
+    .permission-selector {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 1rem;
+    }
+    
+    .permission-item {
+        padding: 0.5rem;
+        border-bottom: 1px solid #f3f4f6;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .permission-item:last-child {
+        border-bottom: none;
+    }
+    
+    .tab-content {
+        padding: 2rem;
+        background-color: white;
+        border-radius: 0 0.5rem 0.5rem 0.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .nav-tabs .nav-link {
+        color: #6b7280;
+        font-weight: 500;
+        border: none;
+        border-bottom: 3px solid transparent;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #10b981;
+        border-bottom-color: #10b981;
+        background-color: transparent;
+    }
+    
+    .search-box {
+        position: relative;
+    }
+    
+    .search-box input {
+        padding-left: 2.5rem;
+        background-color: white !important;
+        color: #1f2937 !important;
+    }
+    
+    .search-box i {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+    }
+    
+    .action-btn {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.85rem;
+        border-radius: 0.375rem;
+    }
+    
+    .user-card h6,
+    .user-card small,
+    .user-card .text-muted {
+        color: #6b7280 !important;
+    }
+    
+    .user-card h6.fw-semibold {
+        color: #1f2937 !important;
+    }
+    
+    .permission-item strong,
+    .permission-item small {
+        color: #1f2937 !important;
+    }
+    
+    .permission-item .text-muted {
+        color: #6b7280 !important;
+    }
+    
+    .modal-header .modal-title {
+        color: #1f2937 !important;
+    }
+    
+    .modal-body h6 {
+        color: #1f2937 !important;
+    }
+    
+    .card-body h5,
+    .card-body h6,
+    .card-body strong,
+    .card-body .fw-semibold {
+        color: #1f2937 !important;
+    }
+    
+    
+    .tab-content h5,
+    .tab-content h6 {
+        color: #1f2937 !important;
+    }
+    
+    .group-card strong,
+    .group-card .fw-semibold {
+        color: #1f2937 !important;
+    }
+    
+    .card-header[style*="gradient"] h5,
+    .card-header[style*="gradient"] .fw-semibold {
+        color: white !important;
+    }
+</style>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0 fw-bold">
+                        <i class="fas fa-shield-alt me-2 text-success"></i>
+                        Panel de Administración de Permisos
+                    </h4>
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#quickActionsModal">
+                        <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <ul class="nav nav-tabs mb-0" id="permissionTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
+                    <i class="fas fa-users me-2"></i>Usuarios
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="groups-tab" data-bs-toggle="tab" data-bs-target="#groups" type="button" role="tab">
+                    <i class="fas fa-layer-group me-2"></i>Grupos por Permisos
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="roles-tab" data-bs-toggle="tab" data-bs-target="#roles" type="button" role="tab">
+                    <i class="fas fa-user-tag me-2"></i>Roles
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="permissions-tab" data-bs-toggle="tab" data-bs-target="#permissions" type="button" role="tab">
+                    <i class="fas fa-key me-2"></i>Todos los Permisos
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tabs Content -->
+        <div class="tab-content" id="permissionTabsContent">
+            
+            <!-- Users Tab -->
+            <div class="tab-pane fade show active" id="users" role="tabpanel">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" class="form-control" id="userSearch" placeholder="Buscar usuario por nombre o email...">
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <span class="text-muted">Total de usuarios: <strong>@Model.AllUsers.Count</strong></span>
+                    </div>
+                </div>
+
+                <div id="usersList">
+                    @foreach (var user in Model.AllUsers)
+                    {
+                        <div class="user-card" data-user-id="@user.UserId" data-user-name="@user.UserName" data-user-email="@user.Email">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="user-avatar bg-success text-white rounded-circle me-3" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">
+                                            @user.UserName?.Substring(0, 1).ToUpper()
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-semibold">@user.UserName</h6>
+                                            <small class="text-muted">@user.Email</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <div class="mb-2">
+                                        @if (user.Roles.Any())
+                                        {
+                                            @foreach (var role in user.Roles)
+                                            {
+                                                <span class="role-badge role-badge-@role.ToString().ToLower()">@role</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted fst-italic">Sin rol asignado</span>
+                                        }
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="fas fa-key me-1"></i>
+                                        @user.Permissions.Count permiso(s)
+                                    </small>
+                                </div>
+                                <div class="col-md-3 text-end">
+                                    <button class="btn btn-sm btn-outline-primary action-btn me-1" onclick="viewUserPermissions(@user.UserId, '@user.UserName')">
+                                        <i class="fas fa-eye"></i> Ver
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-success action-btn" onclick="manageUserPermissions(@user.UserId, '@user.UserName')">
+                                        <i class="fas fa-edit"></i> Gestionar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Groups Tab -->
+            <div class="tab-pane fade" id="groups" role="tabpanel">
+                <div class="mb-4">
+                    <h5 class="fw-semibold mb-3">
+                        <i class="fas fa-layer-group me-2 text-success"></i>
+                        Usuarios Agrupados por Conjunto de Permisos
+                    </h5>
+                    <p class="text-muted">Los usuarios están agrupados según tengan el mismo conjunto de permisos. Esto facilita la gestión masiva de permisos.</p>
+                </div>
+
+                @if (Model.PermissionGroups.Any())
+                {
+                    @foreach (var group in Model.PermissionGroups)
+                    {
+                        <div class="card group-card mb-4">
+                            <div class="card-header bg-light">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1 fw-semibold">
+                                            <i class="fas fa-users text-success me-2"></i>
+                                            Grupo de @group.Users.Count usuario(s)
+                                        </h6>
+                                        <small class="text-muted">@group.Permissions.Count permiso(s) en común</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-success" onclick="manageGroupPermissions('@group.GroupKey')">
+                                        <i class="fas fa-cog me-1"></i>Gestionar Grupo
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6 class="fw-semibold mb-3">Usuarios en este grupo:</h6>
+                                        @foreach (var user in group.Users)
+                                        {
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="user-avatar bg-success text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: bold;">
+                                                    @user.UserName?.Substring(0, 1).ToUpper()
+                                                </div>
+                                                <div>
+                                                    <strong>@user.UserName</strong>
+                                                    <br><small class="text-muted">@user.Email</small>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="fw-semibold mb-3">Permisos compartidos:</h6>
+                                        <div style="max-height: 200px; overflow-y: auto;">
+                                            @foreach (var permission in group.Permissions)
+                                            {
+                                                <span class="permission-badge permission-badge-@permission.Accion.ToString().ToLower()">
+                                                    @permission.Nombre
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No hay grupos de usuarios con permisos compartidos.
+                    </div>
+                }
+            </div>
+
+            <!-- Roles Tab -->
+            <div class="tab-pane fade" id="roles" role="tabpanel">
+                <div class="mb-4">
+                    <h5 class="fw-semibold mb-3">
+                        <i class="fas fa-user-tag me-2 text-success"></i>
+                        Permisos por Rol
+                    </h5>
+                    <p class="text-muted">Visualiza los permisos asociados a cada rol del sistema.</p>
+                </div>
+
+                @foreach (var rolePermission in Model.RolePermissions)
+                {
+                    <div class="card mb-4">
+                        <div class="card-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
+                            <h5 class="mb-0 fw-semibold">
+                                <i class="fas fa-shield-alt me-2"></i>
+                                Rol: @rolePermission.Key
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            @if (rolePermission.Value.Any())
+                            {
+                                <div class="row">
+                                    <div class="col-12 mb-3">
+                                        <span class="text-muted">Total de permisos: <strong>@rolePermission.Value.Count</strong></span>
+                                    </div>
+                                    <div class="col-12">
+                                        @foreach (var permission in rolePermission.Value)
+                                        {
+                                            <span class="permission-badge permission-badge-@permission.Accion.ToString().ToLower()" 
+                                                  data-bs-toggle="tooltip" 
+                                                  title="@permission.Descripcion">
+                                                <i class="fas fa-key me-1"></i>
+                                                @permission.Nombre
+                                                <small>(@permission.Recurso - @permission.Accion)</small>
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="text-muted mb-0">
+                                    <i class="fas fa-exclamation-circle me-2"></i>
+                                    Este rol no tiene permisos asignados.
+                                </p>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- All Permissions Tab -->
+            <div class="tab-pane fade" id="permissions" role="tabpanel">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" class="form-control" id="permissionSearch" placeholder="Buscar permiso...">
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <span class="text-muted">Total de permisos: <strong>@Model.AllPermissions.Count</strong></span>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover" id="permissionsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Descripción</th>
+                                <th>Recurso</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var permission in Model.AllPermissions.OrderBy(p => p.Recurso).ThenBy(p => p.Accion))
+                            {
+                                <tr>
+                                    <td><strong>@permission.Id</strong></td>
+                                    <td>
+                                        <span class="permission-badge permission-badge-@permission.Accion.ToString().ToLower()">
+                                            @permission.Nombre
+                                        </span>
+                                    </td>
+                                    <td>@permission.Descripcion</td>
+                                    <td><span class="badge bg-secondary">@permission.Recurso</span></td>
+                                    <td><span class="badge bg-info">@permission.Accion</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Modal -->
+<div class="modal fade" id="quickActionsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-bolt text-success me-2"></i>
+                    Acciones Rápidas
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="showCopyPermissionsModal()">
+                        <i class="fas fa-copy me-2"></i>Copiar Permisos entre Usuarios
+                    </button>
+                    <button class="btn btn-outline-success" onclick="showAssignRoleModal()">
+                        <i class="fas fa-user-tag me-2"></i>Asignar Rol a Usuario
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="showRemoveAllPermissionsModal()">
+                        <i class="fas fa-trash-alt me-2"></i>Remover Todos los Permisos de un Usuario
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Permissions Modal -->
+<div class="modal fade" id="userPermissionsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userPermissionsModalTitle">Permisos de Usuario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="userPermissionsModalBody">
+                <!-- Content loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Manage User Permissions Modal -->
+<div class="modal fade" id="managePermissionsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="managePermissionsModalTitle">Gestionar Permisos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="fw-semibold mb-3">Permisos Disponibles</h6>
+                        <div class="permission-selector" id="availablePermissions">
+                            <!-- Content loaded dynamically -->
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="fw-semibold mb-3">Permisos Asignados</h6>
+                        <div class="permission-selector" id="assignedPermissions">
+                            <!-- Content loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Manage Group Permissions Modal -->
+<div class="modal fade" id="manageGroupModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="manageGroupModalTitle">
+                    <i class="fas fa-users me-2"></i>
+                    Gestionar Permisos de Grupo
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Group Info -->
+                <div class="alert alert-info mb-4">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-info-circle me-3 fs-4"></i>
+                        <div>
+                            <strong>Gestión Masiva de Permisos</strong>
+                            <p class="mb-0 mt-1">Los cambios se aplicarán a todos los usuarios de este grupo (<span id="groupUserCount">0</span> usuarios)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users in Group -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0 fw-semibold">
+                            <i class="fas fa-users me-2 text-success"></i>
+                            Usuarios en este grupo
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="groupUsersList" class="d-flex flex-wrap gap-2">
+                            <!-- Users loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Permissions Management -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0 fw-semibold text-primary">
+                                    <i class="fas fa-plus-circle me-2"></i>
+                                    Agregar Permisos al Grupo
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" id="searchAvailableGroupPerms" placeholder="Buscar permisos disponibles...">
+                                </div>
+                                <div class="permission-selector" id="availableGroupPermissions" style="max-height: 500px;">
+                                    <!-- Content loaded dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0 fw-semibold text-danger">
+                                    <i class="fas fa-minus-circle me-2"></i>
+                                    Remover Permisos del Grupo
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" id="searchAssignedGroupPerms" placeholder="Buscar permisos asignados...">
+                                </div>
+                                <div class="permission-selector" id="assignedGroupPermissions" style="max-height: 500px;">
+                                    <!-- Content loaded dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="mt-4">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Advertencia:</strong> Los cambios de permisos se aplicarán inmediatamente a todos los usuarios del grupo.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentUserId = null;
+        let allUsers = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AllUsers));
+        let allPermissions = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AllPermissions));
+
+        // User search functionality
+        document.getElementById('userSearch')?.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            document.querySelectorAll('.user-card').forEach(card => {
+                const userName = card.dataset.userName.toLowerCase();
+                const userEmail = card.dataset.userEmail.toLowerCase();
+                if (userName.includes(searchTerm) || userEmail.includes(searchTerm)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // Permission search functionality
+        document.getElementById('permissionSearch')?.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            document.querySelectorAll('#permissionsTable tbody tr').forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+
+        // View user permissions
+        function viewUserPermissions(userId, userName) {
+            const user = allUsers.find(u => u.UserId === userId);
+            if (!user) return;
+
+            document.getElementById('userPermissionsModalTitle').textContent = `Permisos de ${userName}`;
+            
+            let html = '<div class="mb-3">';
+            html += `<h6>Roles:</h6>`;
+            if (user.Roles && user.Roles.length > 0) {
+                user.Roles.forEach(role => {
+                    html += `<span class="role-badge role-badge-${role.toLowerCase()}">${role}</span>`;
+                });
+            } else {
+                html += '<p class="text-muted">Sin roles asignados</p>';
+            }
+            html += '</div>';
+
+            html += '<div>';
+            html += `<h6>Permisos (${user.Permissions.length}):</h6>`;
+            if (user.Permissions.length > 0) {
+                user.Permissions.forEach(perm => {
+                    html += `<span class="permission-badge permission-badge-${perm.Accion.toLowerCase()}" 
+                             data-bs-toggle="tooltip" title="${perm.Descripcion}">
+                             ${perm.Nombre} <small>(${perm.Recurso} - ${perm.Accion})</small>
+                             </span>`;
+                });
+            } else {
+                html += '<p class="text-muted">Sin permisos asignados</p>';
+            }
+            html += '</div>';
+
+            document.getElementById('userPermissionsModalBody').innerHTML = html;
+            
+            // Initialize tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            new bootstrap.Modal(document.getElementById('userPermissionsModal')).show();
+        }
+
+        // Manage user permissions
+        function manageUserPermissions(userId, userName) {
+            currentUserId = userId;
+            const user = allUsers.find(u => u.UserId === userId);
+            if (!user) return;
+
+            document.getElementById('managePermissionsModalTitle').textContent = `Gestionar Permisos - ${userName}`;
+
+            const userPermissionIds = user.Permissions.map(p => p.Id);
+            
+            // Available permissions
+            let availableHtml = '';
+            allPermissions.filter(p => !userPermissionIds.includes(p.Id)).forEach(perm => {
+                availableHtml += `
+                    <div class="permission-item">
+                        <div>
+                            <strong>${perm.Nombre}</strong><br>
+                            <small class="text-muted">${perm.Descripcion}</small><br>
+                        </div>
+                        <button class="btn btn-sm btn-success" onclick="assignPermission(${userId}, ${perm.Id})">
+                            <i class="fas fa-plus"></i> Asignar
+                        </button>
+                    </div>
+                `;
+            });
+            document.getElementById('availablePermissions').innerHTML = availableHtml || '<p class="text-muted">No hay permisos disponibles</p>';
+
+            // Assigned permissions
+            let assignedHtml = '';
+            user.Permissions.forEach(perm => {
+                assignedHtml += `
+                    <div class="permission-item">
+                        <div>
+                            <strong>${perm.Nombre}</strong><br>
+                            <small class="text-muted">${perm.Descripcion}</small><br>
+                            <small><span class="badge bg-secondary">${perm.Recurso}</span> 
+                            <span class="badge bg-info">${perm.Accion}</span></small>
+                        </div>
+                        <button class="btn btn-sm btn-danger" onclick="removePermission(${userId}, ${perm.Id})">
+                            <i class="fas fa-minus"></i> Remover
+                        </button>
+                    </div>
+                `;
+            });
+            document.getElementById('assignedPermissions').innerHTML = assignedHtml || '<p class="text-muted">No hay permisos asignados</p>';
+
+            new bootstrap.Modal(document.getElementById('managePermissionsModal')).show();
+        }
+
+        // Assign permission to user
+        async function assignPermission(userId, permissionId) {
+            try {
+                const response = await fetch('/Admin/AssignPermission', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, permissionId })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('success', result.message);
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification('error', result.message);
+                }
+            } catch (error) {
+                showNotification('error', 'Error al asignar el permiso');
+            }
+        }
+
+        // Remove permission from user
+        async function removePermission(userId, permissionId) {
+            if (!confirm('¿Está seguro de remover este permiso?')) return;
+
+            try {
+                const response = await fetch('/Admin/RemovePermission', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, permissionId })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('success', result.message);
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification('error', result.message);
+                }
+            } catch (error) {
+                showNotification('error', 'Error al remover el permiso');
+            }
+        }
+
+        // Show copy permissions modal
+        function showCopyPermissionsModal() {
+            const modal = new bootstrap.Modal(document.getElementById('quickActionsModal'));
+            modal.hide();
+            
+            // You can implement a custom modal for this
+            const fromUserId = prompt('ID del usuario origen:');
+            const toUserId = prompt('ID del usuario destino:');
+            
+            if (fromUserId && toUserId) {
+                copyPermissions(parseInt(fromUserId), parseInt(toUserId));
+            }
+        }
+
+        // Copy permissions
+        async function copyPermissions(fromUserId, toUserId) {
+            try {
+                const response = await fetch('/Admin/CopyPermissions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fromUserId, toUserId })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('success', result.message);
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification('error', result.message);
+                }
+            } catch (error) {
+                showNotification('error', 'Error al copiar los permisos');
+            }
+        }
+
+        // Manage group permissions
+        function manageGroupPermissions(groupKey) {
+            // Find the group in the permission groups
+            const group = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PermissionGroups))
+                .find(g => g.GroupKey === groupKey);
+            
+            if (!group) return;
+
+            // Set group user count
+            document.getElementById('groupUserCount').textContent = group.Users.length;
+
+            // Display users in group
+            let usersHtml = '';
+            group.Users.forEach(user => {
+                usersHtml += `
+                    <div class="badge bg-success" style="padding: 0.5rem 0.75rem; font-size: 0.9rem;">
+                        <i class="fas fa-user me-1"></i>
+                        ${user.UserName}
+                    </div>
+                `;
+            });
+            document.getElementById('groupUsersList').innerHTML = usersHtml;
+
+            // Get all group permission IDs
+            const groupPermissionIds = group.Permissions.map(p => p.Id);
+
+            // Available permissions (not in group)
+            let availableHtml = '';
+            allPermissions.filter(p => !groupPermissionIds.includes(p.Id)).forEach(perm => {
+                availableHtml += `
+                    <div class="permission-item" data-perm-name="${perm.Nombre.toLowerCase()}">
+                        <div>
+                            <strong>${perm.Nombre}</strong><br>
+                            <small class="text-muted">${perm.Descripcion}</small><br>
+                            <small>
+                                <span class="badge bg-secondary">${perm.Recurso}</span> 
+                                <span class="badge bg-info">${perm.Accion}</span>
+                            </small>
+                        </div>
+                        <button class="btn btn-sm btn-success" onclick="addPermissionToGroup('${groupKey}', ${perm.Id}, ${JSON.stringify(group.Users.map(u => u.UserId))})">
+                            <i class="fas fa-plus"></i> Agregar
+                        </button>
+                    </div>
+                `;
+            });
+            document.getElementById('availableGroupPermissions').innerHTML = availableHtml || 
+                '<p class="text-muted text-center py-4">No hay permisos disponibles para agregar</p>';
+
+            // Assigned permissions (in group)
+            let assignedHtml = '';
+            group.Permissions.forEach(perm => {
+                assignedHtml += `
+                    <div class="permission-item" data-perm-name="${perm.Nombre.toLowerCase()}">
+                        <div>
+                            <strong>${perm.Nombre}</strong><br>
+                            <small class="text-muted">${perm.Descripcion}</small><br>
+                            <small>
+                                <span class="badge bg-secondary">${perm.Recurso}</span> 
+                                <span class="badge bg-info">${perm.Accion}</span>
+                            </small>
+                        </div>
+                        <button class="btn btn-sm btn-danger" onclick="removePermissionFromGroup('${groupKey}', ${perm.Id}, ${JSON.stringify(group.Users.map(u => u.UserId))})">
+                            <i class="fas fa-minus"></i> Remover
+                        </button>
+                    </div>
+                `;
+            });
+            document.getElementById('assignedGroupPermissions').innerHTML = assignedHtml || 
+                '<p class="text-muted text-center py-4">Este grupo no tiene permisos asignados</p>';
+
+            // Add search functionality
+            document.getElementById('searchAvailableGroupPerms').addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                document.querySelectorAll('#availableGroupPermissions .permission-item').forEach(item => {
+                    const permName = item.dataset.permName;
+                    const text = item.textContent.toLowerCase();
+                    item.style.display = (permName.includes(searchTerm) || text.includes(searchTerm)) ? '' : 'none';
+                });
+            });
+
+            document.getElementById('searchAssignedGroupPerms').addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                document.querySelectorAll('#assignedGroupPermissions .permission-item').forEach(item => {
+                    const permName = item.dataset.permName;
+                    const text = item.textContent.toLowerCase();
+                    item.style.display = (permName.includes(searchTerm) || text.includes(searchTerm)) ? '' : 'none';
+                });
+            });
+
+            // Show modal
+            new bootstrap.Modal(document.getElementById('manageGroupModal')).show();
+        }
+
+        // Add permission to all users in group
+        async function addPermissionToGroup(groupKey, permissionId, userIds) {
+            if (!confirm(`¿Está seguro de agregar este permiso a ${userIds.length} usuario(s)?`)) return;
+
+            let successCount = 0;
+            let errorCount = 0;
+
+            for (const userId of userIds) {
+                try {
+                    const response = await fetch('/Admin/AssignPermission', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId, permissionId })
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        successCount++;
+                    } else {
+                        errorCount++;
+                    }
+                } catch (error) {
+                    errorCount++;
+                }
+            }
+
+            if (successCount > 0) {
+                showNotification('success', `Permiso agregado exitosamente a ${successCount} usuario(s)`);
+                setTimeout(() => location.reload(), 1500);
+            }
+            if (errorCount > 0) {
+                showNotification('error', `Error al agregar permiso a ${errorCount} usuario(s)`);
+            }
+        }
+
+        // Remove permission from all users in group
+        async function removePermissionFromGroup(groupKey, permissionId, userIds) {
+            if (!confirm(`¿Está seguro de remover este permiso de ${userIds.length} usuario(s)?`)) return;
+
+            let successCount = 0;
+            let errorCount = 0;
+
+            for (const userId of userIds) {
+                try {
+                    const response = await fetch('/Admin/RemovePermission', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId, permissionId })
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        successCount++;
+                    } else {
+                        errorCount++;
+                    }
+                } catch (error) {
+                    errorCount++;
+                }
+            }
+
+            if (successCount > 0) {
+                showNotification('success', `Permiso removido exitosamente de ${successCount} usuario(s)`);
+                setTimeout(() => location.reload(), 1500);
+            }
+            if (errorCount > 0) {
+                showNotification('error', `Error al remover permiso de ${errorCount} usuario(s)`);
+            }
+        }
+
+        // Show assign role modal
+        function showAssignRoleModal() {
+            const modal = new bootstrap.Modal(document.getElementById('quickActionsModal'));
+            modal.hide();
+            
+            const userId = prompt('ID del usuario:');
+            const role = prompt('Rol (Admin, Medico, Secretaria, Paciente):');
+            
+            if (userId && role) {
+                assignRolePermissions(parseInt(userId), role);
+            }
+        }
+
+        // Assign role permissions
+        async function assignRolePermissions(userId, role) {
+            try {
+                const response = await fetch('/Admin/AssignRolePermissions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, role })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('success', result.message);
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification('error', result.message);
+                }
+            } catch (error) {
+                showNotification('error', 'Error al asignar los permisos del rol');
+            }
+        }
+
+        // Show remove all permissions modal
+        function showRemoveAllPermissionsModal() {
+            const modal = new bootstrap.Modal(document.getElementById('quickActionsModal'));
+            modal.hide();
+            
+            const userId = prompt('ID del usuario:');
+            
+            if (userId && confirm('¿Está seguro de remover TODOS los permisos de este usuario?')) {
+                removeAllPermissions(parseInt(userId));
+            }
+        }
+
+        // Remove all permissions
+        async function removeAllPermissions(userId) {
+            try {
+                const response = await fetch('/Admin/RemoveAllPermissions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(userId)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('success', result.message);
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification('error', result.message);
+                }
+            } catch (error) {
+                showNotification('error', 'Error al remover los permisos');
+            }
+        }
+
+        // Show notification
+        function showNotification(type, message) {
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+            
+            const alertHtml = `
+                <div class="alert ${alertClass} alert-dismissible fade show position-fixed top-0 end-0 m-3" role="alert" style="z-index: 9999;">
+                    <i class="fas ${icon} me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', alertHtml);
+            
+            setTimeout(() => {
+                const alert = document.querySelector('.alert');
+                if (alert) alert.remove();
+            }, 3000);
+        }
+
+        // Initialize tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+}
