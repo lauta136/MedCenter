@@ -116,11 +116,9 @@ public class AdminController : BaseController
 
     // API endpoint to assign permission to group of users
     [HttpPost]
-    public async Task<IActionResult> AssignPermissionToGroup([FromBody] dynamic data)
+    public async Task<IActionResult> AssignPermissionToGroup([FromBody] AssignPermissionToGroupDTO data)
     {
-        int[] userIds = ((IEnumerable<dynamic>)data.userIds).Select(x => (int)x).ToArray();
-        int permissionId = (int)data.permissionId;
-        var result = await _adminService.AssignPermissionToGroup(userIds, permissionId);
+        var result = await _adminService.AssignPermissionToGroup(data.UsersIds, data.PermissionId);
         if (result)
         {
             return Json(new { success = true, message = "Permiso asignado correctamente" });
@@ -130,11 +128,9 @@ public class AdminController : BaseController
 
     // API endpoint to remove permission from group of users
     [HttpPost]
-    public async Task<IActionResult> RemovePermissionToGroup([FromBody] dynamic data)
+    public async Task<IActionResult> RemovePermissionFromGroup([FromBody] RemovePermissionFromGroupDTO data)
     {
-        int[] userIds = ((IEnumerable<dynamic>)data.userIds).Select(x => (int)x).ToArray();
-        int permissionId = (int)data.permissionId;
-        var result = await _adminService.RemovePermissionFromGroup(userIds, permissionId);
+        var result = await _adminService.RemovePermissionFromGroup(data.UsersIds, data.PermissionId);
         if (result)
         {
             return Json(new { success = true, message = "Permiso removido correctamente" });

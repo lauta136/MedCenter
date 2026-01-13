@@ -46,6 +46,18 @@ public class RemovePermissionDTO
     public int PermissionId { get; set; }
 }
 
+public class AssignPermissionToGroupDTO
+{
+    public List<int> UsersIds { get; set; } = new List<int>();
+    public int PermissionId { get; set; }
+}
+
+public class RemovePermissionFromGroupDTO
+{
+    public List<int> UsersIds { get; set; } = new List<int>();
+    public int PermissionId { get; set; }
+}
+
 public class PermissionManagementViewModel
 {
     public List<UserPermissionDTO> AllUsers { get; set; } = new List<UserPermissionDTO>();

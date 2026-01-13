@@ -865,7 +865,7 @@
                                 <span class="badge bg-info">${perm.Accion}</span>
                             </small>
                         </div>
-                        <button class="btn btn-sm btn-success" onclick="addPermissionToGroup('${groupKey}', ${perm.Id}, ${JSON.stringify(group.Users.map(u => u.UserId))})">
+                        <button class="btn btn-sm btn-success" onclick="addPermissionToGroup(${perm.Id}, ${JSON.stringify(group.Users.map(u => u.UserId))})">
                             <i class="fas fa-plus"></i> Agregar
                         </button>
                     </div>
@@ -887,7 +887,7 @@
                                 <span class="badge bg-info">${perm.Accion}</span>
                             </small>
                         </div>
-                        <button class="btn btn-sm btn-danger" onclick="removePermissionFromGroup('${groupKey}', ${perm.Id}, ${JSON.stringify(group.Users.map(u => u.UserId))})">
+                        <button class="btn btn-sm btn-danger" onclick="removePermissionFromGroup(${perm.Id}, ${JSON.stringify(group.Users.map(u => u.UserId))})">
                             <i class="fas fa-minus"></i> Remover
                         </button>
                     </div>
@@ -920,72 +920,56 @@
         }
 
         // Add permission to all users in group
-        async function addPermissionToGroup(groupKey, permissionId, userIds) {
+        async function addPermissionToGroup(permissionId, userIds) {
             if (!confirm(`¿Está seguro de agregar este permiso a ${userIds.length} usuario(s)?`)) return;
 
-            let successCount = 0;
-            let errorCount = 0;
-
-            for (const userId of userIds) {
-                try {
-                    const response = await fetch('/Admin/AssignPermission', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ userId, permissionId })
-                    });
-                    
-                    const result = await response.json();
-                    if (result.success) {
-                        successCount++;
-                    } else {
-                        errorCount++;
-                    }
-                } catch (error) {
-                    errorCount++;
+            try {
+                const response = await fetch('/Admin/AssignPermissionToGroup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        usersIds: userIds,  // Array of user IDs
+                        permissionId: permissionId 
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('success', `Permiso agregado exitosamente a ${userIds.length} usuario(s)`);
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showNotification('error', result.message || 'Error al agregar permiso al grupo');
                 }
-            }
-
-            if (successCount > 0) {
-                showNotification('success', `Permiso agregado exitosamente a ${successCount} usuario(s)`);
-                setTimeout(() => location.reload(), 1500);
-            }
-            if (errorCount > 0) {
-                showNotification('error', `Error al agregar permiso a ${errorCount} usuario(s)`);
+            } catch (error) {
+                showNotification('error', 'Error de red al agregar permiso');
             }
         }
 
         // Remove permission from all users in group
-        async function removePermissionFromGroup(groupKey, permissionId, userIds) {
+        async function removePermissionFromGroup(permissionId, userIds) {
             if (!confirm(`¿Está seguro de remover este permiso de ${userIds.length} usuario(s)?`)) return;
 
-            let successCount = 0;
-            let errorCount = 0;
-
-            for (const userId of userIds) {
-                try {
-                    const response = await fetch('/Admin/RemovePermission', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ userId, permissionId })
-                    });
-                    
-                    const result = await response.json();
-                    if (result.success) {
-                        successCount++;
-                    } else {
-                        errorCount++;
-                    }
-                } catch (error) {
-                    errorCount++;
+            try {
+                const response = await fetch('/Admin/RemovePermissionFromGroup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        usersIds: userIds,
+                        permissionId: permissionId 
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('success', `Permiso removido exitosamente de ${userIds.length} usuario(s)`);
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showNotification('error', result.message || 'Error al remover permiso del grupo');
                 }
-            }
-
-            if (successCount > 0) {
-                showNotification('success', `Permiso removido exitosamente de ${successCount} usuario(s)`);
-                setTimeout(() => location.reload(), 1500);
-            }
-            if (errorCount > 0) {
-                showNotification('error', `Error al remover permiso de ${errorCount} usuario(s)`);
+            } catch (error) {
+                showNotification('error', 'Error de red al remover permiso');
             }
         }
 

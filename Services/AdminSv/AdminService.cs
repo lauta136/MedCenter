@@ -214,7 +214,7 @@ public class AdminService
     }
 
     //assign permission to a group of users
-    public async Task<bool> AssignPermissionToGroup(int[] usersIds, int permissionId)
+    public async Task<bool> AssignPermissionToGroup(List<int> usersIds, int permissionId)
     {
         try
         {
@@ -252,7 +252,7 @@ public class AdminService
     }
 
     // Remove a permission from a group of users 
-    public async Task<bool> RemovePermissionFromGroup(int[] usersIds, int permissionId)
+    public async Task<bool> RemovePermissionFromGroup(List<int> usersIds, int permissionId)
     {
         try
         {
