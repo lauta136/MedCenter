@@ -99,7 +99,7 @@ public class TurnoController : BaseController
         var especialidades = await _especialidadService.GetEspecialidadesCargadas();
         ViewBag.UserName = UserName;
         ViewBag.EsSecretaria = User.IsInRole(RolUsuario.Secretaria.ToString());
-        ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
+        ViewBag.EsAdmin = await _adminService.AccesoAPanelAdmin(UserId.Value);
 
         if (User.IsInRole(RolUsuario.Secretaria.ToString()))
         {
@@ -242,7 +242,7 @@ public class TurnoController : BaseController
                 ViewBag.EstadoActual = result.turnoDto.Estado.ToString();
                 ViewBag.DescripcionEstado = result.turnoDto.DescripcionEstado;
                 ViewBag.UserName = UserName;
-                ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
+                ViewBag.EsAdmin = await _adminService.AccesoAPanelAdmin(UserId.Value);
 
                 return View("~/Views/Shared/Turnos/ReprogramarTurno.cshtml",result.turnoDto);
             }
@@ -325,7 +325,7 @@ public class TurnoController : BaseController
     {
         
         ViewBag.UserName = UserName;
-        ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
+        ViewBag.EsAdmin = await _adminService.AccesoAPanelAdmin(UserId.Value);
 
         TurnoSvCancelResult result = await _turnoService.PuedeCancelarReglas(id);
 
@@ -357,7 +357,7 @@ public class TurnoController : BaseController
     public async Task<IActionResult> GestionarTurnos()
     {
         ViewBag.UserName = UserName;
-        ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
+        ViewBag.EsAdmin = await _adminService.AccesoAPanelAdmin(UserId.Value);
 
         await _turnoService.FinalizarAusentarTurnosPasados();
         await _disponibilidadService.LimpiarSlotsPasados();

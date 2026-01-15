@@ -17,20 +17,20 @@ public class AdminController : BaseController
     
     public async Task<IActionResult> Index()
     {
-        ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
+        ViewBag.EsAdmin = await _adminService.AccesoAPanelAdmin(UserId.Value);
         return View();
     }
 
     // View for permission management panel
     public async Task<IActionResult> PanelAdmin()
     {
-        var isAdmin = await _adminService.EsAdmin(UserId.Value);
+        var isAdmin = await _adminService.AccesoAPanelAdmin(UserId.Value);
         if (!isAdmin)
         {
             return RedirectToAction("AccessDenied", "Access");
         }
-        ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
-
+        ViewBag.EsAdmin = await _adminService.AccesoAPanelAdmin(UserId.Value);
+        ViewBag.Rol = UserRole;
         var viewModel = await _adminService.GetPermissionManagementData();
         return View(viewModel);
     }

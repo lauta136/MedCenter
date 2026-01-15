@@ -2,7 +2,9 @@
 @using MedCenter.Services.TurnoSv
 @{
     ViewData["Title"] = "Panel de Administración de Permisos";
-    Layout = "~/Views/Shared/_SecretariaLayout.cshtml";
+    // Use secretaria layout if user has secretaria role, otherwise use admin layout
+   // var userRole = ViewBag.UserRole;
+    Layout = ViewBag.Rol == RolUsuario.Secretaria ? "~/Views/Shared/_SecretariaLayout.cshtml" : "~/Views/Shared/_AdminLayout.cshtml";
 }
 
 <style>

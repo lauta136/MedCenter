@@ -74,7 +74,7 @@ namespace MedCenter.Controllers
             ViewBag.TurnosCancelados = await _context.turnos.CountAsync(t => t.estado == EstadosTurno.Cancelado.ToString());
             ViewBag.TotalPacientes = await _context.pacientes.CountAsync();
             ViewBag.UserName = UserName;
-            ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
+            ViewBag.EsAdmin = await _adminService.AccesoAPanelAdmin(UserId.Value);
 
             await _turnoService.FinalizarAusentarTurnosPasados();
 
@@ -90,7 +90,7 @@ namespace MedCenter.Controllers
         {
             var especialidades = await _context.especialidades.ToListAsync();
             ViewBag.UserName = UserName;
-            ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
+            ViewBag.EsAdmin = await _adminService.AccesoAPanelAdmin(UserId.Value);
             return View(especialidades);
         }
 
@@ -108,7 +108,7 @@ namespace MedCenter.Controllers
                             })
                             .ToListAsync();
             ViewBag.UserName = UserName;
-            ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
+            ViewBag.EsAdmin = await _adminService.AccesoAPanelAdmin(UserId.Value);
 
             return View(pacientes);
         }
@@ -118,7 +118,7 @@ namespace MedCenter.Controllers
         public async Task<IActionResult> NuevoPaciente()
         {
             ViewBag.UserName = UserName;
-            ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
+            ViewBag.EsAdmin = await _adminService.AccesoAPanelAdmin(UserId.Value);
             return View(new RegisterDTO { Role = "Paciente" }); //Para que en el POST ya tenga el rol correcto
 
         }
@@ -171,7 +171,7 @@ namespace MedCenter.Controllers
                 .ToListAsync();
 
             ViewBag.UserName = UserName;
-            ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
+            ViewBag.EsAdmin = await _adminService.AccesoAPanelAdmin(UserId.Value);
             return View(medicos);
         }
 
@@ -195,7 +195,7 @@ namespace MedCenter.Controllers
             ViewBag.UserName = UserName;
             ViewBag.MedicoId = medico_id;
             ViewBag.MedicoNombre = medico.idNavigation.nombre;
-            ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
+            ViewBag.EsAdmin = await _adminService.AccesoAPanelAdmin(UserId.Value);
 
             return View(disponibilidad);
         }
@@ -286,7 +286,7 @@ namespace MedCenter.Controllers
                 .ToListAsync();
 
             ViewBag.UserName = UserName;
-            ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
+            ViewBag.EsAdmin = await _adminService.AccesoAPanelAdmin(UserId.Value);
             return View(obrasSociales);
         }
 
@@ -312,7 +312,7 @@ namespace MedCenter.Controllers
             ViewBag.PacientesNuevosMes = pacientesNuevosMes;
             ViewBag.TurnosCancelados = turnosCancelados;
             ViewBag.UserName = UserName;
-            ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
+            ViewBag.EsAdmin = await _adminService.AccesoAPanelAdmin(UserId.Value);
 
             return View();
         }

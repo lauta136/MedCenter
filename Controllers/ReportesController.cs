@@ -56,7 +56,7 @@ namespace MedCenter.Controllers
 
             var usuarios = await GetAllUsuarios();
             ViewBag.usuarios = usuarios;
-            ViewBag.EsAdmin = await _adminService.EsAdmin(UserId.Value);
+            ViewBag.EsAdmin = await _adminService.AccesoAPanelAdmin(UserId.Value);
 
             if (User.IsInRole(RolUsuario.Medico.ToString()))
                 return View("~/Views/Medico/Reportes.cshtml", medicos);

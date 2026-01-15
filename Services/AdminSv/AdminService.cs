@@ -15,7 +15,7 @@ public class AdminService
         _context = appDbContext;
     }
     
-    public async Task<bool> EsAdmin(int id)
+    public async Task<bool> AccesoAPanelAdmin(int id)
     {
         int [] permitsIds = await _context.personaPermisos.Where(pp => pp.PersonaId == id).Select(pp => pp.PermisoId).ToArrayAsync();
         var adminIds = await _context.rolPermisos.Where(rp => rp.RolNombre == RolUsuario.Admin).Select(rp => rp.PermisoId).ToListAsync();
