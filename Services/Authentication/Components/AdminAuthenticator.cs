@@ -26,10 +26,8 @@ namespace MedCenter.Services.Authentication.Components
 
             if(admin == null)
             return new AuthResult{Success = false, ErrorMessage = "No se ha encontrado una cuenta de admin con el mail proporcionado"};
-
-            string hashedP = _hashService.HashPassword(password);
-
-            if(admin.IdNavigation.contraseña != hashedP)
+            
+            if(!_hashService.VerifyPassword(password, admin.IdNavigation.contraseña))
             return new AuthResult{Success = false, ErrorMessage = "La contraseña es incorrecta"};
 
             return new AuthResult { Success = true, Role = RolUsuario.Admin, UserName = admin.IdNavigation.nombre, UserId = admin.IdNavigation.id, UserMail = admin.IdNavigation.email };
