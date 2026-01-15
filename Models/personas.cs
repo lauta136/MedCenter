@@ -24,5 +24,6 @@ public partial class Persona
 
     public virtual ICollection<PersonaPermiso> PersonaPermisos{get;set;} = new List<PersonaPermiso>();
     public virtual Secretaria? Secretaria { get; set; }
+    public virtual Admin? Admin{get;set;}
 
 }

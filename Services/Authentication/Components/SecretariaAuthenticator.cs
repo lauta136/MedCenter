@@ -50,12 +50,12 @@ namespace MedCenter.Services.Authentication.Components
             if (!await _roleKeyService.ValidateRoleKeyAsync(dto.ClaveSecretaria, "Secretaria"))
                 return new AuthResult { Success = false, ErrorMessage = _roleKeyService.GetWrongKeyMessage("Secretaria") };
             
-            if(dto.ClaveAdmin != null)
+            /*if(dto.ClaveAdmin != null)
             {
                 if (!await _roleKeyService.ValidateRoleKeyAsync(dto.ClaveAdmin, "Admin"))
                 return new AuthResult { Success = false, ErrorMessage = _roleKeyService.GetWrongKeyMessage("Admin") };
             }
-
+            */
 
             var transaction = await _context.Database.BeginTransactionAsync();
 
@@ -83,10 +83,10 @@ namespace MedCenter.Services.Authentication.Components
 
                 var ids= await _context.rolPermisos.Where(rp => rp.RolNombre == RolUsuario.Secretaria).Select(p => p.PermisoId).ToListAsync();
                 
-                if(dto.ClaveAdmin != null)
+               /* if(dto.ClaveAdmin != null)
                 {
                     ids.AddRange(await _context.rolPermisos.Where(rp => rp.RolNombre == RolUsuario.Admin).Select(p => p.PermisoId).ToListAsync());
-                }
+                }*/
                 
                 var personaPermisos = ids.Select(id => new PersonaPermiso
                 {

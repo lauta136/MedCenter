@@ -278,6 +278,12 @@ public class AdminService
     // Get user roles based on their permissions
     private async Task<List<RolUsuario>> GetUserRoles(int userId)
     {
+        if(await _context.pacientes.AnyAsync(p => p.id == userId))
+        return new List<RolUsuario> {RolUsuario.Paciente};
+
+        if(await _context.medicos.AnyAsync(p => p.id == userId))
+        return new List<RolUsuario> {RolUsuario.Medico};
+
         var userPermissionIds = await _context.personaPermisos
             .Where(pp => pp.PersonaId == userId)
             .Select(pp => pp.PermisoId)
@@ -290,7 +296,7 @@ public class AdminService
             if (role == RolUsuario.System) continue;
 
             var rolePermissionIds = await _context.rolPermisos
-                .Where(rp => rp.RolNombre == role)
+                .Where(rp => rp.RolNombre == role && rp.RolNombre != RolUsuario.Paciente&& rp.RolNombre != RolUsuario.Medico)
                 .Select(rp => rp.PermisoId)
                 .ToListAsync();
 

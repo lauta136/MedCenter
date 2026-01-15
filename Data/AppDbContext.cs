@@ -56,6 +56,7 @@ public partial class AppDbContext : DbContext
     public DbSet<Permiso> permisos {get;set;}
     public DbSet<RolPermiso> rolPermisos{get;set;}
     public DbSet<PersonaPermiso> personaPermisos{get;set;}
+    public DbSet<Admin> admins{get;set;}
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -455,6 +456,23 @@ public partial class AppDbContext : DbContext
            .OnDelete(DeleteBehavior.Cascade); 
 
         });
+        modelBuilder.Entity<Admin>( e =>
+        {
+            e.ToTable("admins");
+
+            e.HasKey(e => e.Id);
+            e.Property(e => e.Id).ValueGeneratedNever().HasColumnName("id");
+            e.Property(e => e.FechaIngreso).HasColumnName("fecha_ingreso");
+            e.Property(e => e.Cargo).HasColumnName("cargo");
+            e.Property(e => e.Activo).HasDefaultValue(true).HasColumnName("activo");
+            
+            e.HasOne<Persona>(e => e.IdNavigation)
+            .WithOne(e => e.Admin).HasForeignKey<Admin>(e => e.Id)
+            .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("admins_id_fkey");
+        });
+
+
 
         /* modelBuilder.Entity<RoleKey>().HasData(
              new RoleKey { Id = 1, Role = "Medico", HashedKey = medicoKey },

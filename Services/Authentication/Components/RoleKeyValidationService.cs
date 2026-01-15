@@ -54,6 +54,7 @@ namespace MedCenter.Services.Authentication.Components
             {
                 "secretaria" => "Se requiere clave de autorización para registrar personal de secretaría",
                 "medico" => "Se requiere clave de autorización para registrar médicos",
+                "admin" => "Se requiere una clave de autorizacion para registrarse como administrador",
                 _ => "Se requiere clave de autorización para este rol"
             };
         }
@@ -64,6 +65,7 @@ namespace MedCenter.Services.Authentication.Components
             {
                 "secretaria" => "La clave del rol secretaria insertada es erronea",
                 "medico" => "La clave del rol medico insertada es erronea",
+                "admin" => "La clave del rol administrador insertada es erronea",
                 _ => "Se requiere clave de autorización para este rol"
             };
         }
