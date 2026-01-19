@@ -3,7 +3,9 @@
 @{
     ViewData["Title"] = "Panel de Administración de Permisos";
     // Use secretaria layout if user has secretaria role, otherwise use admin layout
-   // var userRole = ViewBag.UserRole;
+    var isAdmin = ViewBag.Rol != RolUsuario.Secretaria;
+    var primaryColor = isAdmin ? "#dc2626" : "#10b981";
+    var primaryColorDark = isAdmin ? "#991b1b" : "#059669";
     Layout = ViewBag.Rol == RolUsuario.Secretaria ? "~/Views/Shared/_SecretariaLayout.cshtml" : "~/Views/Shared/_AdminLayout.cshtml";
 }
 
@@ -46,8 +48,8 @@
     }
     
     .group-card:hover {
-        border-color: #10b981;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+        border-color: @primaryColor;
+        box-shadow: 0 4px 12px @(isAdmin ? "rgba(220, 38, 38, 0.15)" : "rgba(16, 185, 129, 0.15)");
     }
     
     .user-card {
@@ -99,8 +101,8 @@
     }
     
     .nav-tabs .nav-link.active {
-        color: #10b981;
-        border-bottom-color: #10b981;
+        color: @primaryColor;
+        border-bottom-color: @primaryColor;
         background-color: transparent;
     }
     
@@ -197,10 +199,10 @@
             <div class="card-header bg-white border-0 py-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <h4 class="mb-0 fw-bold">
-                        <i class="fas fa-shield-alt me-2 text-success"></i>
+                        <i class="fas fa-shield-alt me-2" style="color: @primaryColor;"></i>
                         Panel de Administración de Permisos
                     </h4>
-                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#quickActionsModal">
+                    <button class="btn @(isAdmin ? "btn-danger" : "btn-success")" data-bs-toggle="modal" data-bs-target="#quickActionsModal">
                         <i class="fas fa-bolt me-2"></i>Acciones Rápidas
                     </button>
                 </div>
@@ -255,7 +257,7 @@
                             <div class="row align-items-center">
                                 <div class="col-md-4">
                                     <div class="d-flex align-items-center">
-                                        <div class="user-avatar bg-success text-white rounded-circle me-3" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">
+                                        <div class="user-avatar text-white rounded-circle me-3" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; background-color: @primaryColor;">
                                             @user.UserName?.Substring(0, 1).ToUpper()
                                         </div>
                                         <div>
@@ -284,10 +286,10 @@
                                     </small>
                                 </div>
                                 <div class="col-md-3 text-end">
-                                    <button class="btn btn-sm btn-outline-primary action-btn me-1" onclick="viewUserPermissions(@user.UserId, '@user.UserName')">
+                                    <button class="btn btn-sm btn-outline-primary action-btn me-1" data-action="view-permissions" data-user-id="@user.UserId" data-user-name="@user.UserName">
                                         <i class="fas fa-eye"></i> Ver
                                     </button>
-                                    <button class="btn btn-sm btn-outline-success action-btn" onclick="manageUserPermissions(@user.UserId, '@user.UserName')">
+                                    <button class="btn btn-sm @(isAdmin ? "btn-outline-danger" : "btn-outline-success") action-btn" data-action="manage-permissions" data-user-id="@user.UserId" data-user-name="@user.UserName">
                                         <i class="fas fa-edit"></i> Gestionar
                                     </button>
                                 </div>
@@ -301,7 +303,7 @@
             <div class="tab-pane fade" id="groups" role="tabpanel">
                 <div class="mb-4">
                     <h5 class="fw-semibold mb-3">
-                        <i class="fas fa-layer-group me-2 text-success"></i>
+                        <i class="fas fa-layer-group me-2" style="color: @primaryColor;"></i>
                         Usuarios Agrupados por Conjunto de Permisos
                     </h5>
                     <p class="text-muted">Los usuarios están agrupados según tengan el mismo conjunto de permisos. Esto facilita la gestión masiva de permisos.</p>
@@ -316,12 +318,12 @@
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                         <h6 class="mb-1 fw-semibold">
-                                            <i class="fas fa-users text-success me-2"></i>
+                                            <i class="fas fa-users me-2" style="color: @primaryColor;"></i>
                                             Grupo de @group.Users.Count usuario(s)
                                         </h6>
                                         <small class="text-muted">@group.Permissions.Count permiso(s) en común</small>
                                     </div>
-                                    <button class="btn btn-sm btn-outline-success" onclick="manageGroupPermissions('@group.GroupKey')">
+                                    <button class="btn btn-sm @(isAdmin ? "btn-outline-danger" : "btn-outline-success")" data-action="manage-group" data-group-key="@group.GroupKey">
                                         <i class="fas fa-cog me-1"></i>Gestionar Grupo
                                     </button>
                                 </div>
@@ -333,7 +335,7 @@
                                         @foreach (var user in group.Users)
                                         {
                                             <div class="d-flex align-items-center mb-2">
-                                                <div class="user-avatar bg-success text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: bold;">
+                                                <div class="user-avatar text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: bold; background-color: @primaryColor;">
                                                     @user.UserName?.Substring(0, 1).ToUpper()
                                                 </div>
                                                 <div>
@@ -372,7 +374,7 @@
             <div class="tab-pane fade" id="roles" role="tabpanel">
                 <div class="mb-4">
                     <h5 class="fw-semibold mb-3">
-                        <i class="fas fa-user-tag me-2 text-success"></i>
+                        <i class="fas fa-user-tag me-2" style="color: @primaryColor;"></i>
                         Permisos por Rol
                     </h5>
                     <p class="text-muted">Visualiza los permisos asociados a cada rol del sistema.</p>
@@ -381,7 +383,7 @@
                 @foreach (var rolePermission in Model.RolePermissions)
                 {
                     <div class="card mb-4">
-                        <div class="card-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
+                        <div class="card-header" style="background: linear-gradient(135deg, @primaryColor 0%, @primaryColorDark 100%); color: white;">
                             <h5 class="mb-0 fw-semibold">
                                 <i class="fas fa-shield-alt me-2"></i>
                                 Rol: @rolePermission.Key
@@ -474,20 +476,20 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="fas fa-bolt text-success me-2"></i>
+                    <i class="fas fa-bolt me-2" style="color: @primaryColor;"></i>
                     Acciones Rápidas
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="d-grid gap-2">
-                    <button class="btn btn-outline-primary" onclick="showCopyPermissionsModal()">
+                    <button class="btn btn-outline-primary" data-action="copy-permissions">
                         <i class="fas fa-copy me-2"></i>Copiar Permisos entre Usuarios
                     </button>
-                    <button class="btn btn-outline-success" onclick="showAssignRoleModal()">
+                    <button class="btn @(isAdmin ? "btn-outline-danger" : "btn-outline-success")" data-action="assign-role">
                         <i class="fas fa-user-tag me-2"></i>Asignar Rol a Usuario
                     </button>
-                    <button class="btn btn-outline-danger" onclick="showRemoveAllPermissionsModal()">
+                    <button class="btn btn-outline-danger" data-action="remove-all-permissions">
                         <i class="fas fa-trash-alt me-2"></i>Remover Todos los Permisos de un Usuario
                     </button>
                 </div>
@@ -546,7 +548,7 @@
 <div class="modal fade" id="manageGroupModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
-            <div class="modal-header bg-success text-white">
+            <div class="modal-header text-white" style="background-color: @primaryColor;">
                 <h5 class="modal-title" id="manageGroupModalTitle">
                     <i class="fas fa-users me-2"></i>
                     Gestionar Permisos de Grupo
@@ -569,7 +571,7 @@
                 <div class="card mb-4">
                     <div class="card-header bg-light">
                         <h6 class="mb-0 fw-semibold">
-                            <i class="fas fa-users me-2 text-success"></i>
+                            <i class="fas fa-users me-2" style="color: @primaryColor;"></i>
                             Usuarios en este grupo
                         </h6>
                     </div>
@@ -642,6 +644,56 @@
         let currentUserId = null;
         let allUsers = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AllUsers));
         let allPermissions = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AllPermissions));
+
+        // Initialize event listeners on DOM load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Event delegation for all buttons with data-action attribute
+            document.addEventListener('click', function(e) {
+                const target = e.target.closest('[data-action]');
+                if (!target) return;
+
+                const action = target.dataset.action;
+                
+                switch(action) {
+                    case 'view-permissions':
+                        viewUserPermissions(parseInt(target.dataset.userId), target.dataset.userName);
+                        break;
+                    case 'manage-permissions':
+                        manageUserPermissions(parseInt(target.dataset.userId), target.dataset.userName);
+                        break;
+                    case 'manage-group':
+                        manageGroupPermissions(target.dataset.groupKey);
+                        break;
+                    case 'copy-permissions':
+                        showCopyPermissionsModal();
+                        break;
+                    case 'assign-role':
+                        showAssignRoleModal();
+                        break;
+                    case 'remove-all-permissions':
+                        showRemoveAllPermissionsModal();
+                        break;
+                    case 'assign-permission':
+                        assignPermission(parseInt(target.dataset.userId), parseInt(target.dataset.permissionId));
+                        break;
+                    case 'remove-permission':
+                        removePermission(parseInt(target.dataset.userId), parseInt(target.dataset.permissionId));
+                        break;
+                    case 'add-to-group':
+                        addPermissionToGroup(parseInt(target.dataset.permissionId), JSON.parse(target.dataset.userIds));
+                        break;
+                    case 'remove-from-group':
+                        removePermissionFromGroup(parseInt(target.dataset.permissionId), JSON.parse(target.dataset.userIds));
+                        break;
+                }
+            });
+
+            // Initialize tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
 
         // User search functionality
         document.getElementById('userSearch')?.addEventListener('input', function(e) {
@@ -728,7 +780,7 @@
                             <strong>${perm.Nombre}</strong><br>
                             <small class="text-muted">${perm.Descripcion}</small><br>
                         </div>
-                        <button class="btn btn-sm btn-success" onclick="assignPermission(${userId}, ${perm.Id})">
+                        <button class="btn btn-sm btn-success" data-action="assign-permission" data-user-id="${userId}" data-permission-id="${perm.Id}">
                             <i class="fas fa-plus"></i> Asignar
                         </button>
                     </div>
@@ -747,7 +799,7 @@
                             <small><span class="badge bg-secondary">${perm.Recurso}</span> 
                             <span class="badge bg-info">${perm.Accion}</span></small>
                         </div>
-                        <button class="btn btn-sm btn-danger" onclick="removePermission(${userId}, ${perm.Id})">
+                        <button class="btn btn-sm btn-danger" data-action="remove-permission" data-user-id="${userId}" data-permission-id="${perm.Id}">
                             <i class="fas fa-minus"></i> Remover
                         </button>
                     </div>
@@ -804,20 +856,6 @@
             }
         }
 
-        // Show copy permissions modal
-        function showCopyPermissionsModal() {
-            const modal = new bootstrap.Modal(document.getElementById('quickActionsModal'));
-            modal.hide();
-            
-            // You can implement a custom modal for this
-            const fromUserId = prompt('ID del usuario origen:');
-            const toUserId = prompt('ID del usuario destino:');
-            
-            if (fromUserId && toUserId) {
-                copyPermissions(parseInt(fromUserId), parseInt(toUserId));
-            }
-        }
-
         // Copy permissions
         async function copyPermissions(fromUserId, toUserId) {
             try {
@@ -868,6 +906,7 @@
 
             // Available permissions (not in group)
             let availableHtml = '';
+            const userIdsJson = JSON.stringify(group.Users.map(u => u.UserId));
             allPermissions.filter(p => !groupPermissionIds.includes(p.Id)).forEach(perm => {
                 availableHtml += `
                     <div class="permission-item" data-perm-name="${perm.Nombre.toLowerCase()}">
@@ -879,7 +918,7 @@
                                 <span class="badge bg-info">${perm.Accion}</span>
                             </small>
                         </div>
-                        <button class="btn btn-sm btn-success" onclick="addPermissionToGroup(${perm.Id}, ${JSON.stringify(group.Users.map(u => u.UserId))})">
+                        <button class="btn btn-sm btn-success" data-action="add-to-group" data-permission-id="${perm.Id}" data-user-ids='${userIdsJson}'>
                             <i class="fas fa-plus"></i> Agregar
                         </button>
                     </div>
@@ -901,7 +940,7 @@
                                 <span class="badge bg-info">${perm.Accion}</span>
                             </small>
                         </div>
-                        <button class="btn btn-sm btn-danger" onclick="removePermissionFromGroup(${perm.Id}, ${JSON.stringify(group.Users.map(u => u.UserId))})">
+                        <button class="btn btn-sm btn-danger" data-action="remove-from-group" data-permission-id="${perm.Id}" data-user-ids='${userIdsJson}'>
                             <i class="fas fa-minus"></i> Remover
                         </button>
                     </div>
@@ -942,7 +981,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        usersIds: userIds,  // Array of user IDs
+                        usersIds: userIds,
                         permissionId: permissionId 
                     })
                 });
@@ -987,10 +1026,21 @@
             }
         }
 
+        // Show copy permissions modal
+        function showCopyPermissionsModal() {
+            bootstrap.Modal.getInstance(document.getElementById('quickActionsModal'))?.hide();
+            
+            const fromUserId = prompt('ID del usuario origen:');
+            const toUserId = prompt('ID del usuario destino:');
+            
+            if (fromUserId && toUserId) {
+                copyPermissions(parseInt(fromUserId), parseInt(toUserId));
+            }
+        }
+
         // Show assign role modal
         function showAssignRoleModal() {
-            const modal = new bootstrap.Modal(document.getElementById('quickActionsModal'));
-            modal.hide();
+            bootstrap.Modal.getInstance(document.getElementById('quickActionsModal'))?.hide();
             
             const userId = prompt('ID del usuario:');
             const role = prompt('Rol (Admin, Medico, Secretaria, Paciente):');
@@ -1024,8 +1074,7 @@
 
         // Show remove all permissions modal
         function showRemoveAllPermissionsModal() {
-            const modal = new bootstrap.Modal(document.getElementById('quickActionsModal'));
-            modal.hide();
+            bootstrap.Modal.getInstance(document.getElementById('quickActionsModal'))?.hide();
             
             const userId = prompt('ID del usuario:');
             
@@ -1076,13 +1125,5 @@
                 if (alert) alert.remove();
             }, 3000);
         }
-
-        // Initialize tooltips
-        document.addEventListener('DOMContentLoaded', function() {
-            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
-            });
-        });
     </script>
 }

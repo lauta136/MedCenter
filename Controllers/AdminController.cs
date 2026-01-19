@@ -25,7 +25,7 @@ public class AdminController : BaseController
     public async Task<IActionResult> PanelAdmin()
     {
         var isAdmin = await _adminService.AccesoAPanelAdmin(UserId.Value);
-        if (!isAdmin)
+        if (!isAdmin.Success)
         {
             return RedirectToAction("AccessDenied", "Access");
         }
@@ -56,7 +56,7 @@ public class AdminController : BaseController
     public async Task<IActionResult> AssignPermission([FromBody] AssignPermissionDTO dto)
     {
         var result = await _adminService.AssignPermissionToUser(dto.UserId, dto.PermissionId);
-        if (result)
+        if (result.Success)
         {
             return Json(new { success = true, message = "Permiso asignado correctamente" });
         }
@@ -68,7 +68,7 @@ public class AdminController : BaseController
     public async Task<IActionResult> RemovePermission([FromBody] RemovePermissionDTO dto)
     {
         var result = await _adminService.RemovePermissionFromUser(dto.UserId, dto.PermissionId);
-        if (result)
+        if (result.Success)
         {
             return Json(new { success = true, message = "Permiso removido correctamente" });
         }
@@ -80,7 +80,7 @@ public class AdminController : BaseController
     public async Task<IActionResult> AssignRolePermissions([FromBody] AssignRolePermissionsDTO dto)
     {
         var result = await _adminService.AssignRolePermissionsToUser(dto.UserId, dto.Role);
-        if (result)
+        if (result.Success)
         {
             return Json(new { success = true, message = $"Permisos del rol {dto.Role} asignados correctamente" });
         }
@@ -92,7 +92,7 @@ public class AdminController : BaseController
     public async Task<IActionResult> RemoveAllPermissions([FromBody] int userId)
     {
         var result = await _adminService.RemoveAllPermissionsFromUser(userId);
-        if (result)
+        if (result.Success)
         {
             return Json(new { success = true, message = "Todos los permisos removidos correctamente" });
         }
@@ -107,7 +107,7 @@ public class AdminController : BaseController
         int toUserId = data.toUserId;
         
         var result = await _adminService.CopyPermissions(fromUserId, toUserId);
-        if (result)
+        if (result.Success)
         {
             return Json(new { success = true, message = "Permisos copiados correctamente" });
         }
@@ -119,7 +119,7 @@ public class AdminController : BaseController
     public async Task<IActionResult> AssignPermissionToGroup([FromBody] AssignPermissionToGroupDTO data)
     {
         var result = await _adminService.AssignPermissionToGroup(data.UsersIds, data.PermissionId);
-        if (result)
+        if (result.Success)
         {
             return Json(new { success = true, message = "Permiso asignado correctamente" });
         }
@@ -131,7 +131,7 @@ public class AdminController : BaseController
     public async Task<IActionResult> RemovePermissionFromGroup([FromBody] RemovePermissionFromGroupDTO data)
     {
         var result = await _adminService.RemovePermissionFromGroup(data.UsersIds, data.PermissionId);
-        if (result)
+        if (result.Success)
         {
             return Json(new { success = true, message = "Permiso removido correctamente" });
         }

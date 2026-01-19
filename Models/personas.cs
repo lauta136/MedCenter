@@ -23,7 +23,10 @@ public partial class Persona
     public virtual ICollection<ReporteEstadistico> reportesestadisticos { get; set; } = new List<ReporteEstadistico>();
 
     public virtual ICollection<PersonaPermiso> PersonaPermisos{get;set;} = new List<PersonaPermiso>();
+    public virtual ICollection<PersonaGrupo> PersonaGrupos{get;set;} = new List<PersonaGrupo>();
+
     public virtual Secretaria? Secretaria { get; set; }
     public virtual Admin? Admin{get;set;}
+
 
 }

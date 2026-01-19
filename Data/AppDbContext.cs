@@ -57,7 +57,9 @@ public partial class AppDbContext : DbContext
     public DbSet<RolPermiso> rolPermisos{get;set;}
     public DbSet<PersonaPermiso> personaPermisos{get;set;}
     public DbSet<Admin> admins{get;set;}
-
+    public DbSet<GrupoPermisosPersonas> gruposPermisosPersonas{get;set;}
+    public DbSet<PersonaGrupo> personasGrupos{get;set;}
+    public DbSet<PermisoGrupo> permisosGrupos{get;set;}
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<EntradaClinica>(entity =>
@@ -472,8 +474,51 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("admins_id_fkey");
         });
 
+        modelBuilder.Entity<GrupoPermisosPersonas>(e =>
+        {
+            e.ToTable("grupos_permisos_personas");
 
+            e.HasKey(e => e.Id);
 
+            e.Property(e => e.Id).UseIdentityAlwaysColumn().HasColumnName("id");
+
+            e.Property(e => e.Nombre).IsRequired().HasMaxLength(80).HasColumnName("nombre");
+            e.Property(e => e.Descripcion).HasMaxLength(250).HasColumnName("descripcion");
+            e.Property(e => e.FechaCreacion).HasColumnName("fecha_creacion");
+
+            e.HasIndex(e => e.Nombre).IsUnique();
+        });
+
+        modelBuilder.Entity<PersonaGrupo>(e =>
+        {
+            e.ToTable("persona_grupo");
+            e.HasKey(e => new {e.PersonaId, e.GrupoId}).HasName("persona_grupo_pkey");
+
+            e.HasOne(e => e.Persona).WithMany(p => p.PersonaGrupos)
+            .HasForeignKey(e => e.PersonaId).HasConstraintName("persona_id_fkey").OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(e => e.Grupo).WithMany(g => g.Personas).HasForeignKey(e => e.GrupoId).HasConstraintName("grupo_id_fkey").OnDelete(DeleteBehavior.NoAction);
+
+            e.Property(e => e.GrupoId).IsRequired().HasColumnName("grupo_id");
+            e.Property(e => e.PersonaId).IsRequired().HasColumnName("persona_id");
+
+            
+        });
+
+        modelBuilder.Entity<PermisoGrupo>(e =>
+        {
+            e.ToTable("permiso_grupo");
+            e.HasKey(e => new{e.GrupoId, e.PermisoId}).HasName("permiso_grupo_fkey");
+
+            e.HasOne(e => e.Permiso).WithMany(p => p.PermisoGrupos).HasForeignKey(e => e.PermisoId)
+            .HasConstraintName("permiso_id_fkey").OnDelete(DeleteBehavior.Cascade);
+                        
+            e.HasOne(e => e.Grupo).WithMany(g => g.Permisos).HasForeignKey(e => e.GrupoId).HasConstraintName("grupo_id_fkey").OnDelete(DeleteBehavior.NoAction);
+
+            e.Property(e => e.GrupoId).IsRequired().HasColumnName("grupo_id");
+            e.Property(e => e.PermisoId).IsRequired().HasColumnName("permiso_id");
+            
+        });
         /* modelBuilder.Entity<RoleKey>().HasData(
              new RoleKey { Id = 1, Role = "Medico", HashedKey = medicoKey },
              new RoleKey { Id = 2, Role = "Secretaria", HashedKey = secretariaKey });

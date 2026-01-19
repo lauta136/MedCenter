@@ -15,5 +15,6 @@ public class Permiso
     public ICollection<Permiso> PermisosHijos{get;set;} = new List<Permiso>();
     public ICollection<PersonaPermiso> PersonaPermisos { get; set; }
     public ICollection<RolPermiso> RolPermisos { get; set; }
+    public ICollection<PermisoGrupo> PermisoGrupos = new List<PermisoGrupo>();
 }
     
