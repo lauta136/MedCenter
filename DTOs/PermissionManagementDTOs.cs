@@ -1,5 +1,6 @@
 using MedCenter.Services.TurnoSv;
 using MedCenter.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace MedCenter.DTOs;
 
@@ -28,11 +29,6 @@ public class PermissionGroupDTO
     public List<UserPermissionDTO> Users { get; set; } = new List<UserPermissionDTO>();
 }
 
-public class AssignPermissionDTO
-{
-    public int UserId { get; set; }
-    public int PermissionId { get; set; }
-}
 
 public class AssignRolePermissionsDTO
 {
@@ -40,11 +36,6 @@ public class AssignRolePermissionsDTO
     public RolUsuario Role { get; set; }
 }
 
-public class RemovePermissionDTO
-{
-    public int UserId { get; set; }
-    public int PermissionId { get; set; }
-}
 
 public class AssignPermissionToGroupDTO
 {
@@ -57,6 +48,21 @@ public class RemovePermissionFromGroupDTO
     public List<int> UsersIds { get; set; } = new List<int>();
     public int PermissionId { get; set; }
 }
+
+public class CreateGroupDTO
+{
+    [MinLength(1,ErrorMessage ="Debe seleccionar al menos un usuario")]
+    public int [] UserIds {get;set;} = Array.Empty<int>();
+
+    [MinLength(1,ErrorMessage ="Debe seleccionar al menos un permiso")]
+    public int [] PermissionIds {get;set;}= Array.Empty<int>();
+
+    [Required]
+    public string Name {get;set;}
+
+    public string? Description{get;set;}
+}
+
 
 public class PermissionManagementViewModel
 {

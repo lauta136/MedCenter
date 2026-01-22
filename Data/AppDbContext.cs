@@ -435,6 +435,7 @@ public partial class AppDbContext : DbContext
            //e.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
            e.Property(e => e.PermisoId).HasColumnName("permiso_id");
            e.Property(e => e.PersonaId).HasColumnName("persona_id");
+           e.Property<PermisoSource>(e => e.Origen).HasColumnName("origen").HasConversion<string>();
 
            e.HasOne<Permiso>(e => e.Permiso).WithMany(p => p.PersonaPermisos)
            .HasForeignKey(e => e.PermisoId).HasConstraintName("persona_permiso_permiso_fkey")
@@ -443,6 +444,12 @@ public partial class AppDbContext : DbContext
            e.HasOne(e => e.Persona).WithMany(p => p.PersonaPermisos)
            .HasForeignKey(e => e.PersonaId).HasConstraintName("persona_permiso_persona_fkey")
            .OnDelete(DeleteBehavior.Cascade);
+
+           e.HasOne(e => e.Grupo).WithMany().HasForeignKey(e => e.GrupoId).OnDelete(DeleteBehavior.Cascade);
+
+              // Composite unique index to prevent duplicates
+            e.HasIndex(pp => new { pp.PersonaId, pp.PermisoId, pp.GrupoId })
+            .IsUnique();
         });
 
         modelBuilder.Entity<RolPermiso>(e =>
@@ -497,7 +504,7 @@ public partial class AppDbContext : DbContext
             e.HasOne(e => e.Persona).WithMany(p => p.PersonaGrupos)
             .HasForeignKey(e => e.PersonaId).HasConstraintName("persona_id_fkey").OnDelete(DeleteBehavior.Cascade);
 
-            e.HasOne(e => e.Grupo).WithMany(g => g.Personas).HasForeignKey(e => e.GrupoId).HasConstraintName("grupo_id_fkey").OnDelete(DeleteBehavior.NoAction);
+            e.HasOne(e => e.Grupo).WithMany(g => g.Personas).HasForeignKey(e => e.GrupoId).HasConstraintName("grupo_id_fkey").OnDelete(DeleteBehavior.Cascade);
 
             e.Property(e => e.GrupoId).IsRequired().HasColumnName("grupo_id");
             e.Property(e => e.PersonaId).IsRequired().HasColumnName("persona_id");
@@ -513,7 +520,7 @@ public partial class AppDbContext : DbContext
             e.HasOne(e => e.Permiso).WithMany(p => p.PermisoGrupos).HasForeignKey(e => e.PermisoId)
             .HasConstraintName("permiso_id_fkey").OnDelete(DeleteBehavior.Cascade);
                         
-            e.HasOne(e => e.Grupo).WithMany(g => g.Permisos).HasForeignKey(e => e.GrupoId).HasConstraintName("grupo_id_fkey").OnDelete(DeleteBehavior.NoAction);
+            e.HasOne(e => e.Grupo).WithMany(g => g.Permisos).HasForeignKey(e => e.GrupoId).HasConstraintName("grupo_id_fkey").OnDelete(DeleteBehavior.Cascade);
 
             e.Property(e => e.GrupoId).IsRequired().HasColumnName("grupo_id");
             e.Property(e => e.PermisoId).IsRequired().HasColumnName("permiso_id");

@@ -6,5 +6,9 @@ public class PersonaPermiso
     public int PersonaId{get;set;}
     public virtual Persona Persona {get;set;}
     public virtual Permiso Permiso {get;set;}
+    public PermisoSource Origen {get;set;}
+
+    public int? GrupoId {get;set;}
+    public virtual GrupoPermisosPersonas Grupo{get;set;}
 
 }

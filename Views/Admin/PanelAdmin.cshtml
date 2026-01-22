@@ -301,6 +301,37 @@
 
             <!-- Groups Tab -->
             <div class="tab-pane fade" id="groups" role="tabpanel">
+                <div class="mb-4 d-flex justify-content-between align-items-center">
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Gestiona grupos de permisos manuales y automáticos.
+                    </p>
+                    <button class="btn btn-sm" 
+                            style="background-color: @primaryColor; color: white;" 
+                            data-action="create-group" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#createGroupModal"
+                            type="button"
+                            onclick="showCreateGroupModal(); return false;">
+                        <i class="fas fa-plus me-2"></i>Crear Grupo Manual
+                    </button>
+                </div>
+
+                <!-- Manual Groups Section -->
+                <div class="mb-5">
+                    <h5 class="fw-semibold mb-3">
+                        <i class="fas fa-users-cog me-2" style="color: @primaryColor;"></i>
+                        Grupos Manuales
+                    </h5>
+                    <div id="manualGroupsList">
+                        <p class="text-muted text-center py-4">
+                            <i class="fas fa-folder-open fa-2x mb-2 d-block"></i>
+                            No hay grupos manuales creados. Haz clic en "Crear Grupo Manual" para comenzar.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Auto-grouped Users Section -->
                 <div class="mb-4">
                     <h5 class="fw-semibold mb-3">
                         <i class="fas fa-layer-group me-2" style="color: @primaryColor;"></i>
@@ -323,7 +354,7 @@
                                         </h6>
                                         <small class="text-muted">@group.Permissions.Count permiso(s) en común</small>
                                     </div>
-                                    <button class="btn btn-sm @(isAdmin ? "btn-outline-danger" : "btn-outline-success")" data-action="manage-group" data-group-key="@group.GroupKey">
+                                    <button class="btn btn-sm @(isAdmin ? "btn-outline-danger" : "btn-outline-success")" data-action="manage-auto-group" data-group-key="@group.GroupKey">
                                         <i class="fas fa-cog me-1"></i>Gestionar Grupo
                                     </button>
                                 </div>
@@ -360,9 +391,9 @@
                             </div>
                         </div>
                     }
-                }
-                else
-                {
+                    }
+                    else
+                    {
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
                         No hay grupos de usuarios con permisos compartidos.
@@ -470,6 +501,101 @@
     </div>
 </div>
 
+<!-- Create Group Modal -->
+<div class="modal fade" id="createGroupModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header text-white" style="background-color: @primaryColor;">
+                <h5 class="modal-title">
+                    <i class="fas fa-users-cog me-2"></i>Crear Grupo Manual de Permisos
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <!-- Group Info -->
+                    <div class="col-12 mb-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="fw-semibold mb-3">
+                                    <i class="fas fa-info-circle me-2" style="color: @primaryColor;"></i>
+                                    Información del Grupo
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold">Nombre del Grupo *</label>
+                                        <input type="text" id="groupName" class="form-control" placeholder="Ej: Equipo Médico" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold">Descripción</label>
+                                        <input type="text" id="groupDescription" class="form-control" placeholder="Descripción opcional del grupo">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Users Selection -->
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-light border-0">
+                                <h6 class="fw-semibold mb-2">
+                                    <i class="fas fa-users me-2" style="color: @primaryColor;"></i>
+                                    Seleccionar Usuarios
+                                </h6>
+                                <div class="search-box">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="searchGroupUsers" class="form-control form-control-sm" placeholder="Buscar usuarios...">
+                                </div>
+                            </div>
+                            <div class="card-body permission-selector">
+                                <div id="groupUsersList"></div>
+                            </div>
+                            <div class="card-footer bg-light border-0">
+                                <small class="text-muted">
+                                    <span id="selectedUsersCount">0</span> usuario(s) seleccionado(s)
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Permissions Selection -->
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-light border-0">
+                                <h6 class="fw-semibold mb-2">
+                                    <i class="fas fa-key me-2" style="color: @primaryColor;"></i>
+                                    Seleccionar Permisos
+                                </h6>
+                                <div class="search-box">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="searchGroupPermissions" class="form-control form-control-sm" placeholder="Buscar permisos...">
+                                </div>
+                            </div>
+                            <div class="card-body permission-selector">
+                                <div id="groupPermissionsList"></div>
+                            </div>
+                            <div class="card-footer bg-light border-0">
+                                <small class="text-muted">
+                                    <span id="selectedPermissionsCount">0</span> permiso(s) seleccionado(s)
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </button>
+                <button type="button" class="btn" style="background-color: @primaryColor; color: white;" onclick="createGroup()">
+                    <i class="fas fa-check me-2"></i>Crear Grupo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Quick Actions Modal -->
 <div class="modal fade" id="quickActionsModal" tabindex="-1">
     <div class="modal-dialog">
@@ -567,17 +693,52 @@
                     </div>
                 </div>
 
-                <!-- Users in Group -->
-                <div class="card mb-4">
-                    <div class="card-header bg-light">
-                        <h6 class="mb-0 fw-semibold">
-                            <i class="fas fa-users me-2" style="color: @primaryColor;"></i>
-                            Usuarios en este grupo
-                        </h6>
+                <!-- Users Management -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0 fw-semibold text-success">
+                                    <i class="fas fa-user-plus me-2"></i>
+                                    Agregar Usuarios al Grupo
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" id="searchAvailableGroupUsers" placeholder="Buscar usuarios disponibles...">
+                                </div>
+                                <div class="permission-selector" id="availableGroupUsers" style="max-height: 300px;">
+                                    <!-- Content loaded dynamically -->
+                                </div>
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-success w-100" onclick="addSelectedUsersToGroup()">
+                                        <i class="fas fa-plus me-2"></i>Agregar Usuarios Seleccionados
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div id="groupUsersList" class="d-flex flex-wrap gap-2">
-                            <!-- Users loaded dynamically -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0 fw-semibold text-danger">
+                                    <i class="fas fa-user-minus me-2"></i>
+                                    Remover Usuarios del Grupo
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" id="searchAssignedGroupUsers" placeholder="Buscar usuarios asignados...">
+                                </div>
+                                <div class="permission-selector" id="assignedGroupUsers" style="max-height: 300px;">
+                                    <!-- Content loaded dynamically -->
+                                </div>
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-danger w-100" onclick="removeSelectedUsersFromGroup()">
+                                        <i class="fas fa-minus me-2"></i>Remover Usuarios Seleccionados
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -596,8 +757,13 @@
                                 <div class="mb-3">
                                     <input type="text" class="form-control" id="searchAvailableGroupPerms" placeholder="Buscar permisos disponibles...">
                                 </div>
-                                <div class="permission-selector" id="availableGroupPermissions" style="max-height: 500px;">
+                                <div class="permission-selector" id="availableGroupPermissions" style="max-height: 400px;">
                                     <!-- Content loaded dynamically -->
+                                </div>
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-primary w-100" onclick="addSelectedPermissionsToGroup()">
+                                        <i class="fas fa-plus me-2"></i>Agregar Permisos Seleccionados
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -614,8 +780,13 @@
                                 <div class="mb-3">
                                     <input type="text" class="form-control" id="searchAssignedGroupPerms" placeholder="Buscar permisos asignados...">
                                 </div>
-                                <div class="permission-selector" id="assignedGroupPermissions" style="max-height: 500px;">
+                                <div class="permission-selector" id="assignedGroupPermissions" style="max-height: 400px;">
                                     <!-- Content loaded dynamically -->
+                                </div>
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-danger w-100" onclick="removeSelectedPermissionsFromGroup()">
+                                        <i class="fas fa-minus me-2"></i>Remover Permisos Seleccionados
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -644,15 +815,41 @@
         let currentUserId = null;
         let allUsers = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AllUsers));
         let allPermissions = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AllPermissions));
+        
+        // Helper function to safely get action string in lowercase
+        function getActionString(accion) {
+            if (typeof accion === 'string') {
+                return accion.toLowerCase();
+            }
+            // If it's a number (enum value), convert to lowercase string
+            return String(accion).toLowerCase();
+        }
 
         // Initialize event listeners on DOM load
         document.addEventListener('DOMContentLoaded', function() {
+            // Load manual groups on page load
+            loadManualGroups();
+
+            // Fix for modal backdrop issue - ensure all backdrops are removed when modals are hidden
+            document.querySelectorAll('.modal').forEach(modalEl => {
+                modalEl.addEventListener('hidden.bs.modal', function () {
+                    // Remove any lingering backdrops
+                    document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+                    // Restore body scroll
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                    document.body.style.paddingRight = '';
+                });
+            });
+
             // Event delegation for all buttons with data-action attribute
             document.addEventListener('click', function(e) {
                 const target = e.target.closest('[data-action]');
                 if (!target) return;
 
                 const action = target.dataset.action;
+                
+                console.log('Action clicked:', action); // Debug log
                 
                 switch(action) {
                     case 'view-permissions':
@@ -661,8 +858,20 @@
                     case 'manage-permissions':
                         manageUserPermissions(parseInt(target.dataset.userId), target.dataset.userName);
                         break;
-                    case 'manage-group':
-                        manageGroupPermissions(target.dataset.groupKey);
+                    case 'manage-auto-group':
+                        manageAutoGroupPermissions(target.dataset.groupKey);
+                        break;
+                    case 'create-group':
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Create group action triggered');
+                        showCreateGroupModal();
+                        break;
+                    case 'manage-manual-group':
+                        manageManualGroup(parseInt(target.dataset.groupId), target.dataset.groupName);
+                        break;
+                    case 'delete-manual-group':
+                        deleteManualGroup(parseInt(target.dataset.groupId), target.dataset.groupName);
                         break;
                     case 'copy-permissions':
                         showCopyPermissionsModal();
@@ -740,7 +949,7 @@
             html += `<h6>Permisos (${user.Permissions.length}):</h6>`;
             if (user.Permissions.length > 0) {
                 user.Permissions.forEach(perm => {
-                    html += `<span class="permission-badge permission-badge-${perm.Accion.toLowerCase()}" 
+                    html += `<span class="permission-badge permission-badge-${getActionString(perm.Accion)}" 
                              data-bs-toggle="tooltip" title="${perm.Descripcion}">
                              ${perm.Nombre} <small>(${perm.Recurso} - ${perm.Accion})</small>
                              </span>`;
@@ -878,8 +1087,8 @@
             }
         }
 
-        // Manage group permissions
-        function manageGroupPermissions(groupKey) {
+        // Manage auto-grouped permissions (existing functionality)
+        function manageAutoGroupPermissions(groupKey) {
             // Find the group in the permission groups
             const group = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PermissionGroups))
                 .find(g => g.GroupKey === groupKey);
@@ -1124,6 +1333,608 @@
                 const alert = document.querySelector('.alert');
                 if (alert) alert.remove();
             }, 3000);
+        }
+
+        // ========== MANUAL GROUPS MANAGEMENT ==========
+
+        // Load manual groups from backend
+        async function loadManualGroups() {
+            try {
+                const response = await fetch('/Admin/GetManualGroups');
+                const groups = await response.json();
+                
+                displayManualGroups(groups);
+            } catch (error) {
+                console.error('Error loading manual groups:', error);
+            }
+        }
+
+        // Display manual groups
+        function displayManualGroups(groups) {
+            const container = document.getElementById('manualGroupsList');
+            
+            if (!groups || groups.length === 0) {
+                container.innerHTML = `
+                    <p class="text-muted text-center py-4">
+                        <i class="fas fa-folder-open fa-2x mb-2 d-block"></i>
+                        No hay grupos manuales creados. Haz clic en "Crear Grupo Manual" para comenzar.
+                    </p>
+                `;
+                return;
+            }
+
+            let html = '<div class="row">';
+            groups.forEach(group => {
+                html += `
+                    <div class="col-md-6 mb-3">
+                        <div class="group-card p-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="fw-semibold mb-1">
+                                        <i class="fas fa-users-cog me-2" style="color: @primaryColor;"></i>
+                                        ${group.name}
+                                    </h6>
+                                    ${group.description ? `<small class="text-muted">${group.description}</small>` : ''}
+                                </div>
+                                <button class="btn btn-sm btn-danger" 
+                                        data-action="delete-manual-group" 
+                                        data-group-id="${group.id}"
+                                        data-group-name="${group.name}"
+                                        title="Eliminar grupo">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div>
+                                    <span class="badge bg-primary me-2">
+                                        <i class="fas fa-users me-1"></i>${group.userCount || 0} usuarios
+                                    </span>
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-key me-1"></i>${group.permissionCount || 0} permisos
+                                    </span>
+                                </div>
+                                <button class="btn btn-sm" 
+                                        style="background-color: @primaryColor; color: white;"
+                                        data-action="manage-manual-group"
+                                        data-group-id="${group.id}"
+                                        data-group-name="${group.name}">
+                                    <i class="fas fa-cog me-1"></i>Gestionar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+
+        // Show create group modal
+        function showCreateGroupModal() {
+            console.log('Opening create group modal...');
+            
+            // Reset form
+            document.getElementById('groupName').value = '';
+            document.getElementById('groupDescription').value = '';
+            document.getElementById('selectedUsersCount').textContent = '0';
+            document.getElementById('selectedPermissionsCount').textContent = '0';
+
+            // Populate users list
+            let usersHtml = '';
+            allUsers.forEach(user => {
+                usersHtml += `
+                    <div class="permission-item" data-search-text="${user.UserName.toLowerCase()} ${user.Email.toLowerCase()}">
+                        <div class="form-check">
+                            <input class="form-check-input group-user-checkbox" 
+                                   type="checkbox" 
+                                   value="${user.UserId}" 
+                                   id="groupUser${user.UserId}"
+                                   onchange="updateSelectedCount()">
+                            <label class="form-check-label" for="groupUser${user.UserId}">
+                                <strong>${user.UserName}</strong>
+                                <small class="text-muted d-block">${user.Email}</small>
+                            </label>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('groupUsersList').innerHTML = usersHtml;
+
+            // Populate permissions list
+            let permissionsHtml = '';
+            console.log('All permissions:', allPermissions); // Debug log
+            
+            allPermissions.forEach(perm => {
+                console.log('Processing permission:', perm); // Debug each permission
+                const nombre = perm.Nombre || perm.nombre || '';
+                const descripcion = perm.Descripcion || perm.descripcion || '';
+                const accion = perm.Accion || perm.accion || '';
+                const id = perm.Id || perm.id || 0;
+                
+                const badgeClass = `permission-badge-${getActionString(accion)}`;
+                permissionsHtml += `
+                    <div class="permission-item" data-search-text="${nombre.toLowerCase()} ${descripcion.toLowerCase()}">
+                        <div class="form-check">
+                            <input class="form-check-input group-permission-checkbox" 
+                                   type="checkbox" 
+                                   value="${id}" 
+                                   id="groupPerm${id}"
+                                   onchange="updateSelectedCount()">
+                            <label class="form-check-label" for="groupPerm${id}">
+                                <strong>${nombre}</strong>
+                                <span class="permission-badge ${badgeClass} ms-2">${accion}</span>
+                                <small class="text-muted d-block">${descripcion}</small>
+                            </label>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('groupPermissionsList').innerHTML = permissionsHtml;
+
+            // Setup search functionality
+            const searchUsers = document.getElementById('searchGroupUsers');
+            const searchPerms = document.getElementById('searchGroupPermissions');
+            
+            // Remove existing event listeners by cloning
+            const newSearchUsers = searchUsers.cloneNode(true);
+            const newSearchPerms = searchPerms.cloneNode(true);
+            searchUsers.parentNode.replaceChild(newSearchUsers, searchUsers);
+            searchPerms.parentNode.replaceChild(newSearchPerms, searchPerms);
+            
+            document.getElementById('searchGroupUsers').addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                document.querySelectorAll('#groupUsersList .permission-item').forEach(item => {
+                    const text = item.dataset.searchText;
+                    item.style.display = text.includes(searchTerm) ? '' : 'none';
+                });
+            });
+
+            document.getElementById('searchGroupPermissions').addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                document.querySelectorAll('#groupPermissionsList .permission-item').forEach(item => {
+                    const text = item.dataset.searchText;
+                    item.style.display = text.includes(searchTerm) ? '' : 'none';
+                });
+            });
+
+            // Show the modal
+            const modalElement = document.getElementById('createGroupModal');
+            if (!modalElement) {
+                console.error('Modal element not found!');
+                return;
+            }
+            
+            try {
+                // Check if Bootstrap is loaded
+                if (typeof bootstrap === 'undefined') {
+                    console.error('Bootstrap is not loaded!');
+                    alert('Error: Bootstrap library is not loaded. Please refresh the page.');
+                    return;
+                }
+                
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+                console.log('Modal should be visible now');
+            } catch (error) {
+                console.error('Error showing modal:', error);
+                alert('Error showing modal: ' + error.message);
+            }
+        }
+
+        // Update selected count
+        function updateSelectedCount() {
+            const selectedUsers = document.querySelectorAll('.group-user-checkbox:checked').length;
+            const selectedPermissions = document.querySelectorAll('.group-permission-checkbox:checked').length;
+            
+            document.getElementById('selectedUsersCount').textContent = selectedUsers;
+            document.getElementById('selectedPermissionsCount').textContent = selectedPermissions;
+        }
+
+        // Create group
+        async function createGroup() {
+            const name = document.getElementById('groupName').value.trim();
+            const description = document.getElementById('groupDescription').value.trim();
+            
+            if (!name) {
+                showNotification('error', 'El nombre del grupo es requerido');
+                return;
+            }
+
+            const selectedUsers = Array.from(document.querySelectorAll('.group-user-checkbox:checked'))
+                .map(cb => parseInt(cb.value));
+            const selectedPermissions = Array.from(document.querySelectorAll('.group-permission-checkbox:checked'))
+                .map(cb => parseInt(cb.value));
+
+            if (selectedUsers.length === 0) {
+                showNotification('error', 'Debes seleccionar al menos un usuario');
+                return;
+            }
+
+            if (selectedPermissions.length === 0) {
+                showNotification('error', 'Debes seleccionar al menos un permiso');
+                return;
+            }
+
+            try {
+                const response = await fetch('/Admin/CreateGroup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userIds: selectedUsers,
+                        permissionIds: selectedPermissions,
+                        name: name,
+                        description: description
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('success', result.message);
+                    bootstrap.Modal.getInstance(document.getElementById('createGroupModal')).hide();
+                    loadManualGroups();
+                } else {
+                    showNotification('error', result.message);
+                }
+            } catch (error) {
+                showNotification('error', 'Error al crear el grupo');
+                console.error('Error:', error);
+            }
+        }
+
+        // Delete manual group
+        async function deleteManualGroup(groupId, groupName) {
+            if (!confirm(`¿Está seguro de eliminar el grupo "${groupName}"? Esta acción no se puede deshacer.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/Admin/EraseGroup/${groupId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('success', result.message);
+                    loadManualGroups();
+                } else {
+                    showNotification('error', result.message);
+                }
+            } catch (error) {
+                showNotification('error', 'Error al eliminar el grupo');
+                console.error('Error:', error);
+            }
+        }
+
+        // Manage manual group (reuses existing modal)
+        let currentManualGroupId = null;
+        
+        async function manageManualGroup(groupId, groupName) {
+            currentManualGroupId = groupId;
+            
+            try {
+                const response = await fetch(`/Admin/GetGroupDetails/${groupId}`);
+                
+                // Check if response is OK before parsing JSON
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server response:', response.status, errorText);
+                    showNotification('error', `Error del servidor: ${response.status}. El endpoint GetGroupDetails puede no estar implementado.`);
+                    return;
+                }
+                
+                const group = await response.json();
+                
+                if (!group) {
+                    showNotification('error', 'No se pudo cargar el grupo');
+                    return;
+                }
+
+                // Set modal title - with null check
+                const modalTitle = document.getElementById('manageGroupModalTitle');
+                if (modalTitle) {
+                    modalTitle.textContent = `Gestionar Grupo - ${groupName}`;
+                }
+                
+                const userCountElement = document.getElementById('groupUserCount');
+                if (userCountElement) {
+                    userCountElement.textContent = group.users?.length || 0;
+                }
+
+                const groupUserIds = (group.users || []).map(u => u.userId);
+                const groupPermissionIds = (group.permissions || []).map(p => p.id);
+
+                // Available users (not in group)
+                let availableUsersHtml = '';
+                allUsers.filter(u => !groupUserIds.includes(u.UserId)).forEach(user => {
+                    availableUsersHtml += `
+                        <div class="permission-item" data-search-text="${user.UserName.toLowerCase()} ${user.Email.toLowerCase()}">
+                            <div class="form-check">
+                                <input class="form-check-input available-user-checkbox" 
+                                       type="checkbox" 
+                                       value="${user.UserId}" 
+                                       id="availableUser${user.UserId}">
+                                <label class="form-check-label" for="availableUser${user.UserId}">
+                                    <strong>${user.UserName}</strong>
+                                    <small class="text-muted d-block">${user.Email}</small>
+                                </label>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                const availableUsersContainer = document.getElementById('availableGroupUsers');
+                if (availableUsersContainer) {
+                    availableUsersContainer.innerHTML = availableUsersHtml || '<p class="text-muted">Todos los usuarios están en el grupo</p>';
+                }
+
+                // Assigned users (in group)
+                let assignedUsersHtml = '';
+                (group.users || []).forEach(user => {
+                    assignedUsersHtml += `
+                        <div class="permission-item" data-search-text="${user.userName.toLowerCase()} ${user.email.toLowerCase()}">
+                            <div class="form-check">
+                                <input class="form-check-input assigned-user-checkbox" 
+                                       type="checkbox" 
+                                       value="${user.userId}" 
+                                       id="assignedUser${user.userId}">
+                                <label class="form-check-label" for="assignedUser${user.userId}">
+                                    <strong>${user.userName}</strong>
+                                    <small class="text-muted d-block">${user.email}</small>
+                                </label>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                const assignedUsersContainer = document.getElementById('assignedGroupUsers');
+                if (assignedUsersContainer) {
+                    assignedUsersContainer.innerHTML = assignedUsersHtml || '<p class="text-muted">No hay usuarios en este grupo</p>';
+                }
+
+                // Available permissions (not in group)
+                let availablePermsHtml = '';
+                allPermissions.filter(p => !groupPermissionIds.includes(p.Id)).forEach(perm => {
+                    const nombre = perm.Nombre || perm.nombre || '';
+                    const descripcion = perm.Descripcion || perm.descripcion || '';
+                    const accion = perm.Accion || perm.accion || '';
+                    const id = perm.Id || perm.id || 0;
+                    const badgeClass = `permission-badge-${getActionString(accion)}`;
+                    
+                    availablePermsHtml += `
+                        <div class="permission-item" data-search-text="${nombre.toLowerCase()} ${descripcion.toLowerCase()}">
+                            <div class="form-check">
+                                <input class="form-check-input available-permission-checkbox" 
+                                       type="checkbox" 
+                                       value="${id}" 
+                                       id="availablePerm${id}">
+                                <label class="form-check-label" for="availablePerm${id}">
+                                    <strong>${nombre}</strong>
+                                    <span class="permission-badge ${badgeClass} ms-2">${accion}</span>
+                                    <small class="text-muted d-block">${descripcion}</small>
+                                </label>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                const availablePermsContainer = document.getElementById('availableGroupPermissions');
+                if (availablePermsContainer) {
+                    availablePermsContainer.innerHTML = availablePermsHtml || '<p class="text-muted">Todos los permisos están asignados</p>';
+                }
+
+                // Assigned permissions
+                let assignedPermsHtml = '';
+                (group.permissions || []).forEach(perm => {
+                    const badgeClass = `permission-badge-${getActionString(perm.accion)}`;
+                    assignedPermsHtml += `
+                        <div class="permission-item" data-search-text="${perm.nombre.toLowerCase()} ${perm.descripcion.toLowerCase()}">
+                            <div class="form-check">
+                                <input class="form-check-input assigned-permission-checkbox" 
+                                       type="checkbox" 
+                                       value="${perm.id}" 
+                                       id="assignedPerm${perm.id}">
+                                <label class="form-check-label" for="assignedPerm${perm.id}">
+                                    <strong>${perm.nombre}</strong>
+                                    <span class="permission-badge ${badgeClass} ms-2">${perm.accion}</span>
+                                    <small class="text-muted d-block">${perm.descripcion}</small>
+                                </label>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                const assignedPermsContainer = document.getElementById('assignedGroupPermissions');
+                if (assignedPermsContainer) {
+                    assignedPermsContainer.innerHTML = assignedPermsHtml || '<p class="text-muted">No hay permisos asignados</p>';
+                }
+
+                // Setup search functionality
+                setupGroupSearch('searchAvailableGroupUsers', 'availableGroupUsers');
+                setupGroupSearch('searchAssignedGroupUsers', 'assignedGroupUsers');
+                setupGroupSearch('searchAvailableGroupPerms', 'availableGroupPermissions');
+                setupGroupSearch('searchAssignedGroupPerms', 'assignedGroupPermissions');
+
+                const modalElement = document.getElementById('manageGroupModal');
+                const existingModal = bootstrap.Modal.getInstance(modalElement);
+                if (existingModal) {
+                    existingModal.dispose();
+                }
+                const newModal = new bootstrap.Modal(modalElement);
+                newModal.show();
+            } catch (error) {
+                showNotification('error', 'Error al cargar el grupo: ' + error.message);
+                console.error('Error completo:', error);
+            }
+        }
+
+        // Helper function to setup search functionality
+        function setupGroupSearch(searchInputId, containerId) {
+            const searchInput = document.getElementById(searchInputId);
+            if (searchInput) {
+                // Clone to remove existing listeners
+                const newSearchInput = searchInput.cloneNode(true);
+                searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+                
+                document.getElementById(searchInputId).addEventListener('input', function(e) {
+                    const searchTerm = e.target.value.toLowerCase();
+                    document.querySelectorAll(`#${containerId} .permission-item`).forEach(item => {
+                        const text = item.dataset.searchText;
+                        item.style.display = text && text.includes(searchTerm) ? '' : 'none';
+                    });
+                });
+            }
+        }
+
+        // Add selected users to group
+        async function addSelectedUsersToGroup() {
+            const selectedUsers = Array.from(document.querySelectorAll('.available-user-checkbox:checked'))
+                .map(cb => parseInt(cb.value));
+
+            if (selectedUsers.length === 0) {
+                showNotification('error', 'Selecciona al menos un usuario');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/Admin/AddUsersToGroup/${currentManualGroupId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(selectedUsers)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('success', `${selectedUsers.length} usuario(s) agregado(s) exitosamente`);
+                    const modalInstance = bootstrap.Modal.getInstance(document.getElementById('manageGroupModal'));
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+                    setTimeout(() => loadManualGroups(), 500);
+                } else {
+                    showNotification('error', result.message);
+                }
+            } catch (error) {
+                showNotification('error', 'Error al agregar usuarios');
+                console.error('Error:', error);
+            }
+        }
+
+        // Remove selected users from group
+        async function removeSelectedUsersFromGroup() {
+            const selectedUsers = Array.from(document.querySelectorAll('.assigned-user-checkbox:checked'))
+                .map(cb => parseInt(cb.value));
+
+            if (selectedUsers.length === 0) {
+                showNotification('error', 'Selecciona al menos un usuario');
+                return;
+            }
+
+            if (!confirm(`¿Está seguro de remover ${selectedUsers.length} usuario(s) del grupo?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/Admin/RemoveUsersFromGroup/${currentManualGroupId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(selectedUsers)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('success', `${selectedUsers.length} usuario(s) removido(s) exitosamente`);
+                    const modalInstance = bootstrap.Modal.getInstance(document.getElementById('manageGroupModal'));
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+                    setTimeout(() => loadManualGroups(), 500);
+                } else {
+                    showNotification('error', result.message);
+                }
+            } catch (error) {
+                showNotification('error', 'Error al remover usuarios');
+                console.error('Error:', error);
+            }
+        }
+
+        // Add selected permissions to group
+        async function addSelectedPermissionsToGroup() {
+            const selectedPermissions = Array.from(document.querySelectorAll('.available-permission-checkbox:checked'))
+                .map(cb => parseInt(cb.value));
+
+            if (selectedPermissions.length === 0) {
+                showNotification('error', 'Selecciona al menos un permiso');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/Admin/AddPermissionsToGroup/${currentManualGroupId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(selectedPermissions)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('success', `${selectedPermissions.length} permiso(s) agregado(s) exitosamente`);
+                    const modalInstance = bootstrap.Modal.getInstance(document.getElementById('manageGroupModal'));
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+                    setTimeout(() => loadManualGroups(), 500);
+                } else {
+                    showNotification('error', result.message);
+                }
+            } catch (error) {
+                showNotification('error', 'Error al agregar permisos');
+                console.error('Error:', error);
+            }
+        }
+
+        // Remove selected permissions from group
+        async function removeSelectedPermissionsFromGroup() {
+            const selectedPermissions = Array.from(document.querySelectorAll('.assigned-permission-checkbox:checked'))
+                .map(cb => parseInt(cb.value));
+
+            if (selectedPermissions.length === 0) {
+                showNotification('error', 'Selecciona al menos un permiso');
+                return;
+            }
+
+            if (!confirm(`¿Está seguro de remover ${selectedPermissions.length} permiso(s) del grupo?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/Admin/RemovePermissionsFromGroup/${currentManualGroupId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(selectedPermissions)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('success', `${selectedPermissions.length} permiso(s) removido(s) exitosamente`);
+                    const modalInstance = bootstrap.Modal.getInstance(document.getElementById('manageGroupModal'));
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+                    setTimeout(() => loadManualGroups(), 500);
+                } else {
+                    showNotification('error', result.message);
+                }
+            } catch (error) {
+                showNotification('error', 'Error al remover permisos');
+                console.error('Error:', error);
+            }
         }
     </script>
 }

@@ -3,6 +3,7 @@ using System;
 using MedCenter.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MedCenter.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260122190126_CascadeForManualGroups")]
+    partial class CascadeForManualGroups
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -480,21 +483,10 @@ namespace MedCenter.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("persona_id");
 
-                    b.Property<int?>("GrupoId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Origen")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("origen");
-
                     b.HasKey("PermisoId", "PersonaId")
                         .HasName("persona_permiso_pkey");
 
-                    b.HasIndex("GrupoId");
-
-                    b.HasIndex("PersonaId", "PermisoId", "GrupoId")
-                        .IsUnique();
+                    b.HasIndex("PersonaId");
 
                     b.ToTable("persona_permiso", (string)null);
                 });
@@ -1027,7 +1019,7 @@ namespace MedCenter.Migrations
                     b.HasOne("MedCenter.Models.GrupoPermisosPersonas", "Grupo")
                         .WithMany("Permisos")
                         .HasForeignKey("GrupoId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired()
                         .HasConstraintName("grupo_id_fkey");
 
@@ -1048,7 +1040,7 @@ namespace MedCenter.Migrations
                     b.HasOne("MedCenter.Models.GrupoPermisosPersonas", "Grupo")
                         .WithMany("Personas")
                         .HasForeignKey("GrupoId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired()
                         .HasConstraintName("grupo_id_fkey");
 
@@ -1066,11 +1058,6 @@ namespace MedCenter.Migrations
 
             modelBuilder.Entity("MedCenter.Models.PersonaPermiso", b =>
                 {
-                    b.HasOne("MedCenter.Models.GrupoPermisosPersonas", "Grupo")
-                        .WithMany()
-                        .HasForeignKey("GrupoId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
                     b.HasOne("MedCenter.Models.Permiso", "Permiso")
                         .WithMany("PersonaPermisos")
                         .HasForeignKey("PermisoId")
@@ -1084,8 +1071,6 @@ namespace MedCenter.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("persona_permiso_persona_fkey");
-
-                    b.Navigation("Grupo");
 
                     b.Navigation("Permiso");
 
