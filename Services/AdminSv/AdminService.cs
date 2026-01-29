@@ -7,6 +7,7 @@ using MedCenter.Enums;
 using MedCenter.Models;
 using MedCenter.Services.TurnoSv;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Asn1.Pkcs;
 
 namespace MedCenter.Services.AdminService;
 
@@ -130,12 +131,13 @@ public class AdminService
     //Create a group manually
     public async Task<AuthResult> CreateGroup(int [] usersIds, int [] permissionsIds, string name, string? description)
     {
-        var users = await _context.personas.Where(p => usersIds.Contains(p.id)).ToListAsync();
-        var permissions = await _context.permisos.Where(p => permissionsIds.Contains(p.Id)).ToListAsync();
+        var users = await _context.personas.Where(p => usersIds.Contains(p.id)).Include(p => p.PersonaPermisos).ToListAsync();
+        var PermissionsIds = await _context.permisos.Where(p => permissionsIds.Contains(p.Id)).Select(p => p.Id).ToListAsync();
         var personasGrupos = new List<PersonaGrupo>();
         var permisosGrupos = new List<PermisoGrupo>();
+        var permisosPersona = new List<PersonaPermiso>();
 
-        var transaction = await _context.Database.BeginTransactionAsync();
+        using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
             var grupo = new GrupoPermisosPersonas
@@ -155,20 +157,37 @@ public class AdminService
                     PersonaId = user.id
                 };
                 personasGrupos.Add(personaGrupo);
+
+                foreach(int id in PermissionsIds)
+                {
+                    if(!user.PersonaPermisos.Any(pp => pp.PermisoId == id))
+                    {
+                        var personaPermiso = new PersonaPermiso
+                        {
+                            PermisoId = id,
+                            GrupoId = grupo.Id,
+                            Origen = PermisoSource.Group
+                        };
+                        permisosPersona.Add(personaPermiso);
+                    }    
+                }
             }
 
-            foreach(var permission in permissions)
+            foreach(var permissionId in PermissionsIds)
             {
                 var permisoGrupo = new PermisoGrupo
                 {
                     GrupoId = grupo.Id,
-                    PermisoId = permission.Id
+                    PermisoId = permissionId,
                 };
                 permisosGrupos.Add(permisoGrupo);
+
             }
             
-            await _context.AddRangeAsync(personasGrupos);
-            await _context.AddRangeAsync(permisosGrupos);
+            _context.AddRange(personasGrupos);
+            _context.AddRange(permisosGrupos);
+            _context.AddRange(permisosPersona);
+
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
@@ -198,16 +217,21 @@ public class AdminService
     {
         try
         {
-            var grupo = await _context.gruposPermisosPersonas
+            var grupo = await _context.gruposPermisosPersonas.Include(g => g.Permisos)
+                //.Include(g => g.Personas)
+                //.ThenInclude(p => p.Persona)
                 .FirstOrDefaultAsync(g => g.Id == id);
-        
             if (grupo == null)
                 return new AuthResult 
                 { 
                     Success = false, 
                     ErrorMessage = "El grupo no existe" 
                 };
-        
+
+            //var personasIds = await _context.personasGrupos.Where(pg => pg.GrupoId == grupo.Id).Select(pg => pg.PersonaId).ToListAsync();
+
+            //await _context.personaPermisos.Where(pp => pp.GrupoId.Equals(grupo.Id) && personasIds.Contains(pp.PersonaId)).ExecuteDeleteAsync();
+
             _context.gruposPermisosPersonas.Remove(grupo);
             await _context.SaveChangesAsync();
         
@@ -240,12 +264,40 @@ public class AdminService
             }).ToList();
 
              // Build all PersonaPermiso entries at once
-            var personaPermisos = usersIds
+            /*var personaPermisos = usersIds
             .SelectMany(userId => permisosIds.Select(permisoId => new PersonaPermiso
             {
                 PermisoId = permisoId,
-                PersonaId = userId
+                PersonaId = userId,
+                Origen = PermisoSource.Group,
+                GrupoId = groupId
             }))
+            .ToList();
+            */
+
+           
+
+            // Get existing permissions for these users to avoid duplicates
+            var existingPermissions = await _context.personaPermisos
+            .Where(pp => usersIds.Contains(pp.PersonaId) && permisosIds.Contains(pp.PermisoId))
+            .Select(pp => new { pp.PersonaId, pp.PermisoId })
+            .ToHashSetAsync();
+
+            /*var personasPermisos = usersIds.SelectMany(uI => permisosIds
+            .Where(permisoId => !existingPermissions.Contains(new{PersonaId,uI})));
+            */
+
+            // Build PersonaPermiso entries, excluding duplicates
+            var personaPermisos = usersIds
+            .SelectMany(userId => permisosIds
+                .Where(permisoId => !existingPermissions.Contains(new { PersonaId = userId, PermisoId = permisoId }))
+                .Select(permisoId => new PersonaPermiso
+                {
+                    PermisoId = permisoId,
+                    PersonaId = userId,
+                    Origen = PermisoSource.Group,
+                    GrupoId = groupId
+                }))
             .ToList();
             
             _context.personasGrupos.AddRange(personasGrupos);
@@ -284,19 +336,37 @@ public class AdminService
             if(count == 0)
             return new AuthResult{Success = false, ErrorMessage = "No se encontraron los usuarios seleccionados dentro del grupo"};
 
-            var permissionsIds = await _context.permisosGrupos.Where(pg => pg.GrupoId == groupId).Select(pg => pg.PermisoId).ToListAsync();
-            var permisosDuplicados = await _context.permisosGrupos.Where(pg => permissionsIds.Contains(pg.PermisoId) && pg.GrupoId != groupId).Select(pg => pg.PermisoId).ToArrayAsync();
-            var permisosAEliminar = Array.Empty<int>();
-            
-            if(permisosDuplicados.Length > 0)
+            var permToDelete = new List<PersonaPermiso>();
+
+            foreach(var user in usersIds)
             {
-                permisosAEliminar = permissionsIds.Where(p => permisosDuplicados.Contains(p)).Select(p => p).ToArray();
+                var affectedPerm = await _context.personaPermisos.Where(pp => pp.PersonaId == user && pp.GrupoId == groupId).ToListAsync();
+
+                var permIds = affectedPerm.Select(ap => ap.PermisoId);
+
+                var alternatives = await _context.personasGrupos.Where(pg => pg.PersonaId == user)
+                                    .Join(_context.permisosGrupos
+                                        .Where(pg => permIds
+                                            .Contains(pg.PermisoId)), persGrup => persGrup.GrupoId, permGrup => permGrup.GrupoId,
+                                        (persGrup, permGrup) => new {permGrup.GrupoId,permGrup.PermisoId})
+                                    .ToListAsync();
+
+                foreach(var perm in affectedPerm)
+                {
+                    if(alternatives.Any(a => a.PermisoId == perm.PermisoId))
+                    {
+                        var aux = alternatives.FirstOrDefault(a => a.PermisoId == perm.PermisoId);
+                        perm.GrupoId = aux.GrupoId;
+                    }
+                    else
+                    {
+                        permToDelete.Add(perm);
+                    }
+                }
             }
-            else
-            permisosAEliminar = permissionsIds.ToArray();
 
-            var count2 = await _context.personaPermisos.Where(pp => permisosAEliminar.Contains(pp.PermisoId) && usersIds.Contains(pp.PersonaId)).ExecuteDeleteAsync();
-
+            _context.personaPermisos.RemoveRange(permToDelete);
+            await _context.SaveChangesAsync();
             await transaccion.CommitAsync();
 
             return new AuthResult{Success = true};
@@ -310,20 +380,36 @@ public class AdminService
 
     public async Task<AuthResult> AddPermissionsToGroup(int []permissionsIds, int groupId)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync();
+        //using var transaction = await _context.Database.BeginTransactionAsync();
         try
-        {
-            foreach(int id in permissionsIds)
+        {   
+            var permisosNuevos = permissionsIds.Select(p => new PermisoGrupo
             {
-                await _context.permisosGrupos.AddAsync(new PermisoGrupo
-                {
-                    PermisoId = id,
-                    GrupoId = groupId
-                });
-            }
+                PermisoId = p,
+                GrupoId = groupId
+            });
+            var miembros = await _context.personasGrupos.Where(pg => pg.GrupoId == groupId).Select(pg => pg.PersonaId).ToListAsync();
+            
+            var permisosActuales = await _context.personaPermisos.Where(pp => miembros.Contains(pp.PersonaId))
+                                    .Select(pp => new{PermisoId = pp.PermisoId,PersonaId = pp.PersonaId}).ToHashSetAsync();
 
+            // Create PersonaPermiso entries (only for permissions members don't have)
+            var permisosPersonasNuevos = miembros
+            .SelectMany(miembroId => permissionsIds
+                .Where(permId => !permisosActuales.Contains(new { PermisoId = permId, PersonaId = miembroId, }))
+                .Select(permId => new PersonaPermiso
+                {
+                    PersonaId = miembroId,
+                    PermisoId = permId,
+                    GrupoId = groupId,
+                    Origen = PermisoSource.Group
+                }))
+            .ToList();
+
+            _context.permisosGrupos.AddRange(permisosNuevos);
+            _context.personaPermisos.AddRange(permisosPersonasNuevos);
             await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
+            //await transaction.CommitAsync();
 
             return new AuthResult{Success = true};
         }
@@ -331,7 +417,7 @@ public class AdminService
         {
             // Handle specific database errors
             var innerMessage = ex.InnerException?.Message ?? ex.Message;
-            await transaction.RollbackAsync();
+            //await transaction.RollbackAsync();
             if (innerMessage.Contains("duplicate key") || innerMessage.Contains("unique constraint"))
                 return new AuthResult { Success = false, ErrorMessage = "Alguno de los permisos ya existe en este grupo" };
         
@@ -346,30 +432,74 @@ public class AdminService
         
     }
 
-    public async Task<AuthResult> RemovePermissionsFromGroup(int [] permissionsIds, int groupId)
+    public async Task<AuthResult> RemovePermissionsFromGroup(int[] permissionsIds, int groupId)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            int count = 0;
-            foreach(int id in permissionsIds)
+            // Get all members of this group
+            var groupMembers = await _context.personasGrupos
+                .Where(pg => pg.GrupoId == groupId)
+                .Select(pg => pg.PersonaId)
+                .ToListAsync();
+
+            if (groupMembers.Count == 0)
+                return new AuthResult { Success = false, ErrorMessage = "El grupo no tiene miembros" };
+
+            // Get PersonaPermiso entries that need to be handled
+            var affectedPermissions = await _context.personaPermisos
+                .Where(pp => groupMembers.Contains(pp.PersonaId) 
+                    && permissionsIds.Contains(pp.PermisoId) 
+                    && pp.GrupoId == groupId)
+                .ToListAsync();
+
+            // For each affected permission, check if user has it from another group
+            foreach (var pp in affectedPermissions)
             {
-                count = await _context.permisosGrupos.Where(pg => pg.GrupoId == groupId && permissionsIds.Contains(pg.PermisoId)).ExecuteDeleteAsync();
+                // Find alternative group that has this permission for this user
+                var alternativeGroupId = await _context.personasGrupos
+                    .Where(pg => pg.PersonaId == pp.PersonaId && pg.GrupoId != groupId)
+                    .Join(_context.permisosGrupos,
+                        pg => pg.GrupoId,
+                        pmg => pmg.GrupoId,
+                        (pg, pmg) => new { pg.GrupoId, pmg.PermisoId })
+                    .Where(x => x.PermisoId == pp.PermisoId)
+                    .Select(x => x.GrupoId)
+                    .FirstOrDefaultAsync();
+
+                if (alternativeGroupId != 0)
+                {
+                    // Reassign to another group
+                    pp.GrupoId = alternativeGroupId;
+                }
+                else
+                {
+                    // No alternative, remove permission
+                    _context.personaPermisos.Remove(pp);
+                }
             }
-            if(count == 0)
-            {  
+
+            // Remove permissions from the group itself
+            var count = await _context.permisosGrupos
+                .Where(pg => pg.GrupoId == groupId && permissionsIds.Contains(pg.PermisoId))
+                .ExecuteDeleteAsync();
+
+            if (count == 0)
+            {
                 await transaction.RollbackAsync();
-                return new AuthResult{Success = false, ErrorMessage = "No se elimino el registro correctamente"};
+                return new AuthResult { Success = false, ErrorMessage = "No se encontraron los permisos en el grupo" };
             }
+
+            await _context.SaveChangesAsync();
             await transaction.CommitAsync();
-            return new AuthResult{Success = true};
+
+            return new AuthResult { Success = true };
         }
-        catch
+        catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            return new AuthResult{Success = false, ErrorMessage = "Error al intentar hacer el cambio en la base de datos"};
+            return new AuthResult { Success = false, ErrorMessage = $"Error al remover permisos del grupo: {ex.Message}" };
         }
-        
     }
 
 

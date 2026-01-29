@@ -447,7 +447,7 @@ public partial class AppDbContext : DbContext
 
            e.HasOne(e => e.Grupo).WithMany().HasForeignKey(e => e.GrupoId).OnDelete(DeleteBehavior.Cascade);
 
-              // Composite unique index to prevent duplicates
+            // Composite unique index to prevent duplicates
             e.HasIndex(pp => new { pp.PersonaId, pp.PermisoId, pp.GrupoId })
             .IsUnique();
         });

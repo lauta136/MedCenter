@@ -134,7 +134,8 @@ namespace MedCenter.Services.Authentication.Components
                 var personaPermisos = ids.Select(id => new PersonaPermiso
                 {
                     PermisoId = id,
-                    PersonaId = persona.id
+                    PersonaId = persona.id,
+                    Origen = PermisoSource.Role
                 });
                 
                 await _context.personaPermisos.AddRangeAsync(personaPermisos);
