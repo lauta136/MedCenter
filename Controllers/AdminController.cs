@@ -3,7 +3,7 @@ using MedCenter.Services.AdminService;
 using MedCenter.Services.TurnoSv;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-
+using MedCenter.Attributes;
 namespace MedCenter.Controllers;
 
 [Route("[controller]")]
@@ -28,12 +28,15 @@ public class AdminController : BaseController
     public async Task<IActionResult> PanelAdmin()
     {
         var isAdmin = await _adminService.AccesoAPanelAdmin(UserId.Value);
-        if (!isAdmin.Success)
+        if (!isAdmin)
         {
             return RedirectToAction("AccessDenied", "Access");
         }
         ViewBag.EsAdmin = await _adminService.AccesoAPanelAdmin(UserId.Value);
         ViewBag.Rol = UserRole;
+        ViewBag.CanViewAllPermissions = await _adminService.VerPermisos(UserId.Value);
+        ViewBag.CanViewGroups = await _adminService.VerGrupos(UserId.Value);
+        ViewBag.CanViewRoles = await _adminService.VerRoles(UserId.Value);
         var viewModel = await _adminService.GetPermissionManagementData();
         return View(viewModel);
     }
@@ -55,10 +58,11 @@ public class AdminController : BaseController
     }
 
     // API endpoint to assign permission to user
+    [RequiredPermission("permiso:assign")]
     [HttpPost("AssignPermission")]
-    public async Task<IActionResult> AssignPermission([FromBody] int UserId, int PermissionId)
+    public async Task<IActionResult> AssignPermission([FromBody] AssingPermissionToUserDTO dto)
     {
-        var result = await _adminService.AssignPermissionToUser(UserId, PermissionId);
+        var result = await _adminService.AssignPermissionToUser(dto.UserId, dto.PermissionId);
         if (result.Success)
         {
             return BadRequest(new { success = true, message = "Permiso asignado correctamente" });
@@ -67,15 +71,16 @@ public class AdminController : BaseController
     }
 
     // API endpoint to remove permission from user
+    [RequiredPermission("permiso:remove")]
     [HttpPost("RemovePermission")]
-    public async Task<IActionResult> RemovePermission([FromBody] int UserId, int PermissionId)
+    public async Task<IActionResult> RemovePermission([FromBody] RemovePermissionFromUserDTO dto)
     {
-        var result = await _adminService.RemovePermissionFromUser(UserId, PermissionId);
+        var result = await _adminService.RemovePermissionFromUser(dto.UserId, dto.PermissionId);
         if (result.Success)
         {
             return Ok(new { success = true, message = "Permiso removido correctamente" });
         }
-        return BadRequest(new { success = false, message = "Error al remover el permiso" });
+        return BadRequest(new { success = false, message = result.ErrorMessage });
     }
 
     // API endpoint to assign role permissions to user
@@ -117,31 +122,8 @@ public class AdminController : BaseController
         return BadRequest(new { success = false, message = "Error al copiar los permisos" });
     }
 
-    // API endpoint to assign permission to group of users
-    [HttpPost("AssignPermissionToGroup")]
-    public async Task<IActionResult> AssignPermissionToGroup([FromBody] AssignPermissionToGroupDTO data)
-    {
-        var result = await _adminService.AssignPermissionToGroup(data.UsersIds, data.PermissionId);
-        if (result.Success)
-        {
-            return Ok(new { success = true, message = "Permiso asignado correctamente" });
-        }
-        return BadRequest(new { success = false, message = "Error al asignar el permiso" });
-    }
-
-    // API endpoint to remove permission from group of users
-    [HttpPost("RemovePermissionFromGroup")]
-    public async Task<IActionResult> RemovePermissionFromGroup([FromBody] RemovePermissionFromGroupDTO data)
-    {
-        var result = await _adminService.RemovePermissionFromGroup(data.UsersIds, data.PermissionId);
-        if (result.Success)
-        {
-            return Ok(new { success = true, message = "Permiso removido correctamente" });
-        }
-        return BadRequest(new { success = false, message = "Error al remover el permiso" });
-    }
-
     //API endpoint to create a group
+    [RequiredPermission("permiso_grupo:create")]
     [HttpPost("CreateGroup")]
     public async Task<IActionResult> CreateGroup([FromBody] CreateGroupDTO dto)
     {
@@ -154,6 +136,7 @@ public class AdminController : BaseController
     }
 
     //API endppoint to erase a group
+    [RequiredPermission("permiso_grupo:delete")]
     [HttpPost("EraseGroup/{groupId}")]
     public async Task<IActionResult> EraseGroup(int groupId)
     {
@@ -165,6 +148,7 @@ public class AdminController : BaseController
     }
     
     //API endpoint to add a user to a group
+    [RequiredPermission("permiso_grupo:manage_users")]
     [HttpPost("AddUsersToGroup/{groupId}")]
     public async Task<IActionResult> AddUsersToGroup(int groupId, [FromBody] int[] usersId)
     {
@@ -175,6 +159,7 @@ public class AdminController : BaseController
         return BadRequest(new{success = false, message = result.ErrorMessage});
     }
 
+    [RequiredPermission("permiso_grupo:manage_users")]
     [HttpPost("RemoveUsersFromGroup/{groupId}")]
     public async Task<IActionResult> RemoveUsersFromGroup(int groupId, [FromBody] int[] usersIds)
     {
@@ -185,6 +170,7 @@ public class AdminController : BaseController
         return BadRequest(new{success = false, message = result.ErrorMessage});
     }
 
+    [RequiredPermission("permiso_grupo:manage_permissions")]
     [HttpPost("AddPermissionsToGroup/{groupId}")]
     public async Task<IActionResult> AddPermissionsToGroup(int groupId, [FromBody] int[] permissionsIds)
     {
@@ -195,7 +181,8 @@ public class AdminController : BaseController
         return BadRequest(new{success = false, message = result.ErrorMessage});
     }
 
-    [HttpPost("RemovePermissionFromGroup/{groupId}")]
+    [RequiredPermission("permiso_grupo:manage_permissions")]
+    [HttpPost("RemovePermissionsFromGroup/{groupId}")]
     public async Task<IActionResult> RemovePermissionsFromGroup(int groupId, [FromBody] int[] permissionsIds)
     {
         var result = await _adminService.RemovePermissionsFromGroup(permissionsIds,groupId);

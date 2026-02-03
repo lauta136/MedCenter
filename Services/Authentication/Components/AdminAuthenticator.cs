@@ -67,6 +67,7 @@ namespace MedCenter.Services.Authentication.Components
                 {
                     Id = persona.id,
                     Cargo = dto.Cargo,
+                    Activo = true,
                     IdNavigation = persona
                 };
 

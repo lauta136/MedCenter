@@ -18,10 +18,15 @@ public class RequiredPermission : Attribute, IAsyncAuthorizationFilter
 
     public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
+        // Check if this is an API request (expects JSON response)
+        bool isApiRequest = IsApiRequest(context.HttpContext);
+
         // Check if user is authenticated
         if (!context.HttpContext.User.Identity?.IsAuthenticated ?? true)
         {
-            context.Result = new RedirectToActionResult("AccessDenied", "Access", null);
+            context.Result = isApiRequest 
+                ? new UnauthorizedObjectResult(new { success = false, message = "No autenticado" })
+                : new RedirectToActionResult("AccessDenied", "Access", null);
             return;
         }
 
@@ -30,7 +35,9 @@ public class RequiredPermission : Attribute, IAsyncAuthorizationFilter
         
         if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
         {
-            context.Result = new RedirectToActionResult("AccessDenied", "Access", null);
+            context.Result = isApiRequest 
+                ? new UnauthorizedObjectResult(new { success = false, message = "Usuario inválido" })
+                : new RedirectToActionResult("AccessDenied", "Access", null);
             return;
         }
 
@@ -44,7 +51,39 @@ public class RequiredPermission : Attribute, IAsyncAuthorizationFilter
 
         if (!hasPermission)
         {
-            context.Result = new RedirectToActionResult("AccessDenied", "Access", null);
+            context.Result = isApiRequest 
+                ? new JsonResult(new { success = false, message = $"No tienes permiso para realizar esta acción. Permiso requerido: {_permissionName}" }) 
+                  { StatusCode = 403 }
+                : new RedirectToActionResult("AccessDenied", "Access", null);
         }
+    }
+
+    private bool IsApiRequest(HttpContext context)
+    {
+        // Check if Content-Type is JSON (for POST/PUT requests with JSON body)
+        var contentType = context.Request.ContentType?.ToLower() ?? "";
+        if (contentType.Contains("application/json"))
+            return true;
+
+        // Check if request accepts JSON
+        var acceptHeader = context.Request.Headers["Accept"].ToString().ToLower();
+        if (acceptHeader.Contains("application/json") || acceptHeader.Contains("*/*"))
+            return true;
+
+        // Check if it's an AJAX request
+        if (context.Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            return true;
+
+        // Check if the request path suggests it's an API endpoint
+        var path = context.Request.Path.Value?.ToLower() ?? "";
+        if (path.Contains("/api/"))
+            return true;
+
+        // Check if it's a POST/PUT/DELETE/PATCH request (typically API calls)
+        var method = context.Request.Method.ToUpper();
+        if (method == "POST" || method == "PUT" || method == "DELETE" || method == "PATCH")
+            return true;
+
+        return false;
     }
 }

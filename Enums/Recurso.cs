@@ -13,5 +13,6 @@ public enum Recurso
     Reporte,
     Disponibilidad,
     BloqueDisponibilidad,
-    SlotsAgenda
+    SlotsAgenda,
+    GrupoPermisosPersonas
 }

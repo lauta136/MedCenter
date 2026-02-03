@@ -10,7 +10,7 @@ public class UserPermissionDTO
     public string UserName { get; set; }
     public string Email { get; set; }
     public List<PermissionDTO> Permissions { get; set; } = new List<PermissionDTO>();
-    public List<RolUsuario> Roles { get; set; } = new List<RolUsuario>();
+    public RolUsuario Role { get; set; }
 }
 
 public class PermissionDTO
@@ -70,4 +70,15 @@ public class PermissionManagementViewModel
     public List<PermissionDTO> AllPermissions { get; set; } = new List<PermissionDTO>();
     public List<PermissionGroupDTO> PermissionGroups { get; set; } = new List<PermissionGroupDTO>();
     public Dictionary<RolUsuario, List<PermissionDTO>> RolePermissions { get; set; } = new Dictionary<RolUsuario, List<PermissionDTO>>();
+}
+
+public class RemovePermissionFromUserDTO
+{
+    public int UserId{get;set;}
+    public int PermissionId{get;set;}
+}
+public class AssingPermissionToUserDTO
+{
+    public int UserId{get;set;}
+    public int PermissionId{get;set;}
 }

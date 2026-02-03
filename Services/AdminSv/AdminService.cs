@@ -6,6 +6,7 @@ using MedCenter.DTOs;
 using MedCenter.Enums;
 using MedCenter.Models;
 using MedCenter.Services.TurnoSv;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Org.BouncyCastle.Asn1.Pkcs;
 
@@ -19,22 +20,34 @@ public class AdminService
         _context = appDbContext;
     }
     
-    public async Task<AuthResult> AccesoAPanelAdmin(int id)
+    public async Task<bool> AccesoAPanelAdmin(int id)
     {
         try
         {
             int [] permitsIds = await _context.personaPermisos.Where(pp => pp.PersonaId == id).Select(pp => pp.PermisoId).ToArrayAsync();
-            var adminIds = await _context.rolPermisos.Where(rp => rp.RolNombre == RolUsuario.Admin).Select(rp => rp.PermisoId).ToListAsync();
+            var adminIds = await _context.rolPermisos.Where(rp => rp.RolNombre == RolUsuario.Admin).Select(rp => rp.PermisoId).ToHashSetAsync();
 
-            bool hasAccess = permitsIds.Any(id => adminIds.Contains(id));
-            return new AuthResult { Success = hasAccess };
+            return permitsIds.Any(id => adminIds.Contains(id));
         }
         catch (Exception ex)
         {
-            return new AuthResult { Success = false, ErrorMessage = $"Error al verificar acceso: {ex.Message}" };
+            return false;
         }
     }
 
+    public async Task<bool> VerPermisos(int userId)
+    {
+        return await _context.personaPermisos.Include(pp => pp.Permiso).AnyAsync(pp =>pp.PersonaId == userId && pp.Permiso.Nombre == "permiso:view");
+    }
+
+    public async Task<bool> VerGrupos(int userId)
+    {
+        return await _context.personaPermisos.Include(pp => pp.Permiso).AnyAsync(pp =>pp.PersonaId == userId && pp.Permiso.Nombre == "permiso_grupo:view");
+    }
+    public async Task<bool> VerRoles(int userId)
+    {
+        return await _context.personaPermisos.Include(pp => pp.Permiso).AnyAsync(pp =>pp.PersonaId == userId && pp.Permiso.Nombre == "rol:view");
+    }
     // Get all users with their permissions
     public async Task<List<UserPermissionDTO>> GetAllUsersWithPermissions()
     {
@@ -60,7 +73,7 @@ public class AdminService
         // Get roles for each user
         foreach (var user in users)
         {
-            user.Roles = await GetUserRoles(user.UserId);
+            user.Role = await GetUserRole(user.UserId);
         }
 
         return users;
@@ -164,6 +177,7 @@ public class AdminService
                     {
                         var personaPermiso = new PersonaPermiso
                         {
+                            PersonaId = user.id,
                             PermisoId = id,
                             GrupoId = grupo.Id,
                             Origen = PermisoSource.Group
@@ -254,8 +268,7 @@ public class AdminService
         {   
             var permisosIds= await _context.permisosGrupos.Where(pg =>pg.GrupoId == groupId).Select(pg => pg.PermisoId).ToArrayAsync();
             
-            if(permisosIds.Length == 0)
-            return new AuthResult{Success = false, ErrorMessage = "No se encontraron los permisos en la db"};
+            
 
             var personasGrupos = usersIds.Select(u => new PersonaGrupo
             {
@@ -263,45 +276,30 @@ public class AdminService
                 GrupoId = groupId
             }).ToList();
 
-             // Build all PersonaPermiso entries at once
-            /*var personaPermisos = usersIds
-            .SelectMany(userId => permisosIds.Select(permisoId => new PersonaPermiso
+            if(permisosIds.Length != 0)
             {
-                PermisoId = permisoId,
-                PersonaId = userId,
-                Origen = PermisoSource.Group,
-                GrupoId = groupId
-            }))
-            .ToList();
-            */
+                // Get existing permissions for these users to avoid duplicates
+                var existingPermissions = await _context.personaPermisos
+                .Where(pp => usersIds.Contains(pp.PersonaId) && permisosIds.Contains(pp.PermisoId))
+                .Select(pp => new { pp.PersonaId, pp.PermisoId })
+                .ToHashSetAsync();
 
-           
-
-            // Get existing permissions for these users to avoid duplicates
-            var existingPermissions = await _context.personaPermisos
-            .Where(pp => usersIds.Contains(pp.PersonaId) && permisosIds.Contains(pp.PermisoId))
-            .Select(pp => new { pp.PersonaId, pp.PermisoId })
-            .ToHashSetAsync();
-
-            /*var personasPermisos = usersIds.SelectMany(uI => permisosIds
-            .Where(permisoId => !existingPermissions.Contains(new{PersonaId,uI})));
-            */
-
-            // Build PersonaPermiso entries, excluding duplicates
-            var personaPermisos = usersIds
-            .SelectMany(userId => permisosIds
-                .Where(permisoId => !existingPermissions.Contains(new { PersonaId = userId, PermisoId = permisoId }))
-                .Select(permisoId => new PersonaPermiso
-                {
-                    PermisoId = permisoId,
-                    PersonaId = userId,
-                    Origen = PermisoSource.Group,
-                    GrupoId = groupId
-                }))
-            .ToList();
-            
+                // Build PersonaPermiso entries, excluding duplicates
+                var personaPermisos = usersIds
+                .SelectMany(userId => permisosIds
+                    .Where(permisoId => !existingPermissions.Contains(new { PersonaId = userId, PermisoId = permisoId }))
+                    .Select(permisoId => new PersonaPermiso
+                    {
+                        PermisoId = permisoId,
+                        PersonaId = userId,
+                        Origen = PermisoSource.Group,
+                        GrupoId = groupId
+                    }))
+                .ToList();
+                _context.personaPermisos.AddRange(personaPermisos);
+            }
             _context.personasGrupos.AddRange(personasGrupos);
-            _context.personaPermisos.AddRange(personaPermisos);
+            
 
             await _context.SaveChangesAsync();
             
@@ -526,7 +524,8 @@ public class AdminService
             _context.personaPermisos.Add(new PersonaPermiso
             {
                 PersonaId = userId,
-                PermisoId = permissionId
+                PermisoId = permissionId,
+                Origen = PermisoSource.Manual
             });
 
             await _context.SaveChangesAsync();
@@ -548,6 +547,14 @@ public class AdminService
 
             if (personaPermiso == null) return new AuthResult{Success = false, ErrorMessage = "No se encontro el vinculo entre usuario y permiso"};
 
+            if(personaPermiso.Origen == PermisoSource.Group) 
+            {
+                string groupName = _context.gruposPermisosPersonas
+                .Where(gpp => gpp.Id == personaPermiso.GrupoId)
+                .Select(gpp => gpp.Nombre)
+                .FirstOrDefault();
+                return new AuthResult{Success = false, ErrorMessage = $"El usuario pertenece al grupo {groupName} que garantiza este permiso, elimina al usuario del grupo"};
+            }
             _context.personaPermisos.Remove(personaPermiso);
             await _context.SaveChangesAsync();
             return new AuthResult{Success = true};
@@ -601,101 +608,21 @@ public class AdminService
         }
     }
 
-    //assign permission to a group of users, no a los grupos manuales sino los que estaban antes, ver si quitar
-    public async Task<AuthResult> AssignPermissionToGroup(List<int> usersIds, int permissionId)
-    {
-        try
-        {
-            // Check if permission exists
-            var permissionExists = await _context.permisos.AnyAsync(p => p.Id == permissionId);
-            if (!permissionExists) return new AuthResult { Success = false, ErrorMessage = "Permiso no encontrado" };
-
-            foreach(int i in usersIds)
-            {
-                // Check if user exists
-                var userExists = await _context.personas.AnyAsync(p => p.id == i);
-                if (!userExists) return new AuthResult { Success = false, ErrorMessage = $"Usuario {i} no encontrado" };
-
-                // Check if already assigned
-                var alreadyAssigned = await _context.personaPermisos
-                .AnyAsync(pp => pp.PersonaId == i && pp.PermisoId == permissionId);
-            
-                if (alreadyAssigned) continue;
-
-                 // Assign permission
-                _context.personaPermisos.Add(new PersonaPermiso
-                {
-                    PersonaId = i,
-                    PermisoId = permissionId
-                });
-            }
-          
-            await _context.SaveChangesAsync();
-            return new AuthResult { Success = true };
-        }
-        catch (Exception ex)
-        {
-            return new AuthResult { Success = false, ErrorMessage = $"Error al asignar permiso al grupo: {ex.Message}" };
-        }
-    }
-
-    // Remove a permission from a group of users, NO A LOS GRUPOS NUEVOS, SOLO A LOS VIEJOS PROBABLEMENTE SACAR
-    public async Task<AuthResult> RemovePermissionFromGroup(List<int> usersIds, int permissionId)
-    {
-        try
-        {
-            foreach(int i in usersIds)
-            {
-                var personaPermiso = await _context.personaPermisos
-                .FirstOrDefaultAsync(pp => pp.PersonaId == i && pp.PermisoId == permissionId);
-
-                if (personaPermiso == null) continue;
-
-                _context.personaPermisos.Remove(personaPermiso);
-            }
-           
-            await _context.SaveChangesAsync();
-            return new AuthResult { Success = true };
-        }
-        catch (Exception ex)
-        {
-            return new AuthResult { Success = false, ErrorMessage = $"Error al remover permiso del grupo: {ex.Message}" };
-        }
-    }
-
+    
     // Get user roles based on their permissions
-    private async Task<List<RolUsuario>> GetUserRoles(int userId)
+    private async Task<RolUsuario> GetUserRole(int userId)
     {
         if(await _context.pacientes.AnyAsync(p => p.id == userId))
-        return new List<RolUsuario> {RolUsuario.Paciente};
+        return RolUsuario.Paciente;
 
         if(await _context.medicos.AnyAsync(p => p.id == userId))
-        return new List<RolUsuario> {RolUsuario.Medico};
+        return RolUsuario.Medico;
 
-        var userPermissionIds = await _context.personaPermisos
-            .Where(pp => pp.PersonaId == userId)
-            .Select(pp => pp.PermisoId)
-            .ToListAsync();
+        if(await _context.secretarias.AnyAsync(p => p.id == userId))
+        return RolUsuario.Secretaria;
 
-        var roles = new List<RolUsuario>();
-        
-        foreach (var role in Enum.GetValues<RolUsuario>())
-        {
-            if (role == RolUsuario.System) continue;
+        return RolUsuario.Admin;
 
-            var rolePermissionIds = await _context.rolPermisos
-                .Where(rp => rp.RolNombre == role && rp.RolNombre != RolUsuario.Paciente&& rp.RolNombre != RolUsuario.Medico)
-                .Select(rp => rp.PermisoId)
-                .ToListAsync();
-
-            // Check if user has all permissions for this role
-            if (rolePermissionIds.All(rpId => userPermissionIds.Contains(rpId)) && rolePermissionIds.Any())
-            {
-                roles.Add(role);
-            }
-        }
-
-        return roles;
     }
 
     // Get complete permission management data
@@ -786,4 +713,6 @@ public class AdminService
 
         return group;
     }
+
+    
 }
