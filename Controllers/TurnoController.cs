@@ -84,7 +84,7 @@ public class TurnoController : BaseController
     {
         var medicos = await _especialidadService.GetMedicosPorEspecialidad(especialidadId);
 
-        return Json(medicos);
+        return Json(medicos.Where(m => m.Activo == true));
     }
     
     public async Task<JsonResult> ObtenerSlotsDelDia(int medicoId, DateOnly fecha)
@@ -104,6 +104,7 @@ public class TurnoController : BaseController
         if (User.IsInRole(RolUsuario.Secretaria.ToString()))
         {
             ViewBag.Pacientes = await _context.pacientes.Include(p => p.idNavigation)
+                                                        .Where(p => p.idNavigation.activo == true)
                                                         .Select(p => new { p.idNavigation.nombre, p.dni, p.id })
                                                         .OrderBy(p => p.nombre)
                                                         .ToListAsync();
@@ -118,100 +119,13 @@ public class TurnoController : BaseController
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
+        if(await _context.personas.AnyAsync(p => p.activo == false && (p.id == dto.MedicoId || p.id == dto.PacienteId)))
+            return BadRequest(ModelState);
+
         var result = await _turnoService.Reservar(dto, pacienteElegidoId);
 
         return Json(new{success = result.success , message = result.message });
 
-        
-       /* if (!await _disponibilidadService.SlotEstaDisponible(dto.SlotId))
-            return Json(new { success = false, message = "El horario ya no esta disponible" }); //Los Json se crean de forma dinamica
-
-        var slot = await _context.slotsagenda.FirstOrDefaultAsync(sa => sa.id == dto.SlotId);
-
-        if (slot == null)
-            return Json(new { success = false, message = "No se encontro el horario" });
-
-        if(slot.fecha <= DateOnly.FromDateTime(DateTime.Now)) 
-            return Json(new {succes = false, message = "No pueden reservarse turnos para el dia actual o hacia el pasado, hagalo con mas antelacion"});
-        
-        int pacienteFinalId;
-
-        if (UserRole == RolUsuario.Secretaria)
-        {
-            if (!pacienteElegidoId.HasValue)
-            {
-                return Json(new { success = false, message = "Debe elegir un paciente" });
-            }
-            pacienteFinalId = pacienteElegidoId.Value;
-        }
-        else
-        {
-            pacienteFinalId = UserId.Value;
-        }
-
-        var turno = new Turno
-        {
-            slot_id = dto.SlotId,
-            fecha = slot.fecha,
-            hora = slot.horainicio,
-            paciente_id = pacienteFinalId,
-            medico_id = dto.MedicoId,
-            especialidad_id = dto.EspecialidadId
-        };
-
-        if (UserRole == RolUsuario.Secretaria)
-            turno.secretaria_id = UserId;
-
-        _context.turnos.Add(turno);
-        _stateService.Reservar(turno);
-
-
-        slot.disponible = false;
-
-
-
-        await _context.SaveChangesAsync(); //Para que se le asigne un valor al id de turno, no puedo hacerlo todo en un solo saveChanges ya que el turnoId no esta fijado como FK en la tabla auditoria
-
-
-        var pacInfo = await _context.pacientes.Where(p => p.id == turno.paciente_id).Include(p => p.idNavigation).Select(p => new { p.idNavigation.nombre, p.dni,p.id }).FirstOrDefaultAsync();
-        var medNombre = await _context.medicos.Where(m => m.id == turno.medico_id).Include(m => m.idNavigation).Select(m => new { m.idNavigation.nombre }).FirstOrDefaultAsync();
-        var espNombre = await _context.especialidades.Where(e => e.id == turno.especialidad_id).Select(e => new { e.nombre }).FirstOrDefaultAsync();
-
-
-        _context.turnoAuditorias.Add(new TurnoAuditoria
-        {
-            TurnoId = turno.id, //Es nulo porque no fue guardado con SaveChangesAsync
-            UsuarioNombre = UserName,
-            MomentoAccion = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
-            Accion = AccionesTurno.INSERT,
-            FechaNueva = turno.fecha,
-            HoraNueva = turno.hora,
-            EstadoNuevo = _stateService.GetEstadoActual(turno).GetNombreEstado().ToEstadoTurno(),
-            PacienteId = turno.paciente_id.Value,
-            PacienteNombre = pacInfo.nombre,
-            PacienteDNI = pacInfo.dni,
-            MedicoId = turno.medico_id.Value,
-            MedicoNombre = medNombre.nombre,
-            EspecialidadId = turno.especialidad_id.Value,
-            EspecialidadNombre = espNombre.nombre,
-            SlotIdNuevo = turno.slot_id,
-        });
-
-        _context.trazabilidadTurnos.Add(new TrazabilidadTurno
-        {
-            TurnoId = turno.id,
-            UsuarioId = UserId.Value,
-            UsuarioRol = UserRole.Value,
-            UsuarioNombre = UserName,
-            MomentoAccion = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
-            Accion = AccionesTurno.INSERT,
-            Descripcion = User.IsInRole("Secretaria") ? $"La secretaria {UserName} reservo un turno" : $"El paciente {UserName} reservo un turno"
-        });
-
-        await _context.SaveChangesAsync();
-
-
-        return Json(new { success = true, message = "Turno creado exitosamente" });*/
     }
     
     [RequiredPermission("turno:edit")]

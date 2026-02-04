@@ -10,10 +10,12 @@ namespace MedCenter.Controllers;
 public class AdminController : BaseController
 {
     private readonly AdminService _adminService;
+    private readonly TurnoService _turnoService;
 
-    public AdminController(AdminService adminService)
+    public AdminController(AdminService adminService, TurnoService turnoService)
     {
         _adminService = adminService;
+        _turnoService = turnoService;
     }
     
     [HttpGet("Index")]
@@ -38,6 +40,7 @@ public class AdminController : BaseController
         ViewBag.CanViewGroups = await _adminService.VerGrupos(UserId.Value);
         ViewBag.CanViewRoles = await _adminService.VerRoles(UserId.Value);
         var viewModel = await _adminService.GetPermissionManagementData();
+        await _turnoService.FinalizarAusentarTurnosPasados();
         return View(viewModel);
     }
 

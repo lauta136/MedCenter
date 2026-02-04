@@ -39,6 +39,10 @@ namespace MedCenter.Services.DisponibilidadMedico
         public async Task<DisponibilidadResult> AgregarBloqueDisponibilidad(int medico_id, ManipularDisponibilidadDTO dto)
         {
             DisponibilidadResult resultado = await NuevaDisponibilidadCoherente(dto,medico_id);
+
+            if(await _context.personas.AnyAsync(p => p.id == medico_id && p.activo == false))
+            return new DisponibilidadResult{success = false, message = "La cuenta del medico fue desactivada"};
+
             if (resultado.success)
             {
                 _context.disponibilidad_medico.Add(new Models.DisponibilidadMedico
@@ -51,6 +55,7 @@ namespace MedCenter.Services.DisponibilidadMedico
                     vigencia_hasta = DateOnly.FromDateTime(DateTime.Now.AddDays(60)),
                     duracion_turno_minutos = dto.Duracion_turno_minutos
                 });
+
                 await _context.SaveChangesAsync();
 
                 return resultado;
@@ -211,7 +216,9 @@ namespace MedCenter.Services.DisponibilidadMedico
 
             if (bloques == null) return new DisponibilidadResult{ success = false, message = "El medico no tiene bloques de disponibilidad activos" };
 
-
+            if(! await _context.personas.AnyAsync(p => p.id == medico_id && p.activo == false))
+            return new DisponibilidadResult{success = false, message = "La cuenta del medico fue desactivada"};
+            
             List<SlotAgenda> slotsAAgregar = new List<SlotAgenda>();
 
             foreach (var bloque in bloques)

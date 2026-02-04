@@ -1,5 +1,6 @@
 using System.Data.Common;
 using System.Transactions;
+using DocumentFormat.OpenXml.Bibliography;
 using DocumentFormat.OpenXml.Wordprocessing;
 using MedCenter.Data;
 using MedCenter.DTOs;
@@ -15,9 +16,11 @@ namespace MedCenter.Services.AdminService;
 public class AdminService
 {
     private readonly AppDbContext _context;
-    public AdminService(AppDbContext appDbContext)
+    private readonly TurnoService _turnoService;
+    public AdminService(AppDbContext appDbContext, TurnoService turnoService)
     {
         _context = appDbContext;
+        _turnoService = turnoService;
     }
     
     public async Task<bool> AccesoAPanelAdmin(int id)
@@ -712,6 +715,62 @@ public class AdminService
             .FirstOrDefaultAsync();
 
         return group;
+    }
+
+    public async Task<AuthResult> DesactivarCuenta(int userId, string rol)
+    {
+
+        if(await _turnoService.TieneTurnosActivos(userId, rol))
+            return new AuthResult{Success = false, ErrorMessage = "El usuario esta registrado en turnos que aun estan activos"};
+
+        await _context.Database.BeginTransactionAsync();
+
+        try 
+        {
+            var grupos = await _context.personasGrupos.Where(pg => pg.PersonaId == userId).Select(pg => pg.GrupoId).ToHashSetAsync();
+            await _context.personasGrupos.Where(pg => pg.PersonaId == userId && grupos.Contains(pg.GrupoId)).ExecuteDeleteAsync();
+
+            var permissions = await _context.personaPermisos.Where(pp => pp.PersonaId == userId).Select(pp => pp.PermisoId).ToHashSetAsync();
+            await _context.personaPermisos.Where(pg => pg.PersonaId == userId && permissions.Contains(pg.PermisoId)).ExecuteDeleteAsync();
+
+            var persona = new Persona{id = userId, activo = false};
+            _context.Attach(persona);
+            _context.Entry(persona).Property(p => p.activo).IsModified = true;
+
+            await _context.SaveChangesAsync();
+
+            return new AuthResult{Success = true};
+        }
+
+        catch(Exception e)
+        {
+            return new AuthResult{Success = false, ErrorMessage = "Error inesperado al desactivar la cuenta"};
+        }
+    }
+
+    public async Task<AuthResult> ReactivarCuenta(int userId, string rol)
+    {
+        if(!Enum.TryParse<RolUsuario>(rol, true,out var rolEnum))
+            return new AuthResult { Success = false, ErrorMessage = "Rol inválido" };
+
+        var permToAssign = await _context.rolPermisos.Where(rp => rp.RolNombre == rolEnum).Select(rp => rp.PermisoId).ToHashSetAsync();
+        var permisosPersonas = new List<PersonaPermiso>();
+        foreach(var perm in permToAssign)
+        {
+            permisosPersonas.Add(
+                new PersonaPermiso
+                {
+                    PermisoId = perm,
+                    PersonaId = userId,
+                    Origen = PermisoSource.Role
+                }
+            );
+        }
+
+        _context.personaPermisos.AddRange(permisosPersonas);
+        await _context.SaveChangesAsync();
+
+        return new AuthResult{Success = true};
     }
 
     

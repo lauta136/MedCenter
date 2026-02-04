@@ -157,6 +157,7 @@ namespace MedCenter.Controllers
         {
             var medicos = await _context.medicos
                 .Include(m => m.idNavigation)
+                .Where(m => m.idNavigation.activo == true)
                 .Include(m => m.disponibilidadesMedico)
                 //.Include(m => m.medicoEspecialidades)
                     //.ThenInclude(me => me.especialidad)
@@ -181,7 +182,7 @@ namespace MedCenter.Controllers
         {
             var medico = await _context.medicos
                     .Include(m => m.idNavigation)
-                    .FirstOrDefaultAsync(m => m.id == medico_id);
+                    .FirstOrDefaultAsync(m => m.id == medico_id && m.idNavigation.activo == true);
 
             if (medico == null)
                 return NotFound();

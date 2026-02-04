@@ -540,5 +540,17 @@ public class TurnoService
         
         return turnoActual;
     }
+
+    public async Task<bool> TieneTurnosActivos(int userId, string rol)
+    {
+        if(rol == RolUsuario.Secretaria.ToString() || rol == RolUsuario.Admin.ToString())
+        return false;
+
+        var activo = await _context.turnos.AnyAsync(t => t.estado == EstadosTurno.Reprogramado.ToString() || t.estado == EstadosTurno.Reservado.ToString() && t.medico_id == userId || t.paciente_id == userId);
+        if(activo)
+        return true;
+
+        return false;
+    }
      
 }

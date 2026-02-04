@@ -149,6 +149,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.contraseña).HasMaxLength(50);
             entity.Property(e => e.email).HasMaxLength(100);
             entity.Property(e => e.nombre).HasMaxLength(100);
+            entity.Property(e => e.activo).HasDefaultValue(true);
         });
 
         modelBuilder.Entity<ReporteEstadistico>(entity =>

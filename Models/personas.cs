@@ -16,6 +16,8 @@ public partial class Persona
 
     public string? contraseña { get; set; }
 
+    public bool activo {get;set;}
+
     public virtual Medico? Medico { get; set; }
 
     public virtual Paciente? Paciente { get; set; }

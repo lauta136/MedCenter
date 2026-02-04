@@ -33,7 +33,7 @@ public class EspecialidadService
                                            .Where(me => me.especialidad.id == especialidadId && me.medico != null)
                                            .Include(me => me.medico) // Incluimos los datos de la especialidad
                                            .ThenInclude(me => me.idNavigation)
-                                           .Select(me => new MedicoViewDTO{ Nombre = me.medico.idNavigation.nombre, Id = me.medico.id, Matricula = me.medico.matricula })
+                                           .Select(me => new MedicoViewDTO{ Nombre = me.medico.idNavigation.nombre, Id = me.medico.id, Matricula = me.medico.matricula , Activo = me.medico.idNavigation.activo})
                                            .ToListAsync();
 
         return medicos;

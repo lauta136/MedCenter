@@ -9,6 +9,7 @@ namespace MedCenter.DTOs
         public string? Matricula { get; set; }
         public string? Nombre { get; set; }
         public string? Email { get; set; }
+        public bool Activo {get;set;}
         public List<string>? Especialidades { get; set; } = new();
 
         public List<int>? TurnosIds { get; set; } = new();
