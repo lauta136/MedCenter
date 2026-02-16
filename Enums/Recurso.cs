@@ -14,5 +14,6 @@ public enum Recurso
     Disponibilidad,
     BloqueDisponibilidad,
     SlotsAgenda,
-    GrupoPermisosPersonas
+    GrupoPermisosPersonas,
+    Persona
 }

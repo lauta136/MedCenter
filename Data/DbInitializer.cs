@@ -305,6 +305,27 @@ public static class DbInitializer
                     Descripcion = "Ver los roles",
                     Recurso = MedCenter.Enums.Recurso.Rol,
                     Accion = MedCenter.Enums.AccionUsuario.View
+                },
+                new Permiso
+                {
+                    Nombre = "historia_clinica:view",
+                    Descripcion = "Ver historia clinica",
+                    Recurso = MedCenter.Enums.Recurso.HistoriaClinica,
+                    Accion = MedCenter.Enums.AccionUsuario.View
+                },
+                new Permiso
+                {
+                    Nombre = "persona:activate",
+                    Descripcion = "Activa la cuenta de un usuario, se le otorgaran los permisos propios de su rol",
+                    Recurso = MedCenter.Enums.Recurso.Persona,
+                    Accion = MedCenter.Enums.AccionUsuario.Activate
+                },
+                new Permiso
+                {
+                    Nombre = "persona:deactivate",
+                    Descripcion = "Desactivar a un usuario, se le revocaran todos los permisos y no podra iniciar sesion",
+                    Recurso = MedCenter.Enums.Recurso.Persona,
+                    Accion = MedCenter.Enums.AccionUsuario.Activate
                 }
             };
             await context.permisos.AddRangeAsync(permisos);
@@ -341,6 +362,16 @@ public static class DbInitializer
                 {
                     RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Medico,
                     PermisoId = permisos.Where(p => p.Nombre == "historia_clinica:create").Select(p => p.Id).FirstOrDefault(),
+                },
+                new RolPermiso
+                {
+                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Medico,
+                    PermisoId = permisos.Where(p => p.Nombre == "paciente:view").Select(p => p.Id).FirstOrDefault(),
+                },
+                new RolPermiso
+                {
+                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Medico,
+                    PermisoId = permisos.Where(p => p.Nombre == "historia_clinica:view").Select(p => p.Id).FirstOrDefault(),
                 },
                 //permisos paciente
                 new RolPermiso
@@ -519,6 +550,16 @@ public static class DbInitializer
                 {
                     RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
                     PermisoId = permisos.Where(p => p.Nombre == "rol:view").Select(p => p.Id).FirstOrDefault(),
+                },
+                new RolPermiso
+                {
+                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
+                    PermisoId = permisos.Where(p => p.Nombre == "persona:activate").Select(p => p.Id).FirstOrDefault(),
+                },
+                new RolPermiso
+                {
+                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
+                    PermisoId = permisos.Where(p => p.Nombre == "persona:deactivate").Select(p => p.Id).FirstOrDefault(),
                 }
             };
 

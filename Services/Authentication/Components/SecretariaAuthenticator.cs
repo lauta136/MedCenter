@@ -25,15 +25,19 @@ namespace MedCenter.Services.Authentication.Components
 
             var secretaria = await _context.secretarias.Include(s => s.idNavigation).FirstOrDefaultAsync(s => s.idNavigation.email == username);
 
-            if (secretaria != null)
-            {
-                if (_hashService.VerifyPassword(password, secretaria.idNavigation.contraseña))
-                    return new AuthResult { Success = true, Role = RolUsuario.Secretaria, UserName = secretaria.idNavigation.nombre, UserId = secretaria.idNavigation.id, UserMail = secretaria.idNavigation.email };
-                else
-                    return new AuthResult { Success = false, ErrorMessage = "La contraseña es incorrecta" };
-            }
+            if (secretaria == null)
+            return new AuthResult { Success = false, ErrorMessage = "No se ha encontrado una cuenta de secretaria con el mail proporcionado" };
+            
+            if(secretaria.idNavigation.activo == false)
+            return new AuthResult{Success = false, ErrorMessage = "La cuenta ha sido desactivada"};
+
+            if (_hashService.VerifyPassword(password, secretaria.idNavigation.contraseña))
+            return new AuthResult { Success = true, Role = RolUsuario.Secretaria, UserName = secretaria.idNavigation.nombre, UserId = secretaria.idNavigation.id, UserMail = secretaria.idNavigation.email };
+            
             else
-                return new AuthResult { Success = false, ErrorMessage = "No se ha encontrado una cuenta de secretaria con el mail proporcionado" };
+            return new AuthResult { Success = false, ErrorMessage = "La contraseña es incorrecta" };
+           
+                
         }
 
         public async Task<AuthResult> RegisterAsync(RegisterDTO dto)

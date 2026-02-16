@@ -27,15 +27,17 @@ namespace MedCenter.Services.Authentication.Components
             .Where(p => p.idNavigation.email == username)
             .FirstOrDefaultAsync();
 
-            if (paciente != null)
-            {
-                if (_hashService.VerifyPassword(password, paciente.idNavigation.contraseña))
-                    return new AuthResult { Success = true, Role = RolUsuario.Paciente, UserName = paciente.idNavigation.nombre, UserId = paciente.idNavigation.id, UserMail = paciente.idNavigation.email };
-                else
-                    return new AuthResult { Success = false, ErrorMessage = "La contraseña es incorrecta" };
-            }
-            else
+            if (paciente == null)
                 return new AuthResult { Success = false, ErrorMessage = "No se ha encontrado una cuenta de paciente con el mail proporcionado" };
+            if(paciente.idNavigation.activo == false)
+            return new AuthResult{Success = false, ErrorMessage = "La cuenta ha sido desactivada"};
+
+            if (_hashService.VerifyPassword(password, paciente.idNavigation.contraseña))
+                return new AuthResult { Success = true, Role = RolUsuario.Paciente, UserName = paciente.idNavigation.nombre, UserId = paciente.idNavigation.id, UserMail = paciente.idNavigation.email };
+            else
+                return new AuthResult { Success = false, ErrorMessage = "La contraseña es incorrecta" };
+            
+
         }
 
         public async Task<AuthResult> RegisterAsync(RegisterDTO registerDto)

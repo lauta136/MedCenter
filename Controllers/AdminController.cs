@@ -86,6 +86,32 @@ public class AdminController : BaseController
         return BadRequest(new { success = false, message = result.ErrorMessage });
     }
 
+    // API endpoint to deactivate an account
+    [RequiredPermission("persona:deactivate")]
+    [HttpPost("DeactivateAccpunt")]
+    public async Task<IActionResult> DeactivateAccount([FromBody] DeactivateAccount dto)
+    {
+        var result = await _adminService.DesactivarCuenta(dto.UserId, dto.Role);
+        if (result.Success)
+        {
+            return Ok(new { success = true, message = "Cuenta desactivada correctamente" });
+        }
+        return BadRequest(new { success = false, message = result.ErrorMessage });
+    }
+
+    // API endpoint to deactivate an account
+    [RequiredPermission("persona:activate")]
+    [HttpPost("ActivateAccount")]
+    public async Task<IActionResult> ActivateAccount([FromBody] ActivateAccount dto)
+    {
+        var result = await _adminService.ReactivarCuenta(dto.UserId, dto.Role);
+        if (result.Success)
+        {
+            return Ok(new { success = true, message = "Cuenta activada correctamente" });
+        }
+        return BadRequest(new { success = false, message = result.ErrorMessage });
+    }
+
     // API endpoint to assign role permissions to user
     [HttpPost("AssignRolePermissions")]
     public async Task<IActionResult> AssignRolePermissions([FromBody] AssignRolePermissionsDTO dto)

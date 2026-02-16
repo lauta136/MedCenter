@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using MedCenter.Data;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
@@ -44,6 +45,15 @@ public class RequiredPermission : Attribute, IAsyncAuthorizationFilter
         // Get database context from DI
         var dbContext = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
         
+        var persona = await dbContext.personas.AsNoTracking().FirstOrDefaultAsync(p => p.id == userId);
+        
+        if (persona == null || !persona.activo)
+        {
+            // Don't log out the user, just show a friendly message and redirect back
+            context.Result = new RedirectToActionResult("AccountDeactivated", "Access", null);
+            return;
+        }
+        
         // Check if user has the required permission
         var hasPermission = await dbContext.personaPermisos
             .Include(pp => pp.Permiso)
@@ -65,11 +75,6 @@ public class RequiredPermission : Attribute, IAsyncAuthorizationFilter
         if (contentType.Contains("application/json"))
             return true;
 
-        // Check if request accepts JSON
-        var acceptHeader = context.Request.Headers["Accept"].ToString().ToLower();
-        if (acceptHeader.Contains("application/json") || acceptHeader.Contains("*/*"))
-            return true;
-
         // Check if it's an AJAX request
         if (context.Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             return true;
@@ -79,9 +84,18 @@ public class RequiredPermission : Attribute, IAsyncAuthorizationFilter
         if (path.Contains("/api/"))
             return true;
 
-        // Check if it's a POST/PUT/DELETE/PATCH request (typically API calls)
+        // Check if request explicitly accepts ONLY JSON (not browser's default Accept header)
+        var acceptHeader = context.Request.Headers["Accept"].ToString().ToLower();
+        // Only consider it an API request if Accept header starts with application/json
+        // Don't consider browser's default Accept headers like "text/html,...,*/*"
+        if (acceptHeader.StartsWith("application/json"))
+            return true;
+
+        // For POST/PUT/DELETE/PATCH, only consider them API if they have JSON content
+        // Form submissions should redirect, not return JSON
         var method = context.Request.Method.ToUpper();
-        if (method == "POST" || method == "PUT" || method == "DELETE" || method == "PATCH")
+        if ((method == "POST" || method == "PUT" || method == "DELETE" || method == "PATCH") 
+            && contentType.Contains("application/json"))
             return true;
 
         return false;

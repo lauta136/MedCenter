@@ -11,6 +11,7 @@ public class UserPermissionDTO
     public string Email { get; set; }
     public List<PermissionDTO> Permissions { get; set; } = new List<PermissionDTO>();
     public RolUsuario Role { get; set; }
+    public bool IsActive { get; set; }
 }
 
 public class PermissionDTO
@@ -81,4 +82,15 @@ public class AssingPermissionToUserDTO
 {
     public int UserId{get;set;}
     public int PermissionId{get;set;}
+}
+
+public class DeactivateAccount
+{
+    public int UserId{get;set;}
+    public string Role{get;set;}
+}
+public class ActivateAccount
+{
+    public int UserId{get;set;}
+    public string Role{get;set;}
 }

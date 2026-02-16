@@ -51,6 +51,9 @@ public class TurnoService
         var currentUserId = GetCurrentUserId()!.Value;
         var currentUserName = GetCurrentUserName()!;
 
+        if(await _context.personas.AnyAsync(p => p.activo == false && (p.id == dto.MedicoId || p.id == dto.PacienteId)))
+            return (false,"Una de las cuentas ha sido desactivada, reintente el proceso");
+
         if (!await _dispoService.SlotEstaDisponible(dto.SlotId))
             return (false, "El horario ya no esta disponible") ;//Los Json se crean de forma dinamica
 
@@ -76,6 +79,8 @@ public class TurnoService
         {
             pacienteFinalId = currentUserId;
         }
+
+
 
         var turno = new Turno
         {
@@ -546,7 +551,7 @@ public class TurnoService
         if(rol == RolUsuario.Secretaria.ToString() || rol == RolUsuario.Admin.ToString())
         return false;
 
-        var activo = await _context.turnos.AnyAsync(t => t.estado == EstadosTurno.Reprogramado.ToString() || t.estado == EstadosTurno.Reservado.ToString() && t.medico_id == userId || t.paciente_id == userId);
+        var activo = await _context.turnos.AnyAsync(t => (t.estado == EstadosTurno.Reprogramado.ToString() || t.estado == EstadosTurno.Reservado.ToString())&& (t.medico_id == userId || t.paciente_id == userId));
         if(activo)
         return true;
 

@@ -7,4 +7,9 @@ public class AccessController : BaseController
     {
         return View("~/Views/Shared/AccessDenied.cshtml");
     }
+    
+    public IActionResult AccountDeactivated()
+    {
+        return View("~/Views/Shared/AccountDeactivated.cshtml");
+    }
 }

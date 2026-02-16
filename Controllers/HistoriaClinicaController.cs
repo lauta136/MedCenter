@@ -5,6 +5,7 @@ using MedCenter.Services.HistoriaClinicaSv;
 using MedCenter.Services.TurnoSv;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MedCenter.Attributes;
 
 namespace MedCenter.Controllers;
 
@@ -23,6 +24,7 @@ public class HistoriaClinicaController : BaseController
     }
 
     [HttpGet]
+    [RequiredPermission("entrada_clinica:create")]
     public async Task<IActionResult> NuevaEntrada(int paciente_id, bool verificar = false)
     {
         ViewBag.UserName = UserName;
@@ -53,6 +55,7 @@ public class HistoriaClinicaController : BaseController
     }
 
     [HttpPost]
+    [RequiredPermission("entrada_clinica:create")]
     public async Task<IActionResult> NuevaEntrada(EntradaClinicaRegisterDTO entrada, int turno_id)
     {
         var result = await _historiaService.GuardarNuevaEntrada(entrada, turno_id);
@@ -74,6 +77,7 @@ public class HistoriaClinicaController : BaseController
     }
     
     [HttpGet]
+    [RequiredPermission("historia_clinica:view")]
     public async Task<IActionResult> TodasLasHistorias()
     {
         int medico_id = UserId.Value;
@@ -83,6 +87,7 @@ public class HistoriaClinicaController : BaseController
     }
 
     [HttpGet]
+    [RequiredPermission("historia_clinica:view")]
     public async Task<IActionResult> VerHistoria(int paciente_id)
     {
         ViewBag.UserName = UserName;

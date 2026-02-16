@@ -41,6 +41,9 @@ namespace MedCenter.Services.Authentication.Components
                     Success = false,
                     ErrorMessage = "El usuario no es un médico"
                 };
+
+            
+
             if (!_hashService.VerifyPassword(password, persona.contraseña))
                 return new AuthResult { Success = false, ErrorMessage = "La contraseña es incorrecta" };
 

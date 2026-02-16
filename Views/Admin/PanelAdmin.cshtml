@@ -255,6 +255,22 @@
                         </div>
                     </div>
                     <div class="col-md-6 text-end">
+                        <div class="btn-group me-3" role="group" aria-label="Filtro de estado">
+                            <input type="radio" class="btn-check" name="statusFilter" id="filterAll" value="all" checked autocomplete="off">
+                            <label class="btn btn-outline-secondary" for="filterAll">
+                                <i class="fas fa-users"></i> Todos
+                            </label>
+
+                            <input type="radio" class="btn-check" name="statusFilter" id="filterActive" value="active" autocomplete="off">
+                            <label class="btn btn-outline-success" for="filterActive">
+                                <i class="fas fa-check-circle"></i> Activos
+                            </label>
+
+                            <input type="radio" class="btn-check" name="statusFilter" id="filterInactive" value="inactive" autocomplete="off">
+                            <label class="btn btn-outline-danger" for="filterInactive">
+                                <i class="fas fa-ban"></i> Inactivos
+                            </label>
+                        </div>
                         <span class="text-muted">Total de usuarios: <strong>@Model.AllUsers.Count</strong></span>
                     </div>
                 </div>
@@ -262,7 +278,7 @@
                 <div id="usersList">
                     @foreach (var user in Model.AllUsers)
                     {
-                        <div class="user-card" data-user-id="@user.UserId" data-user-name="@user.UserName" data-user-email="@user.Email">
+                        <div class="user-card" data-user-id="@user.UserId" data-user-name="@user.UserName" data-user-email="@user.Email" data-user-active="@user.IsActive.ToString().ToLower()" data-user-role="@user.Role.ToString()">
                             <div class="row align-items-center">
                                 <div class="col-md-4">
                                     <div class="d-flex align-items-center">
@@ -275,22 +291,46 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-5">
+                                <div class="col-md-4">
                                     <div class="mb-2">          
                                         <span class="role-badge role-badge-@user.Role.ToString().ToLower()">@user.Role</span>
+                                        @if (user.IsActive)
+                                        {
+                                            <span class="badge bg-success ms-2">
+                                                <i class="fas fa-check-circle"></i> Activo
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger ms-2">
+                                                <i class="fas fa-ban"></i> Inactivo
+                                            </span>
+                                        }
                                     </div>
                                     <small class="text-muted">
                                         <i class="fas fa-key me-1"></i>
                                         @user.Permissions.Count permiso(s)
                                     </small>
                                 </div>
-                                <div class="col-md-3 text-end">
+                                <div class="col-md-4 text-end">
                                     <button class="btn btn-sm btn-outline-primary action-btn me-1" data-action="view-permissions" data-user-id="@user.UserId" data-user-name="@user.UserName">
                                         <i class="fas fa-eye"></i> Ver
                                     </button>
-                                    <button class="btn btn-sm @(isAdmin ? "btn-outline-danger" : "btn-outline-success") action-btn" data-action="manage-permissions" data-user-id="@user.UserId" data-user-name="@user.UserName">
-                                        <i class="fas fa-edit"></i> Gestionar Permisos
+                                    <button class="btn btn-sm @(isAdmin ? "btn-outline-danger" : "btn-outline-success") action-btn me-1" data-action="manage-permissions" data-user-id="@user.UserId" data-user-name="@user.UserName">
+                                        <i class="fas fa-edit"></i> Gestionar
                                     </button>
+                                    @if (user.IsActive)
+                                    {
+                                        <button class="btn btn-sm btn-outline-danger action-btn" data-action="deactivate-account" data-user-id="@user.UserId" data-user-name="@user.UserName" data-user-role="@user.Role.ToString()">
+                                            <i class="fas fa-user-times"></i> Desactivar
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-sm btn-outline-success action-btn" data-action="activate-account" data-user-id="@user.UserId" data-user-name="@user.UserName" data-user-role="@user.Role.ToString()">
+                                            <i class="fas fa-user-check"></i> Activar
+                                        </button>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -881,7 +921,20 @@
                     case 'remove-permission':
                         removePermission(parseInt(target.dataset.userId), parseInt(target.dataset.permissionId));
                         break;
+                    case 'activate-account':
+                        activateAccount(parseInt(target.dataset.userId), target.dataset.userName, target.dataset.userRole);
+                        break;
+                    case 'deactivate-account':
+                        deactivateAccount(parseInt(target.dataset.userId), target.dataset.userName, target.dataset.userRole);
+                        break;
                 }
+            });
+
+            // Status filter functionality
+            document.querySelectorAll('input[name="statusFilter"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    filterUsersByStatus(this.value);
+                });
             });
 
             // Initialize tooltips
@@ -893,17 +946,36 @@
 
         // User search functionality
         document.getElementById('userSearch')?.addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
+            applyUserFilters();
+        });
+
+        // Filter users by search term and status
+        function applyUserFilters() {
+            const searchTerm = document.getElementById('userSearch')?.value.toLowerCase() || '';
+            const statusFilter = document.querySelector('input[name="statusFilter"]:checked')?.value || 'all';
+            
             document.querySelectorAll('.user-card').forEach(card => {
                 const userName = card.dataset.userName.toLowerCase();
                 const userEmail = card.dataset.userEmail.toLowerCase();
-                if (userName.includes(searchTerm) || userEmail.includes(searchTerm)) {
+                const isActive = card.dataset.userActive === 'true';
+                
+                const matchesSearch = userName.includes(searchTerm) || userEmail.includes(searchTerm);
+                const matchesStatus = statusFilter === 'all' || 
+                                    (statusFilter === 'active' && isActive) || 
+                                    (statusFilter === 'inactive' && !isActive);
+                
+                if (matchesSearch && matchesStatus) {
                     card.style.display = '';
                 } else {
                     card.style.display = 'none';
                 }
             });
-        });
+        }
+
+        // Filter users by status
+        function filterUsersByStatus(status) {
+            applyUserFilters();
+        }
 
         // Permission search functionality
         document.getElementById('permissionSearch')?.addEventListener('input', function(e) {
@@ -1150,6 +1222,58 @@
                 }
             } catch (error) {
                 showNotification('error', 'Error al remover los permisos');
+            }
+        }
+
+        // Activate account
+        async function activateAccount(userId, userName, role) {
+            if (!confirm(`¿Está seguro de activar la cuenta de ${userName}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/Admin/ActivateAccount', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, role })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('success', result.message);
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification('error', result.message);
+                }
+            } catch (error) {
+                showNotification('error', 'Error al activar la cuenta');
+            }
+        }
+
+        // Deactivate account
+        async function deactivateAccount(userId, userName, role) {
+            if (!confirm(`¿Está seguro de desactivar la cuenta de ${userName}? El usuario no podrá acceder al sistema.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/Admin/DeactivateAccpunt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, role })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('success', result.message);
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification('error', result.message);
+                }
+            } catch (error) {
+                showNotification('error', 'Error al desactivar la cuenta');
             }
         }
 

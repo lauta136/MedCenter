@@ -8,7 +8,7 @@ using MedCenter.DTOs;
 using System.Xml;
 using MedCenter.Services.TurnoSv;
 using MedCenter.Services.MedicoSv; // Assuming you have a DTO for creating/updating Medicos
-
+using MedCenter.Attributes;
 
 namespace MedCenter.Controllers
 {
@@ -69,7 +69,7 @@ namespace MedCenter.Controllers
         }
 
         //GET //Medico/MisPacientes`1
-
+        [RequiredPermission("paciente:view")]
         public async Task<IActionResult> MisPacientes()
         {
             List<int> misPacientesIds = new List<int>();
@@ -115,54 +115,7 @@ namespace MedCenter.Controllers
             var medicos = await _medicoService.GetAll();
             return Ok(medicos);
         }
-        
-
-
-        // ========== API ENDPOINTS (sin vista, devuelven JSON) ==========
-        // GET: api/medicos
-        //[HttpGet]
-       
-
-       
-
-        
-       
-        
-
-
-        /* POST: api/medicos
-        [HttpPost]
-        public IActionResult Create([FromBody] MedicoViewDTO dto)
-        {
-            var persona = new Persona
-            {
-                nombre = dto.Nombre,
-                email = dto.Email,
-                contraseña = "temporal" // podés ajustar esto
-            };
-
-            var medico = new Medico
-            {
-                matricula = dto.Matricula,
-                idNavigation = persona
-            };
-
-            _context.medicos.Add(medico);
-            _context.SaveChanges(); // guardamos primero para obtener el ID
-
-            foreach (var espId in dto.Especialidades)
-            {
-                _context.medicoEspecialidades.Add(new MedicoEspecialidad
-                {
-                    medicoId = medico.id,
-                    especialidad = espId
-                });
-            }
-
-            _context.SaveChanges();
-            return CreatedAtAction(nameof(GetById), new { id = medico.id }, null);
-        }
-        */
+                
     }
 
     

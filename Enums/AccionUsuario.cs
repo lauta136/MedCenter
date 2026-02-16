@@ -8,6 +8,8 @@ public enum AccionUsuario
     Manage,
     View,
     Assign,
-    Remove
+    Remove,
+    Activate,
+    Deactivate
 
 }

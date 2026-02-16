@@ -119,9 +119,6 @@ public class TurnoController : BaseController
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        if(await _context.personas.AnyAsync(p => p.activo == false && (p.id == dto.MedicoId || p.id == dto.PacienteId)))
-            return BadRequest(ModelState);
-
         var result = await _turnoService.Reservar(dto, pacienteElegidoId);
 
         return Json(new{success = result.success , message = result.message });
@@ -151,7 +148,8 @@ public class TurnoController : BaseController
             if (result.success)
             {
                 //Filtra los médicos por la especialidad del turno
-                ViewData["MedicoId"] = _especialidadService.GetMedicosPorEspecialidad(result.turnoDto!.EspecialidadId);
+                var aux = await _especialidadService.GetMedicosPorEspecialidad(result.turnoDto!.EspecialidadId);
+                ViewData["MedicoId"] = aux.Where(m => m.Activo == true);
                 // Información del estado actual
                 ViewBag.EstadoActual = result.turnoDto.Estado.ToString();
                 ViewBag.DescripcionEstado = result.turnoDto.DescripcionEstado;
