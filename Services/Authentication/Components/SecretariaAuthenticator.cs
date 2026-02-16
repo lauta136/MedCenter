@@ -11,13 +11,13 @@ namespace MedCenter.Services.Authentication.Components
     {
         private AppDbContext _context;
         private PasswordHashService _hashService;
-        private RoleKeyValidationService _roleKeyService;
+        private readonly PersonaValidationService _validationService;
 
-        public SecretariaAuthenticator(AppDbContext appDbContext, PasswordHashService passwordHashService, RoleKeyValidationService roleKeyValidationService)
+        public SecretariaAuthenticator(AppDbContext appDbContext, PasswordHashService passwordHashService, PersonaValidationService personaValidationService)
         {
             _context = appDbContext;
             _hashService = passwordHashService;
-            _roleKeyService = roleKeyValidationService;
+            _validationService = personaValidationService;
         }
 
         public async Task<AuthResult> AuthenticateAsync(string username, string password)
@@ -42,24 +42,9 @@ namespace MedCenter.Services.Authentication.Components
 
         public async Task<AuthResult> RegisterAsync(RegisterDTO dto)
         {
-            if (dto.Role != "Secretaria")
-                return new AuthResult { Success = false, ErrorMessage = "Rol incorrecto para este autenticador" };
-            // Verificar si ya existe el email
-            var emailExists = await _context.personas.AnyAsync(p => p.email == dto.Email);
-            if (emailExists)
-                return new AuthResult { Success = false, ErrorMessage = "El email ya está registrado" };
-
-            if (string.IsNullOrEmpty(dto.ClaveSecretaria))
-                return new AuthResult { Success = false, ErrorMessage = _roleKeyService.GetKeyRequiredMessage("Secretaria") };
-            if (!await _roleKeyService.ValidateRoleKeyAsync(dto.ClaveSecretaria, "Secretaria"))
-                return new AuthResult { Success = false, ErrorMessage = _roleKeyService.GetWrongKeyMessage("Secretaria") };
-            
-            /*if(dto.ClaveAdmin != null)
-            {
-                if (!await _roleKeyService.ValidateRoleKeyAsync(dto.ClaveAdmin, "Admin"))
-                return new AuthResult { Success = false, ErrorMessage = _roleKeyService.GetWrongKeyMessage("Admin") };
-            }
-            */
+            var result = await _validationService.ValidateSecretariaAsync(dto.Email,dto.Role,dto.ClaveSecretaria,dto.Legajo);
+            if(!result.Success)
+            return result;
 
             var transaction = await _context.Database.BeginTransactionAsync();
 
@@ -83,14 +68,7 @@ namespace MedCenter.Services.Authentication.Components
                 };
 
                 _context.secretarias.Add(secretaria);
-
-
                 var ids= await _context.rolPermisos.Where(rp => rp.RolNombre == RolUsuario.Secretaria).Select(p => p.PermisoId).ToListAsync();
-                
-               /* if(dto.ClaveAdmin != null)
-                {
-                    ids.AddRange(await _context.rolPermisos.Where(rp => rp.RolNombre == RolUsuario.Admin).Select(p => p.PermisoId).ToListAsync());
-                }*/
                 
                 var personaPermisos = ids.Select(id => new PersonaPermiso
                 {

@@ -2,6 +2,7 @@ using MedCenter.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using MedCenter.Services.Authentication.Components;
+using MedCenter.Services.Authentication;
 
 namespace MedCenter.Services
 {

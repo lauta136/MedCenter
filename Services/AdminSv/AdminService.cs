@@ -1,4 +1,6 @@
 using System.Data.Common;
+using System.Net.Mail;
+using System.Text.RegularExpressions;
 using System.Transactions;
 using DocumentFormat.OpenXml.Bibliography;
 using DocumentFormat.OpenXml.Wordprocessing;
@@ -6,6 +8,7 @@ using MedCenter.Data;
 using MedCenter.DTOs;
 using MedCenter.Enums;
 using MedCenter.Models;
+using MedCenter.Services.Authentication;
 using MedCenter.Services.TurnoSv;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,10 +20,14 @@ public class AdminService
 {
     private readonly AppDbContext _context;
     private readonly TurnoService _turnoService;
-    public AdminService(AppDbContext appDbContext, TurnoService turnoService)
+    private readonly PersonaValidationService _validationService;
+
+
+    public AdminService(AppDbContext appDbContext, TurnoService turnoService, PersonaValidationService personaValidationService)
     {
         _context = appDbContext;
         _turnoService = turnoService;
+        _validationService = personaValidationService;
     }
     
     public async Task<bool> AccesoAPanelAdmin(int id)
@@ -793,9 +800,30 @@ public class AdminService
     
    /* public async Task<AdminResult> EditarCuenta(PersonaEditDTO dto, string rol)
     {
-        if(string.IsNullOrEmpty(dto.Nombre) && string.IsNullOrEmpty(dto.Email))
-        return new AdminResult{Success = false, ErrorMessage = "Los nuevos campos estan vacios"};
-    }*/
+        if(string.IsNullOrWhiteSpace(dto.Nombre) || string.IsNullOrWhiteSpace(dto.Email))
+        return new AdminResult{Success = false, ErrorMessage = "Hay campos vacios"};
 
+        if(!Regex.IsMatch(dto.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+        return new AdminResult{Success = false, ErrorMessage = "El mail proporcionado no es una direccion valida"};
+        
+
+        switch (rol)
+        {
+            case "Medico":
+            if(string.IsNullOrEmpty(dto.Matricula))
+            return new AdminResult{Success = false, ErrorMessage = "Hay campos vacios"};
+            break;
+            case "Secretaria":
+            if(string.IsNullOrEmpty(dto.Legajo))
+            return new AdminResult{Success = false, ErrorMessage = "Hay campos vacios"};
+            break;
+            case "Paciente":
+            if(await _validationService.ValidatePacienteAsync(dto.Email,rol,dto.Dni,dto.Telefono))
+            return new AdminResult{Success = false, ErrorMessage = "Hay campos vacios"};
+            break;
+
+        }
+    }
+    */
     
 }

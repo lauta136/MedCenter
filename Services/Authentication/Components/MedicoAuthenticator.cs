@@ -11,13 +11,13 @@ namespace MedCenter.Services.Authentication.Components
     {
         private readonly AppDbContext _context;
         private readonly PasswordHashService _hashService;
-        private readonly RoleKeyValidationService _roleKeyValidator;
+        private readonly PersonaValidationService _validationService;
 
-        public MedicoAuthenticator(AppDbContext appDbContext, PasswordHashService hashService, RoleKeyValidationService roleKeyValidator)
+        public MedicoAuthenticator(AppDbContext appDbContext, PasswordHashService hashService, PersonaValidationService personaValidationService)
         {
             _context = appDbContext;
             _hashService = hashService;
-            _roleKeyValidator = roleKeyValidator;
+            _validationService = personaValidationService;
         }
 
         public async Task<AuthResult> AuthenticateAsync(string username, string password)
@@ -59,42 +59,7 @@ namespace MedCenter.Services.Authentication.Components
 
         public async Task<AuthResult> RegisterAsync(RegisterDTO dto)
         {
-            if (dto.Role != "Medico")
-                return new AuthResult { Success = false, ErrorMessage = "Rol incorrecto para este autenticador" };
-
-            // Validar campos específicos de médico
-            if (string.IsNullOrWhiteSpace(dto.Matricula))
-                return new AuthResult { Success = false, ErrorMessage = "La matrícula es obligatoria para médicos" };
-
-            if (dto.EspecialidadIds == null || !dto.EspecialidadIds.Any())
-                return new AuthResult { Success = false, ErrorMessage = "Debe seleccionar al menos una especialidad" };
-
-            // Validar clave de rol para médicos
-            if (string.IsNullOrWhiteSpace(dto.ClaveMedico))
-                return new AuthResult { Success = false, ErrorMessage = _roleKeyValidator.GetKeyRequiredMessage("Medico") };
-
-            if (!await _roleKeyValidator.ValidateRoleKeyAsync(dto.ClaveMedico, "Medico"))
-                return new AuthResult { Success = false, ErrorMessage = _roleKeyValidator.GetWrongKeyMessage("Medico") };
-
-            // Verificar que las especialidades existan
-            var especialidadesExistentes = await _context.especialidades
-                .Where(e => dto.EspecialidadIds.Contains(e.id))
-                .Select(e => e.id)
-                .ToListAsync();
-
-            if (especialidadesExistentes.Count != dto.EspecialidadIds.Count)
-                return new AuthResult { Success = false, ErrorMessage = "Una o más especialidades seleccionadas no existen" };
-
-            // Verificar si ya existe el email
-            var emailExists = await _context.personas.AnyAsync(p => p.email == dto.Email);
-            if (emailExists)
-                return new AuthResult { Success = false, ErrorMessage = "El email ya está registrado" };
-
-            // Verificar si ya existe la matrícula
-            var matriculaExists = await _context.medicos.AnyAsync(m => m.matricula == dto.Matricula);
-            if (matriculaExists)
-                return new AuthResult { Success = false, ErrorMessage = "La matrícula ya está registrada" };
-
+            var result = await _validationService.ValidateMedicoAsync(dto.Email,dto.Role,dto.Matricula,dto.EspecialidadIds,dto.ClaveMedico);
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try

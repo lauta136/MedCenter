@@ -2,7 +2,7 @@ using MedCenter.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
-namespace MedCenter.Services.Authentication.Components
+namespace MedCenter.Services.Authentication
 {
 
     public class RoleKeyValidationService

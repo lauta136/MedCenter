@@ -1,21 +1,24 @@
 using MedCenter.Data;
 using MedCenter.DTOs;
 using MedCenter.Services.Authentication.Components;
+using MedCenter.Services.Authentication;
+using DocumentFormat.OpenXml.Bibliography;
+using MedCenter.Models;
 
 public class AuthService
 {
     private readonly AuthComposite _authComposite;
+
     
-    public AuthService(AppDbContext context)
+    public AuthService( 
+    PacienteAuthenticator pacienteAuthenticator,
+    MedicoAuthenticator medicoAuthenticator, SecretariaAuthenticator secretariaAuthenticator, AdminAuthenticator adminAuthenticator)
     {
-        var hashService = new PasswordHashService();
-        var roleKeyValidationService = new RoleKeyValidationService(context,hashService);
-        
         _authComposite = new AuthComposite();
-        _authComposite.Add(new MedicoAuthenticator(context, hashService,roleKeyValidationService));
-        _authComposite.Add(new PacienteAuthenticator(context, hashService));
-        _authComposite.Add(new SecretariaAuthenticator(context, hashService,roleKeyValidationService));
-        _authComposite.Add(new AdminAuthenticator(context, hashService,roleKeyValidationService));
+        _authComposite.Add(medicoAuthenticator);
+        _authComposite.Add(pacienteAuthenticator);
+        _authComposite.Add(secretariaAuthenticator);
+        _authComposite.Add(adminAuthenticator);
 
     }
     

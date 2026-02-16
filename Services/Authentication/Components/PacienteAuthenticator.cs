@@ -12,11 +12,13 @@ namespace MedCenter.Services.Authentication.Components
     {
         private AppDbContext _context;
         private PasswordHashService _hashService;
+        private readonly PersonaValidationService _validationService;
 
-        public PacienteAuthenticator(AppDbContext appDbContext, PasswordHashService passwordHashService)
+        public PacienteAuthenticator(AppDbContext appDbContext, PasswordHashService passwordHashService, PersonaValidationService personaValidationService)
         {
             _context = appDbContext;
             _hashService = passwordHashService;
+            _validationService = personaValidationService;
         }
 
         public async Task<AuthResult> AuthenticateAsync(string username, string password)
@@ -42,24 +44,10 @@ namespace MedCenter.Services.Authentication.Components
 
         public async Task<AuthResult> RegisterAsync(RegisterDTO registerDto)
         {
-            if (registerDto.Role != "Paciente")
-                return new AuthResult { Success = false, ErrorMessage = "Rol incorrecto para este autenticador" };
-
-            if (string.IsNullOrEmpty(registerDto.DNI))
-                return new AuthResult { Success = false, ErrorMessage = "El campo dni esta vacio" };
-
-            if (registerDto.DNI.Length < 7)
-                return new AuthResult { Success = false, ErrorMessage = "El campo dni no contiene el largo adecuado" };
-
-            var pac = await _context.pacientes.FirstOrDefaultAsync(p => p.dni == registerDto.DNI);
-            if (pac != null)
-                return new AuthResult { Success = false, ErrorMessage = "Este dni ya corresponde a un paciente" };
-
-            if (string.IsNullOrEmpty(registerDto.Telefono))
-                return new AuthResult { Success = false, ErrorMessage = "El campo telefono esta vacio" };
-
-            if (registerDto.Telefono.Length < 10)
-                return new AuthResult { Success = false, ErrorMessage = "El campo telefono no contiene el largo adecuado" };
+            
+            var result = await _validationService.ValidatePacienteAsync(registerDto.Email, registerDto.Role,registerDto.DNI,registerDto.Telefono);
+            if(result.Success == false)
+            return result;
 
             var transaction = await _context.Database.BeginTransactionAsync();
 
@@ -120,8 +108,7 @@ namespace MedCenter.Services.Authentication.Components
                     ErrorMessage = $"Error al crear el paciente: {errorMessage}"
                 };
             }
-
-
         }
+
     }
 }

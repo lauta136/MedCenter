@@ -7,6 +7,7 @@ using MedCenter.Model;
 using DocumentFormat.OpenXml.Bibliography;
 using MedCenter.Services.TurnoSv;
 using MedCenter.Enums;
+using MedCenter.Services.Authentication;
 
 namespace MedCenter.Data;
 

@@ -11,13 +11,14 @@ namespace MedCenter.Services.Authentication.Components
         private readonly AppDbContext _context;
         private readonly PasswordHashService _hashService;
         private RoleKeyValidationService _roleKeyService;
+        private readonly PersonaValidationService _validationService;
 
 
-        public AdminAuthenticator(AppDbContext appDbContext, PasswordHashService passwordHashService, RoleKeyValidationService roleKeyValidationService)
+        public AdminAuthenticator(AppDbContext appDbContext, PasswordHashService passwordHashService, PersonaValidationService personaValidationService)
         {
             _context = appDbContext;
             _hashService = passwordHashService;
-            _roleKeyService = roleKeyValidationService;
+            _validationService = personaValidationService;
 
         }
         public async Task<AuthResult> AuthenticateAsync(string username, string password)
@@ -39,18 +40,7 @@ namespace MedCenter.Services.Authentication.Components
 
         public async Task<AuthResult> RegisterAsync(RegisterDTO dto)
         {
-            if (dto.Role != "Admin")
-                return new AuthResult { Success = false, ErrorMessage = "Rol incorrecto para este autenticador" };
-            // Verificar si ya existe el email
-            var emailExists = await _context.personas.AnyAsync(p => p.email == dto.Email);
-            if (emailExists)
-                return new AuthResult { Success = false, ErrorMessage = "El email ya está registrado" };
-
-            if (string.IsNullOrEmpty(dto.ClaveAdmin))
-                return new AuthResult { Success = false, ErrorMessage = _roleKeyService.GetKeyRequiredMessage("Admin") };
-            if (!await _roleKeyService.ValidateRoleKeyAsync(dto.ClaveAdmin, "Admin"))
-                return new AuthResult { Success = false, ErrorMessage = _roleKeyService.GetWrongKeyMessage("Admin") };
-
+            var result = await _validationService.ValidateAdminAsync(dto.Role,dto.ClaveAdmin,dto.Email);
             var transaction = await _context.Database.BeginTransactionAsync();
 
            try

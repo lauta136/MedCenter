@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 
 // 1. Servicio de Hash de Contraseñas
 
-namespace MedCenter.Services.Authentication.Components
+namespace MedCenter.Services.Authentication
 {
     public class PasswordHashService
     {

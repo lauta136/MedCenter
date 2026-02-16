@@ -43,6 +43,13 @@ builder.Services.AddScoped<MedicoService>();
 builder.Services.AddScoped<PasswordRecoveryService>();
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<AdminService>();
+builder.Services.AddScoped<PersonaValidationService>();
+builder.Services.AddScoped<PersonaValidationService>();
+builder.Services.AddScoped<RoleKeyValidationService>();
+builder.Services.AddScoped<MedicoAuthenticator>();
+builder.Services.AddScoped<PacienteAuthenticator>();
+builder.Services.AddScoped<SecretariaAuthenticator>();
+builder.Services.AddScoped<AdminAuthenticator>();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
