@@ -590,5 +590,12 @@ namespace MedCenter.Controllers
                 return RedirectToAction("Index");
             }
         }
+
+        public async Task<IActionResult> GetMedicosPorEspecialidadYPeriodo(int? especialidadId, int mesesAtras)
+        {
+            var medicos = await _especialidadService.GetMedicosPorEspecialidadReporte(especialidadId,mesesAtras);
+            return Ok(medicos);
+        }
     }
+
 }

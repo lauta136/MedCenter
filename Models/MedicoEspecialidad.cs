@@ -7,4 +7,6 @@ public class MedicoEspecialidad
 
     public int especialidadId { get; set; }
     public virtual Especialidad especialidad { get; set; } = null!;
+
+    public bool activo{get;set;}
 }

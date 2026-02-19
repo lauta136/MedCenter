@@ -4,6 +4,8 @@ using MedCenter.Services.TurnoSv;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using MedCenter.Attributes;
+using MedCenter.Extensions;
+using MedCenter.Models;
 namespace MedCenter.Controllers;
 
 [Route("[controller]")]
@@ -11,11 +13,13 @@ public class AdminController : BaseController
 {
     private readonly AdminService _adminService;
     private readonly TurnoService _turnoService;
+    private readonly AuthService _authService;
 
-    public AdminController(AdminService adminService, TurnoService turnoService)
+    public AdminController(AdminService adminService, TurnoService turnoService, AuthService authService)
     {
         _adminService = adminService;
         _turnoService = turnoService;
+        _authService = authService;
     }
     
     [HttpGet("Index")]
@@ -110,6 +114,46 @@ public class AdminController : BaseController
             return Ok(new { success = true, message = "Cuenta activada correctamente" });
         }
         return BadRequest(new { success = false, message = result.ErrorMessage });
+    }
+
+    [HttpGet("EditAccount")]
+    public async Task<IActionResult> EditAccountGet([FromQuery] int userId, [FromQuery] string rol)
+    {
+        string requiredPerm = rol.ToRolUsuario() switch
+        {
+            RolUsuario.Paciente => "paciente:edit",
+            RolUsuario.Secretaria => "secretaria:edit",
+            RolUsuario.Medico => "medico:edit",
+            RolUsuario.Admin => "admin:edit",
+            _ => "persona:edit"
+        };
+        
+        if(!await _adminService.TienePermiso(UserId.Value, requiredPerm))
+            return StatusCode(403, new { success = false, message = "No tienes permiso para editar este usuario." });
+
+        try
+        {
+            var result = await _adminService.GetEditar(rol, userId);
+            if (result != null)
+                return Ok(new { success = true, data = result });
+
+            return BadRequest(new { success = false, message = "No se encontraron los datos del usuario." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+
+    [HttpPost("EditAccount")]
+    public async Task<IActionResult> EditAccount([FromBody] PersonaEditDTO dto, [FromQuery] string rol, [FromQuery] int userId)
+    {
+        var result = await _adminService.EditarCuenta(dto, rol, userId);
+        if (result.Success)
+            return Ok(new { success = true, message = "Cuenta editada correctamente" });
+
+        return BadRequest(new { success = false, message = result.ErrorMessage ?? "Error inesperado del lado del servidor" });
     }
 
     // API endpoint to assign role permissions to user
@@ -219,6 +263,38 @@ public class AdminController : BaseController
         return Ok(new {success = true, message = "El/Los permiso/s ha sido removido/s"});
 
         return BadRequest(new{success = false, message = result.ErrorMessage});
+    }
+
+    // API endpoint to create a new user account from the admin panel
+    [HttpPost("CreateAccount")]
+    public async Task<IActionResult> CreateAccount([FromBody] RegisterDTO dto)
+    {
+
+        string requiredPerm = dto.Role.ToRolUsuario() switch 
+        {
+            RolUsuario.Paciente => "paciente:create",
+            RolUsuario.Medico => "medico:create",
+            RolUsuario.Secretaria => "secretaria:create",
+            RolUsuario.Admin => "admin:create",
+            _ => "persona:create"
+        };
+
+        if(! await _adminService.TienePermiso(UserId.Value, requiredPerm))
+            return StatusCode(403, new { success = false, message = "No tienes permiso para crear este tipo de cuenta." });
+
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage);
+            return BadRequest(new { success = false, message = string.Join(" | ", errors) });
+        }
+
+        var result = await _authService.RegisterAsync(dto);
+        if (result.Success)
+            return Ok(new { success = true, message = $"Cuenta creada correctamente para {result.UserName} ({result.Role})" });
+
+        return BadRequest(new { success = false, message = result.ErrorMessage });
     }
 
     // API endpoint to get role permissions

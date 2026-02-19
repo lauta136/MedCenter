@@ -191,6 +191,46 @@
     #searchAssignedGroupPerms::placeholder {
         color: #9ca3af !important;
     }
+
+    /* ── Modal form controls: override site.css dark-theme ─────────────────── */
+    .modal-content {
+        background-color: #ffffff !important;
+        color: #1f2937 !important;
+    }
+
+    .modal-content .form-control {
+        background-color: #f9fafb !important;
+        color: #1f2937 !important;
+        border-color: #d1d5db !important;
+    }
+
+    .modal-content .form-control:focus {
+        background-color: #ffffff !important;
+        color: #1f2937 !important;
+        border-color: @primaryColor !important;
+        box-shadow: 0 0 0 2px rgba(0,0,0,0.05), 0 0 0 4px @(primaryColor + "33") !important;
+    }
+
+    .modal-content .form-control::placeholder {
+        color: #9ca3af !important;
+    }
+
+    .modal-content .form-label,
+    .modal-content label {
+        color: #374151 !important;
+    }
+
+    .modal-content .form-text {
+        color: #6b7280 !important;
+    }
+
+    .modal-content .text-muted {
+        color: #6b7280 !important;
+    }
+
+    .modal-body {
+        color: #1f2937 !important;
+    }
 </style>
 
 <div class="row">
@@ -202,9 +242,14 @@
                         <i class="fas fa-shield-alt me-2" style="color: @primaryColor;"></i>
                         Panel de Administración de Permisos
                     </h4>
-                    <button class="btn @(isAdmin ? "btn-danger" : "btn-success")" data-bs-toggle="modal" data-bs-target="#quickActionsModal">
-                        <i class="fas fa-bolt me-2"></i>Acciones Rápidas
-                    </button>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAccountModal">
+                            <i class="fas fa-user-plus me-2"></i>Crear Cuenta
+                        </button>
+                        <button class="btn @(isAdmin ? "btn-danger" : "btn-success")" data-bs-toggle="modal" data-bs-target="#quickActionsModal">
+                            <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -318,6 +363,9 @@
                                     </button>
                                     <button class="btn btn-sm @(isAdmin ? "btn-outline-danger" : "btn-outline-success") action-btn me-1" data-action="manage-permissions" data-user-id="@user.UserId" data-user-name="@user.UserName">
                                         <i class="fas fa-edit"></i> Gestionar
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary action-btn me-1" onclick="openEditAccountModal(@user.UserId, '@user.UserName', '@user.Role.ToString()')">
+                                        <i class="fas fa-user-edit"></i> Editar
                                     </button>
                                     @if (user.IsActive)
                                     {
@@ -532,6 +580,129 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Account Modal -->
+<div class="modal fade" id="createAccountModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header text-white" style="background-color: @primaryColor;">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus me-2"></i>Crear Nueva Cuenta
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Common fields -->
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Nombre completo *</label>
+                        <input type="text" id="ca_nombre" class="form-control" placeholder="Nombre completo">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Email *</label>
+                        <input type="email" id="ca_email" class="form-control" placeholder="correo@@ejemplo.com">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Contraseña *</label>
+                        <input type="password" id="ca_password" class="form-control" placeholder="Mínimo 6 caracteres">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Confirmar contraseña *</label>
+                        <input type="password" id="ca_confirmPassword" class="form-control" placeholder="Repetir contraseña">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Rol *</label>
+                        <select id="ca_role" class="form-select" onchange="caToggleRoleFields()">
+                            <option value="">-- Seleccionar rol --</option>
+                            <option value="Paciente">Paciente</option>
+                            <option value="Medico">Médico</option>
+                            <option value="Secretaria">Secretaria</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Paciente fields -->
+                <div id="ca_pacienteFields" class="role-fields mt-3" style="display:none;">
+                    <hr>
+                    <h6 class="fw-semibold mb-3"><i class="fas fa-id-card me-2"></i>Datos del Paciente</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">DNI *</label>
+                            <input type="text" id="ca_dni" class="form-control" placeholder="Número de DNI">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Teléfono *</label>
+                            <input type="text" id="ca_telefono" class="form-control" placeholder="Número de teléfono">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Médico fields -->
+                <div id="ca_medicoFields" class="role-fields mt-3" style="display:none;">
+                    <hr>
+                    <h6 class="fw-semibold mb-3"><i class="fas fa-stethoscope me-2"></i>Datos del Médico</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Matrícula *</label>
+                            <input type="text" id="ca_matricula" class="form-control" placeholder="Número de matrícula">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Clave de médico *</label>
+                            <input type="password" id="ca_claveMedico" class="form-control" placeholder="Clave de acceso para médicos">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Especialidades *</label>
+                            <div id="ca_especialidadesContainer" class="border rounded p-2" style="max-height:180px; overflow-y:auto;">
+                                <p class="text-muted mb-0 text-center">Cargando especialidades...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Secretaria fields -->
+                <div id="ca_secretariaFields" class="role-fields mt-3" style="display:none;">
+                    <hr>
+                    <h6 class="fw-semibold mb-3"><i class="fas fa-briefcase me-2"></i>Datos de la Secretaria</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Legajo *</label>
+                            <input type="text" id="ca_legajo" class="form-control" placeholder="Número de legajo">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Clave de secretaria *</label>
+                            <input type="password" id="ca_claveSecretaria" class="form-control" placeholder="Clave de acceso para secretarias">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin fields -->
+                <div id="ca_adminFields" class="role-fields mt-3" style="display:none;">
+                    <hr>
+                    <h6 class="fw-semibold mb-3"><i class="fas fa-shield-alt me-2"></i>Datos del Admin</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Cargo *</label>
+                            <input type="text" id="ca_cargo" class="form-control" placeholder="Ej: Director, Jefe de sistemas">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Clave de admin *</label>
+                            <input type="password" id="ca_claveAdmin" class="form-control" placeholder="Clave de acceso para admins">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="submitCreateAccount()">
+                    <i class="fas fa-user-plus me-2"></i>Crear Cuenta
+                </button>
             </div>
         </div>
     </div>
@@ -840,6 +1011,30 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="fas fa-times me-2"></i>Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Account Modal -->
+<div class="modal fade" id="editAccountModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header text-white" style="background-color: @primaryColor;">
+                <h5 class="modal-title" id="editAccountModalTitle">Editar Cuenta</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="editAccountModalBody">
+                <div class="text-center py-4">
+                    <div class="spinner-border" style="color: @primaryColor;" role="status"></div>
+                    <p class="mt-2 text-muted">Cargando datos...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn text-white" style="background-color: @primaryColor;" onclick="submitEditAccount()">
+                    <i class="fas fa-save me-1"></i> Guardar Cambios
                 </button>
             </div>
         </div>
@@ -1951,5 +2146,272 @@
                 console.error('Error:', error);
             }
         }
+
+        // ========== EDIT ACCOUNT ==========
+
+        let editAccountUserId = null;
+        let editAccountRole = null;
+
+        async function openEditAccountModal(userId, userName, role) {
+            editAccountUserId = userId;
+            editAccountRole = role;
+
+            document.getElementById('editAccountModalTitle').textContent = `Editar Cuenta - ${userName} (${role})`;
+            document.getElementById('editAccountModalBody').innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border" role="status" style="color: @primaryColor;"></div>
+                    <p class="mt-2 text-muted">Cargando datos...</p>
+                </div>`;
+
+            const modal = new bootstrap.Modal(document.getElementById('editAccountModal'));
+            modal.show();
+
+            try {
+                const response = await fetch(`/Admin/EditAccount?userId=${userId}&rol=${role}`);
+                if (response.status === 403) {
+                    document.getElementById('editAccountModalBody').innerHTML =
+                        '<div class="alert alert-danger">No tienes permiso para editar este usuario.</div>';
+                    return;
+                }
+                const result = await response.json();
+                if (!result.success) {
+                    document.getElementById('editAccountModalBody').innerHTML =
+                        `<div class="alert alert-danger">${result.message}</div>`;
+                    return;
+                }
+
+                const d = result.data;
+                const roleLower = role.toLowerCase();
+
+                // Common fields for all roles
+                let html = `
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nombre completo</label>
+                            <input type="text" class="form-control" id="edit_Nombre" value="${escHtml(d.nombre ?? '')}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Email</label>
+                            <input type="email" class="form-control" id="edit_Email" value="${escHtml(d.email ?? '')}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nueva contraseña</label>
+                            <input type="password" class="form-control" id="edit_Contrasena" placeholder="Dejar en blanco para no cambiar">
+                            <div class="form-text">Mínimo 6 caracteres si se cambia.</div>
+                        </div>`;
+
+                if (roleLower === 'paciente') {
+                    html += `
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">DNI</label>
+                            <input type="text" class="form-control" id="edit_Dni" value="${escHtml(d.dni ?? '')}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Teléfono</label>
+                            <input type="text" class="form-control" id="edit_Telefono" value="${escHtml(d.telefono ?? '')}">
+                        </div>`;
+                } else if (roleLower === 'medico') {
+                    html += `
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Matrícula</label>
+                            <input type="text" class="form-control" id="edit_Matricula" value="${escHtml(d.matricula ?? '')}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Especialidades</label>
+                            <div id="edit_EspecialidadesContainer" class="border rounded p-2" style="max-height:160px;overflow-y:auto;">
+                                <div class="text-muted small">Cargando especialidades...</div>
+                            </div>
+                        </div>`;
+                } else if (roleLower === 'secretaria') {
+                    html += `
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Legajo</label>
+                            <input type="text" class="form-control" id="edit_Legajo" value="${escHtml(d.legajo ?? '')}">
+                        </div>`;
+                } else if (roleLower === 'admin') {
+                    html += `
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Cargo</label>
+                            <input type="text" class="form-control" id="edit_Cargo" value="${escHtml(d.cargo ?? '')}">
+                        </div>`;
+                }
+
+                html += `</div>`;
+                document.getElementById('editAccountModalBody').innerHTML = html;
+
+                // Load especialidades for medico
+                if (roleLower === 'medico') {
+                    const currentIds = Array.isArray(d.especialidadesIds) ? d.especialidadesIds : [];
+                    try {
+                        const espResp = await fetch('/Especialidad/GetEspecialidadesJson');
+                        const especialidades = await espResp.json();
+                        let espHtml = '';
+                        for (const esp of especialidades) {
+                            const checked = currentIds.includes(esp.id) ? 'checked' : '';
+                            espHtml += `
+                                <div class="form-check">
+                                    <input class="form-check-input edit-especialidad-cb" type="checkbox" value="${esp.id}" id="esp_${esp.id}" ${checked}>
+                                    <label class="form-check-label" for="esp_${esp.id}">${escHtml(esp.nombre)}</label>
+                                </div>`;
+                        }
+                        document.getElementById('edit_EspecialidadesContainer').innerHTML =
+                            espHtml || '<span class="text-muted small">No hay especialidades disponibles.</span>';
+                    } catch {
+                        document.getElementById('edit_EspecialidadesContainer').innerHTML =
+                            '<span class="text-danger small">Error al cargar especialidades.</span>';
+                    }
+                }
+            } catch (error) {
+                document.getElementById('editAccountModalBody').innerHTML =
+                    `<div class="alert alert-danger">Error de red: ${error.message}</div>`;
+            }
+        }
+
+        async function submitEditAccount() {
+            const nombre    = document.getElementById('edit_Nombre')?.value?.trim();
+            const email     = document.getElementById('edit_Email')?.value?.trim();
+            const contrasena = document.getElementById('edit_Contrasena')?.value ?? '';
+
+            if (!nombre || !email) {
+                showNotification('error', 'Nombre y email son obligatorios.');
+                return;
+            }
+            if (contrasena && contrasena.length < 6) {
+                showNotification('error', 'La contraseña debe tener al menos 6 caracteres.');
+                return;
+            }
+
+            const dto = {
+                nombre,
+                email,
+                contraseña: contrasena || null,
+                matricula: document.getElementById('edit_Matricula')?.value?.trim() ?? null,
+                dni: document.getElementById('edit_Dni')?.value?.trim() ?? null,
+                telefono: document.getElementById('edit_Telefono')?.value?.trim() ?? null,
+                legajo: document.getElementById('edit_Legajo')?.value?.trim() ?? null,
+                cargo: document.getElementById('edit_Cargo')?.value?.trim() ?? null,
+                claveMedico: document.getElementById('edit_ClaveMedico')?.value ?? null,
+                claveSecretaria: document.getElementById('edit_ClaveSecretaria')?.value ?? null,
+                claveAdmin: document.getElementById('edit_ClaveAdmin')?.value ?? null,
+                especialidadesIds: Array.from(document.querySelectorAll('.edit-especialidad-cb:checked'))
+                    .map(cb => parseInt(cb.value))
+            };
+
+            try {
+                const response = await fetch(`/Admin/EditAccount?rol=${editAccountRole}&userId=${editAccountUserId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dto)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showNotification('success', result.message || 'Cuenta editada correctamente.');
+                    bootstrap.Modal.getInstance(document.getElementById('editAccountModal'))?.hide();
+                    setTimeout(() => location.reload(), 1200);
+                } else {
+                    showNotification('error', result.message || 'Error al editar la cuenta.');
+                }
+            } catch (error) {
+                showNotification('error', 'Error de red: ' + error.message);
+            }
+        }
+
+        function escHtml(str) {
+            return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        // ── Create Account ────────────────────────────────────────────────────────
+        function caToggleRoleFields() {
+            const role = document.getElementById('ca_role').value;
+            ['paciente','medico','secretaria','admin'].forEach(r => {
+                document.getElementById(`ca_${r}Fields`).style.display = 'none';
+            });
+            if (role === 'Paciente')   document.getElementById('ca_pacienteFields').style.display = 'block';
+            if (role === 'Medico')     { document.getElementById('ca_medicoFields').style.display = 'block'; caLoadEspecialidades(); }
+            if (role === 'Secretaria') document.getElementById('ca_secretariaFields').style.display = 'block';
+            if (role === 'Admin')      document.getElementById('ca_adminFields').style.display = 'block';
+        }
+
+        let _caEspecialidadesLoaded = false;
+        async function caLoadEspecialidades() {
+            if (_caEspecialidadesLoaded) return;
+            const container = document.getElementById('ca_especialidadesContainer');
+            try {
+                const res = await fetch('/Especialidad/GetEspecialidadesJson');
+                const data = await res.json();
+                container.innerHTML = data.map(e =>
+                    `<div class="form-check">
+                        <input class="form-check-input ca-esp-cb" type="checkbox" value="${e.id}" id="ca_esp_${e.id}">
+                        <label class="form-check-label" for="ca_esp_${e.id}">${escHtml(e.nombre)}</label>
+                    </div>`
+                ).join('');
+                _caEspecialidadesLoaded = true;
+            } catch {
+                container.innerHTML = '<p class="text-danger mb-0">Error al cargar especialidades.</p>';
+            }
+        }
+
+        function caResetModal() {
+            ['ca_nombre','ca_email','ca_password','ca_confirmPassword',
+             'ca_dni','ca_telefono','ca_matricula','ca_claveMedico',
+             'ca_legajo','ca_claveSecretaria','ca_cargo','ca_claveAdmin']
+                .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+            document.getElementById('ca_role').value = '';
+            ['paciente','medico','secretaria','admin'].forEach(r => {
+                document.getElementById(`ca_${r}Fields`).style.display = 'none';
+            });
+            _caEspecialidadesLoaded = false;
+            document.getElementById('ca_especialidadesContainer').innerHTML =
+                '<p class="text-muted mb-0 text-center">Cargando especialidades...</p>';
+        }
+
+        document.getElementById('createAccountModal').addEventListener('hidden.bs.modal', caResetModal);
+
+        async function submitCreateAccount() {
+            const role = document.getElementById('ca_role').value;
+            if (!role) { showNotification('error', 'Debe seleccionar un rol.'); return; }
+
+            const dto = {
+                nombre:          document.getElementById('ca_nombre').value.trim(),
+                email:           document.getElementById('ca_email').value.trim(),
+                password:        document.getElementById('ca_password').value,
+                confirmPassword: document.getElementById('ca_confirmPassword').value,
+                role:            role,
+                dni:             document.getElementById('ca_dni')?.value?.trim() || null,
+                telefono:        document.getElementById('ca_telefono')?.value?.trim() || null,
+                matricula:       document.getElementById('ca_matricula')?.value?.trim() || null,
+                claveMedico:     document.getElementById('ca_claveMedico')?.value || null,
+                legajo:          document.getElementById('ca_legajo')?.value?.trim() || null,
+                claveSecretaria: document.getElementById('ca_claveSecretaria')?.value || null,
+                cargo:           document.getElementById('ca_cargo')?.value?.trim() || null,
+                claveAdmin:      document.getElementById('ca_claveAdmin')?.value || null,
+                especialidadIds: Array.from(document.querySelectorAll('.ca-esp-cb:checked')).map(cb => parseInt(cb.value))
+            };
+
+            // Basic client-side validation
+            if (!dto.nombre)  { showNotification('error', 'El nombre es obligatorio.'); return; }
+            if (!dto.email)   { showNotification('error', 'El email es obligatorio.'); return; }
+            if (!dto.password || dto.password.length < 6) { showNotification('error', 'La contraseña debe tener al menos 6 caracteres.'); return; }
+            if (dto.password !== dto.confirmPassword)     { showNotification('error', 'Las contraseñas no coinciden.'); return; }
+
+            try {
+                const res = await fetch('/Admin/CreateAccount', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dto)
+                });
+                const result = await res.json();
+                if (result.success) {
+                    showNotification('success', result.message || 'Cuenta creada correctamente.');
+                    bootstrap.Modal.getInstance(document.getElementById('createAccountModal'))?.hide();
+                    setTimeout(() => location.reload(), 1200);
+                } else {
+                    showNotification('error', result.message || 'Error al crear la cuenta.');
+                }
+            } catch (err) {
+                showNotification('error', 'Error de red: ' + err.message);
+            }
+        }
+        // ─────────────────────────────────────────────────────────────────────────
     </script>
 }

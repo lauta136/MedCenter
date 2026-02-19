@@ -171,11 +171,14 @@ public partial class AppDbContext : DbContext
 
             entity.Property(e => e.id).ValueGeneratedNever();
             entity.Property(e => e.legajo).HasMaxLength(20);
+            
 
             entity.HasOne(d => d.idNavigation).WithOne(p => p.Secretaria)
                 .HasForeignKey<Secretaria>(d => d.id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("secretarias_id_fkey");
+                
+            entity.HasIndex(e => new {e.legajo}).IsUnique();
         });
 
         modelBuilder.Entity<SlotAgenda>(entity =>
@@ -237,6 +240,8 @@ public partial class AppDbContext : DbContext
             // 3. ✅ MAPEAMOS LOS NOMBRES DE LAS COLUMNAS
             entity.Property(me => me.medicoId).HasColumnName("medico_id");
             entity.Property(me => me.especialidadId).HasColumnName("especialidad_id");
+            entity.Property(me => me.activo).HasColumnName("activo").HasDefaultValue(true);
+
 
             // Configuramos la relación con Medico
             entity.HasOne(me => me.medico)

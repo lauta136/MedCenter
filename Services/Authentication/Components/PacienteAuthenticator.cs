@@ -45,7 +45,7 @@ namespace MedCenter.Services.Authentication.Components
         public async Task<AuthResult> RegisterAsync(RegisterDTO registerDto)
         {
             
-            var result = await _validationService.ValidatePacienteAsync(registerDto.Email, registerDto.Role,registerDto.DNI,registerDto.Telefono);
+            var result = await _validationService.ValidatePacienteAsync(registerDto.Email, registerDto.Role,registerDto.DNI,registerDto.Telefono,null);
             if(result.Success == false)
             return result;
 
@@ -57,7 +57,8 @@ namespace MedCenter.Services.Authentication.Components
                 {
                     nombre = registerDto.Nombre,
                     email = registerDto.Email,
-                    contraseña = _hashService.HashPassword(registerDto.Password)
+                    contraseña = _hashService.HashPassword(registerDto.Password),
+                    activo = true
                 };
 
                 await _context.personas.AddAsync(persona);

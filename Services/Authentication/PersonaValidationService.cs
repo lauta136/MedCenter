@@ -13,7 +13,7 @@ public class PersonaValidationService
         _context = context;
         _roleKeyService = roleKeyValidationService;
     }
-    public async Task<AuthResult> ValidatePacienteAsync(string mail, string rol, string dni, string telefono)
+    public async Task<AuthResult> ValidatePacienteAsync(string mail, string rol, string dni, string telefono, int? userId)
     {
         if (rol != "Paciente")
             return new AuthResult { Success = false, ErrorMessage = "Rol incorrecto para este autenticador" };
@@ -29,35 +29,38 @@ public class PersonaValidationService
         if (telefono.Length < 10)
             return new AuthResult { Success = false, ErrorMessage = "El campo telefono no contiene el largo adecuado" };
 
-        if (await _context.pacientes.AnyAsync(p => p.dni == dni))
+        if (await _context.pacientes.AnyAsync(p => p.dni == dni && p.id != userId))
             return new AuthResult { Success = false, ErrorMessage = "Este dni ya corresponde a un paciente" };
         
-        var result = await ValidateEmail(mail);
+        var result = await ValidateEmail(mail,userId.HasValue ? userId.Value : null);
         if(!result.Success)
         return result;
 
         return new AuthResult{Success = true};
     }
 
-    public async Task<AuthResult> ValidateSecretariaAsync(string mail, string rol, string ClaveSecretaria, string legajo) //Fijate comom validar el elegajo
+    public async Task<AuthResult> ValidateSecretariaAsync(string mail, string rol, string ClaveSecretaria, string legajo,int? userId ) 
     {
         if (rol != "Secretaria")
                 return new AuthResult { Success = false, ErrorMessage = "Rol incorrecto para este autenticador" };
         if(string.IsNullOrWhiteSpace(legajo))
             return new AuthResult{Success = false, ErrorMessage = "Campo de legajo vacio"};
-        if (string.IsNullOrEmpty(ClaveSecretaria))
+        if (string.IsNullOrWhiteSpace(ClaveSecretaria))
             return new AuthResult { Success = false, ErrorMessage = _roleKeyService.GetKeyRequiredMessage("Secretaria") };
         if (!await _roleKeyService.ValidateRoleKeyAsync(ClaveSecretaria, "Secretaria"))
             return new AuthResult { Success = false, ErrorMessage = _roleKeyService.GetWrongKeyMessage("Secretaria") };
 
-        var result = await ValidateEmail(mail);
+        var result = await ValidateEmail(mail, userId.HasValue ? userId.Value : null);
         if(!result.Success)
         return result;
 
+        if(await _context.secretarias.AnyAsync(s => s.legajo == legajo))
+            return new AuthResult{Success = false, ErrorMessage = "Ya hay una secretaria con este numero de legajo"};
+    
         return new AuthResult{Success = true};
     }
 
-    public async Task<AuthResult> ValidateMedicoAsync(string mail, string rol, string matricula, List<int> especialidadesIds, string ClaveMedico)
+    public async Task<AuthResult> ValidateMedicoAsync(string mail, string rol, string matricula, List<int> especialidadesIds, string ClaveMedico, int? userId)
     {
         if (rol!= "Medico")
                 return new AuthResult { Success = false, ErrorMessage = "Rol incorrecto para este autenticador" };
@@ -85,7 +88,7 @@ public class PersonaValidationService
             if (especialidadesExistentes.Count != especialidadesIds.Count)
                 return new AuthResult { Success = false, ErrorMessage = "Una o más especialidades seleccionadas no existen" };
 
-            var result = await ValidateEmail(mail);
+            var result = await ValidateEmail(mail, userId.HasValue ? userId.Value : null);
             if(!result.Success)
             return result;
             // Verificar si ya existe la matrícula
@@ -95,22 +98,28 @@ public class PersonaValidationService
 
         return new AuthResult{Success = true};
     }
-    public async Task<AuthResult> ValidateEmail(string mail)
+    public async Task<AuthResult> ValidateEmail(string mail, int? userId)
     {
-        if(await _context.personas.AnyAsync(p => p.email == mail))
+        var query = _context.personas.Where(p => p.email == mail);
+        if(userId.HasValue)
+            query = query.Where(p => p.id != userId.Value);
+            
+        if(await query.AnyAsync())
             return new AuthResult{Success = false, ErrorMessage = "Este email ya corresponde a otra cuenta"};
         
         return new AuthResult {Success = true};
     }
 
-    public async Task<AuthResult> ValidateAdminAsync(string rol, string ClaveAdmin,string mail)
+    public async Task<AuthResult> ValidateAdminAsync(string rol, string ClaveAdmin,string mail,string cargo, int? userId)
     {
          if (rol != "Admin")
                 return new AuthResult { Success = false, ErrorMessage = "Rol incorrecto para este autenticador" };
             // Verificar si ya existe el email
         if (string.IsNullOrWhiteSpace(ClaveAdmin))
             return new AuthResult { Success = false, ErrorMessage = _roleKeyService.GetKeyRequiredMessage("Admin") };
-        var result = await ValidateEmail(mail);
+        if (string.IsNullOrWhiteSpace(cargo))
+            return new AuthResult { Success = false, ErrorMessage = "El campo de cargo esta vacio" };
+        var result = await ValidateEmail(mail, userId.HasValue ? userId.Value : null);
         if(!result.Success)
         return result;
         if (!await _roleKeyService.ValidateRoleKeyAsync(ClaveAdmin, "Admin"))

@@ -2,11 +2,15 @@ using System.Data.Common;
 using System.Net.Mail;
 using System.Text.RegularExpressions;
 using System.Transactions;
+using System.Xml.Schema;
 using DocumentFormat.OpenXml.Bibliography;
+using DocumentFormat.OpenXml.ExtendedProperties;
+using DocumentFormat.OpenXml.VariantTypes;
 using DocumentFormat.OpenXml.Wordprocessing;
 using MedCenter.Data;
 using MedCenter.DTOs;
 using MedCenter.Enums;
+using MedCenter.Extensions;
 using MedCenter.Models;
 using MedCenter.Services.Authentication;
 using MedCenter.Services.TurnoSv;
@@ -21,13 +25,14 @@ public class AdminService
     private readonly AppDbContext _context;
     private readonly TurnoService _turnoService;
     private readonly PersonaValidationService _validationService;
+    private readonly PasswordHashService _hashService;
 
-
-    public AdminService(AppDbContext appDbContext, TurnoService turnoService, PersonaValidationService personaValidationService)
+    public AdminService(AppDbContext appDbContext, TurnoService turnoService, PersonaValidationService personaValidationService, PasswordHashService passwordHashService)
     {
         _context = appDbContext;
         _turnoService = turnoService;
         _validationService = personaValidationService;
+        _hashService = passwordHashService;
     }
     
     public async Task<bool> AccesoAPanelAdmin(int id)
@@ -773,18 +778,17 @@ public class AdminService
         using var transaccion = await _context.Database.BeginTransactionAsync();
 
         var permToAssign = await _context.rolPermisos.Where(rp => rp.RolNombre == rolEnum).Select(rp => rp.PermisoId).ToHashSetAsync();
-        var permisosPersonas = new List<PersonaPermiso>();
-        foreach(var perm in permToAssign)
-        {
-            permisosPersonas.Add(
-                new PersonaPermiso
-                {
-                    PermisoId = perm,
-                    PersonaId = userId,
-                    Origen = PermisoSource.Role
-                }
-            );
-        }
+        var alreadyHas = await _context.personaPermisos.Where(pp => pp.PersonaId == userId).Select(pp => pp.PermisoId).ToHashSetAsync();
+
+        var permisosPersonas = permToAssign
+            .Where(perm => !alreadyHas.Contains(perm))
+            .Select(perm => new PersonaPermiso
+            {
+                PermisoId = perm,
+                PersonaId = userId,
+                Origen = PermisoSource.Role
+            })
+            .ToList();
 
         var persona = new Persona{id = userId, activo = true};
         _context.Attach(persona);
@@ -798,32 +802,261 @@ public class AdminService
         return new AdminResult{Success = true};
     }
     
-   /* public async Task<AdminResult> EditarCuenta(PersonaEditDTO dto, string rol)
+    public async Task<bool> TienePermiso(int userId, string requiredPerm)
+    {
+        return await _context.personaPermisos.Include(pp=>pp.Permiso).AnyAsync(pp => pp.PersonaId == userId && pp.Permiso.Nombre == requiredPerm);
+    }
+    public async Task<PersonaEditDTO> GetEditar(string rol, int userId)
+    {
+        var result = new PersonaEditDTO();
+        switch(rol.ToRolUsuario())
+        {
+            case RolUsuario.Paciente:
+                result = await _context.pacientes.Include(paciente => paciente.idNavigation)
+                        .Where(p => p.id == userId)
+                        .Select(paciente=> new PersonaEditDTO
+                        {
+                            Nombre = paciente.idNavigation.nombre, 
+                            Email = paciente.idNavigation.email, 
+                            Contraseña = "*******", 
+                            Telefono = paciente.telefono, 
+                            Dni = paciente.dni
+                        })
+                        .FirstOrDefaultAsync();
+            break;
+            case RolUsuario.Medico:
+                result = result = await _context.medicos
+                        .Include(medico => medico.idNavigation)
+                        .Include(medico => medico.medicoEspecialidades)
+                        .Where(m => m.id == userId)
+                        .Select(medico=> new PersonaEditDTO
+                        {
+                            Nombre = medico.idNavigation.nombre, 
+                            Email = medico.idNavigation.email, 
+                            Contraseña = "*******", 
+                            Matricula = medico.matricula,
+                            EspecialidadesIds = medico.medicoEspecialidades.Select(me => me.especialidadId).ToList(),
+                        })
+                        .FirstOrDefaultAsync();
+            break;
+            case RolUsuario.Secretaria:
+                result = result = await _context.secretarias.Include(secretaria => secretaria.idNavigation)
+                        .Where(s => s.id == userId)
+                        .Select(secretaria=> new PersonaEditDTO
+                        {
+                            Nombre = secretaria.idNavigation.nombre, 
+                            Email = secretaria.idNavigation.email, 
+                            Contraseña = "*******", 
+                            Legajo = secretaria.legajo, 
+                        })
+                        .FirstOrDefaultAsync();
+            break;
+            case RolUsuario.Admin:
+                result = await _context.personas
+                        .Where(p => p.Admin != null && p.id == userId)
+                        .Select(p => new PersonaEditDTO
+                        {
+                            Nombre = p.nombre,
+                            Email = p.email,
+                            Contraseña = "*******",
+                            Cargo = p.Admin.Cargo,
+                        })
+                        .FirstOrDefaultAsync();
+            break;
+        }
+        return result;
+    }
+
+    public async Task<AdminResult> EditarCuenta(PersonaEditDTO dto, string rol, int userId)
     {
         if(string.IsNullOrWhiteSpace(dto.Nombre) || string.IsNullOrWhiteSpace(dto.Email))
         return new AdminResult{Success = false, ErrorMessage = "Hay campos vacios"};
 
+        if(!string.IsNullOrWhiteSpace(dto.Contraseña) && dto.Contraseña.Length < 6)
+        return new AdminResult{Success = false, ErrorMessage = "La contraseña es demasiado corta, minimo 6 caracteres"};
+
         if(!Regex.IsMatch(dto.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
         return new AdminResult{Success = false, ErrorMessage = "El mail proporcionado no es una direccion valida"};
-        
 
-        switch (rol)
+        var result = new AdminResult();
+        switch (rol.ToRolUsuario())
         {
-            case "Medico":
-            if(string.IsNullOrEmpty(dto.Matricula))
-            return new AdminResult{Success = false, ErrorMessage = "Hay campos vacios"};
+            case RolUsuario.Medico:
+                result = await EditarMedico(dto,userId);
             break;
-            case "Secretaria":
-            if(string.IsNullOrEmpty(dto.Legajo))
-            return new AdminResult{Success = false, ErrorMessage = "Hay campos vacios"};
+            case RolUsuario.Secretaria:
+                result = await EditarSecretaria(dto,userId);
             break;
-            case "Paciente":
-            if(await _validationService.ValidatePacienteAsync(dto.Email,rol,dto.Dni,dto.Telefono))
-            return new AdminResult{Success = false, ErrorMessage = "Hay campos vacios"};
+            case RolUsuario.Paciente:
+                result = await EditarPaciente(dto,userId);
+            break;
+            case RolUsuario.Admin:
+                result = await EditarAdmin(dto,userId);
+            break;
+            default:
+                result =  new AdminResult { Success = false, ErrorMessage = "Rol no válido" };
             break;
 
         }
+
+        return result;
     }
-    */
+    
+    public async Task<AdminResult> EditarPaciente(PersonaEditDTO dto,int userId)
+    {
+        var result = await _validationService.ValidatePacienteAsync(dto.Email,RolUsuario.Paciente.ToString(),dto.Dni,dto.Telefono,userId);
+        if(!result.Success)
+        return new AdminResult {Success = result.Success, ErrorMessage = result.ErrorMessage};
+
+        try
+        {
+            var persona = new Persona{id = userId, email = dto.Email, nombre = dto.Nombre};
+            if(!string.IsNullOrWhiteSpace(dto.Contraseña))
+                persona.contraseña = _hashService.HashPassword(dto.Contraseña);
+            _context.personas.Attach(persona);
+            _context.Entry(persona).Property(p => p.email).IsModified = true;
+            _context.Entry(persona).Property(p => p.nombre).IsModified = true;
+            
+            if(!string.IsNullOrWhiteSpace(dto.Contraseña))
+            _context.Entry(persona).Property(p => p.contraseña).IsModified = true;
+
+            var paciente = new Paciente{id = userId, dni = dto.Dni, telefono = dto.Telefono};
+            _context.pacientes.Attach(paciente);
+            _context.Entry(paciente).Property(p => p.telefono).IsModified = true;
+            _context.Entry(paciente).Property(p => p.dni).IsModified = true;
+
+
+            await _context.SaveChangesAsync();
+
+            return new AdminResult{Success = true};
+        }
+        catch(Exception ex)
+        {
+            return new AdminResult{Success = false, ErrorMessage = ex.InnerException.Message};
+        }
+    }
+    
+    public async Task<AdminResult> EditarMedico(PersonaEditDTO dto,int userId)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Matricula))
+            return new AdminResult { Success = false, ErrorMessage = "La matrícula es obligatoria" };
+        if (dto.EspecialidadesIds == null || !dto.EspecialidadesIds.Any())
+            return new AdminResult { Success = false, ErrorMessage = "Debe seleccionar al menos una especialidad" };
+        if (await _context.medicos.AnyAsync(m => m.matricula == dto.Matricula && m.id != userId))
+            return new AdminResult { Success = false, ErrorMessage = "La matrícula ya está registrada por otro médico" };
+        var emailCheck = await _validationService.ValidateEmail(dto.Email, userId);
+        if (!emailCheck.Success)
+            return new AdminResult { Success = false, ErrorMessage = emailCheck.ErrorMessage };
+        var especialidadesExistentes = await _context.especialidades.Where(e => dto.EspecialidadesIds.Contains(e.id)).CountAsync();
+        if (especialidadesExistentes != dto.EspecialidadesIds.Count)
+            return new AdminResult { Success = false, ErrorMessage = "Una o más especialidades seleccionadas no existen" };
+
+        try
+        {
+            var persona = new Persona{id = userId, email = dto.Email, nombre = dto.Nombre};
+            if(!string.IsNullOrWhiteSpace(dto.Contraseña))
+                persona.contraseña = _hashService.HashPassword(dto.Contraseña);
+            _context.personas.Attach(persona);
+            _context.Entry(persona).Property(p => p.email).IsModified = true;
+            _context.Entry(persona).Property(p => p.nombre).IsModified = true;
+            
+            if(!string.IsNullOrWhiteSpace(dto.Contraseña))
+            _context.Entry(persona).Property(p => p.contraseña).IsModified = true;
+
+
+            var medico = new Medico{id = userId, matricula = dto.Matricula};
+            _context.medicos.Attach(medico);
+            _context.Entry(medico).Property(p => p.matricula).IsModified = true;
+
+            await _context.medicoEspecialidades.Where(me => me.medicoId == userId).ExecuteDeleteAsync();
+            
+            var especialidades = new List<MedicoEspecialidad>();
+            foreach(var id in dto.EspecialidadesIds)
+            {
+                especialidades.Add(new MedicoEspecialidad{medicoId = userId, especialidadId = id});
+            }
+            _context.medicoEspecialidades.AddRange(especialidades);
+
+            await _context.SaveChangesAsync();
+
+            return new AdminResult{Success = true};
+        }
+        catch(Exception ex)
+        {
+            return new AdminResult{Success = false, ErrorMessage = ex.InnerException?.Message ?? ex.Message};
+        }
+    }
+
+    public async Task<AdminResult> EditarSecretaria(PersonaEditDTO dto, int userId)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Legajo))
+            return new AdminResult { Success = false, ErrorMessage = "El campo de legajo está vacío" };
+        if (await _context.secretarias.AnyAsync(s => s.legajo == dto.Legajo && s.id != userId))
+            return new AdminResult { Success = false, ErrorMessage = "Ya hay una secretaria con este número de legajo" };
+        var emailCheck = await _validationService.ValidateEmail(dto.Email, userId);
+        if (!emailCheck.Success)
+            return new AdminResult { Success = false, ErrorMessage = emailCheck.ErrorMessage };
+
+        try
+        {
+            var persona = new Persona{id = userId, email = dto.Email, nombre = dto.Nombre};
+            if(!string.IsNullOrWhiteSpace(dto.Contraseña))
+                persona.contraseña = _hashService.HashPassword(dto.Contraseña);
+            _context.personas.Attach(persona);
+            _context.Entry(persona).Property(p => p.email).IsModified = true;
+            _context.Entry(persona).Property(p => p.nombre).IsModified = true;
+            
+            if(!string.IsNullOrWhiteSpace(dto.Contraseña))
+            _context.Entry(persona).Property(p => p.contraseña).IsModified = true;
+
+            var secretaria = new Secretaria {id = userId, legajo = dto.Legajo};
+            _context.secretarias.Attach(secretaria);
+            _context.Entry(secretaria).Property(s => s.legajo).IsModified = true;
+
+            await _context.SaveChangesAsync();
+
+            return new AdminResult{Success = true};
+        }
+        catch(Exception ex)
+        {
+            return new AdminResult {Success = false, ErrorMessage = ex.InnerException?.Message ?? ex.Message};
+        }
+
+    }
+
+    public async Task<AdminResult> EditarAdmin(PersonaEditDTO dto, int userId)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Cargo))
+            return new AdminResult { Success = false, ErrorMessage = "El campo de cargo está vacío" };
+        var emailCheck = await _validationService.ValidateEmail(dto.Email, userId);
+        if (!emailCheck.Success)
+            return new AdminResult { Success = false, ErrorMessage = emailCheck.ErrorMessage };
+
+        try
+        {
+            var persona = new Persona{id = userId, email = dto.Email, nombre = dto.Nombre};
+            if(!string.IsNullOrWhiteSpace(dto.Contraseña))
+                persona.contraseña = _hashService.HashPassword(dto.Contraseña);
+            _context.personas.Attach(persona);
+            _context.Entry(persona).Property(p => p.email).IsModified = true;
+            _context.Entry(persona).Property(p => p.nombre).IsModified = true;
+            
+            if(!string.IsNullOrWhiteSpace(dto.Contraseña))
+            _context.Entry(persona).Property(p => p.contraseña).IsModified = true;
+
+            var admin = new Admin {Id = userId, Cargo = dto.Cargo};
+            _context.admins.Attach(admin);
+            _context.Entry(admin).Property(a => a.Cargo).IsModified = true;
+
+            await _context.SaveChangesAsync();
+
+            return new AdminResult{Success = true};
+        }
+        catch(Exception ex)
+        {
+            return new AdminResult{Success = false, ErrorMessage = ex.InnerException?.Message ?? ex.Message};
+        }
+
+    }
     
 }

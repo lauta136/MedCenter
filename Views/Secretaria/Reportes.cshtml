@@ -199,8 +199,18 @@
                             <i class="fas fa-filter me-2 text-info"></i>
                             Reporte Filtrado
                         </h5>
-                        <p class="text-muted">Filtra turnos por médico y/o especialidad</p>
+                        <p class="text-muted">Filtra turnos por médico y/o especialidad en un período específico</p>
                         <form class="mt-3">
+                            <div class="mb-3">
+                                <label class="form-label">Período <span class="text-danger">*</span></label>
+                                <select class="form-select" id="periodo" onchange="onPeriodoChange()"> 
+                                    <option value="">Seleccione un período</option>
+                                    <option value="1">Último mes</option>
+                                    <option value="3">Últimos 3 meses</option>
+                                    <option value="12">Último año</option>
+                                </select>
+                                <small class="text-muted">Primero seleccione el período para cargar los médicos disponibles</small>
+                            </div>
                             <div class="mb-3">
                                 <label class="form-label">Especialidad</label>
                                 <select class="form-select" id="especialidadId" onchange="filtrarMedicosPorEspecialidad()">
@@ -213,20 +223,8 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Médico (opcional)</label>
-                                <select class="form-select" id="medicoId">
+                                <select class="form-select" id="medicoId" disabled>
                                     <option value="">Todos los médicos</option>
-                                    @foreach (var medico in Model)
-                                    {
-                                        <option value="@medico.Id">@medico.Nombre</option>
-                                    }
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Período</label>
-                                <select class="form-select" id="periodo"> 
-                                    <option value="1">Último mes</option>
-                                    <option value="3">Últimos 3 meses</option>
-                                    <option value="12">Último año</option>
                                 </select>
                             </div>
                             <button type="button" onclick="descargarTurnosPDFPorMedico()" class="btn btn-danger w-100 mb-2">
@@ -576,20 +574,19 @@
     }
 
     function descargarTurnosPDFPorMedico() {
+        const periodoSelect = document.getElementById('periodo');
+        const mesesAtras = parseInt(periodoSelect.value);
+        
+        // Validate period is selected first
+        if (!periodoSelect.value || periodoSelect.value === "") {
+            showClientError('Por favor seleccione primero un período');
+            return;
+        }
+        
         const medicoSelect = document.getElementById('medicoId');
         const medicoId = medicoSelect.value;
         const especialidadSelect = document.getElementById('especialidadId');
         const especialidadId = especialidadSelect.value;
-        const mesesAtras = parseInt(document.getElementById('periodo').value);
-        
-        console.log('MedicoId value:', medicoId, 'Type:', typeof medicoId);
-        console.log('EspecialidadId value:', especialidadId, 'Type:', typeof especialidadId);
-        console.log('Selected option:', medicoSelect.options[medicoSelect.selectedIndex].text);
-        
-        if (!mesesAtras) {
-            showClientError('Por favor seleccione un periodo');
-            return;
-        }
         
         // Calculate dates
         const fechaHasta = new Date();
@@ -607,25 +604,23 @@
             url += `&especialidadId=${especialidadId}`;
         }
         
-        console.log('Final URL:', url);
         window.location.href = url;
     }
     
     function descargarTurnosExcelPorMedico() {
+        const periodoSelect = document.getElementById('periodo');
+        const mesesAtras = parseInt(periodoSelect.value);
+        
+        // Validate period is selected first
+        if (!periodoSelect.value || periodoSelect.value === "") {
+            showClientError('Por favor seleccione primero un período');
+            return;
+        }
+        
         const medicoSelect = document.getElementById('medicoId');
         const medicoId = medicoSelect.value;
         const especialidadSelect = document.getElementById('especialidadId');
         const especialidadId = especialidadSelect.value;
-        const mesesAtras = parseInt(document.getElementById('periodo').value);
-        
-        console.log('MedicoId value:', medicoId, 'Type:', typeof medicoId);
-        console.log('EspecialidadId value:', especialidadId, 'Type:', typeof especialidadId);
-        console.log('Selected option:', medicoSelect.options[medicoSelect.selectedIndex].text);
-        
-        if (!mesesAtras) {
-            showClientError('Por favor seleccione un periodo');
-            return;
-        }
         
         // Calculate dates
         const fechaHasta = new Date();
@@ -643,7 +638,6 @@
             url += `&especialidadId=${especialidadId}`;
         }
         
-        console.log('Final URL:', url);
         window.location.href = url;
     }
     
@@ -655,38 +649,66 @@
         window.location.href = '/Reportes/DescargarPacientesExcel';
     }
 
-    // Filter doctors by specialty
+    // Handler for when period is selected - loads médicos based on period and current specialty selection
+    async function onPeriodoChange() {
+        const periodo = document.getElementById('periodo').value;
+        const medicoSelect = document.getElementById('medicoId');
+        
+        // Reset medico dropdown
+        medicoSelect.innerHTML = '<option value="">Todos los médicos</option>';
+        
+        if (!periodo || periodo === "") {
+            // Disable medico dropdown if no period selected
+            medicoSelect.disabled = true;
+            return;
+        }
+        
+        // Enable medico dropdown and load doctors
+        medicoSelect.disabled = false;
+        await cargarMedicosPorEspecialidadYPeriodo();
+    }
+
+    // Filter doctors by specialty (also considers the period)
     async function filtrarMedicosPorEspecialidad() {
+        const periodo = document.getElementById('periodo').value;
+        
+        // Only reload if period is selected
+        if (!periodo || periodo === "") {
+            return;
+        }
+        
+        await cargarMedicosPorEspecialidadYPeriodo();
+    }
+
+    // Helper function to load doctors based on specialty and period
+    async function cargarMedicosPorEspecialidadYPeriodo() {
+        const periodo = document.getElementById('periodo').value;
         const especialidadId = document.getElementById('especialidadId').value;
         const medicoSelect = document.getElementById('medicoId');
         
-        // Clear current options except "Todos los médicos"
+        // Clear current options
         medicoSelect.innerHTML = '<option value="">Todos los médicos</option>';
         
-        if (!especialidadId || especialidadId === "") {
-            // If no specialty selected, load all doctors
-            const allMedicos = @Html.Raw(Json.Serialize(Model));
-            allMedicos.forEach(medico => {
+        const mesesAtras = parseInt(periodo);
+        
+        try {
+            let url = `/Reportes/GetMedicosPorEspecialidadYPeriodo?mesesAtras=${mesesAtras}`;
+            if (especialidadId && especialidadId !== "") {
+                url += `&especialidadId=${especialidadId}`;
+            }
+            
+            const response = await fetch(url);
+            const medicos = await response.json();
+            
+            medicos.forEach(medico => {
                 const option = document.createElement('option');
                 option.value = medico.id;
                 option.textContent = medico.nombre;
                 medicoSelect.appendChild(option);
             });
-        } else {
-            // Fetch doctors for selected specialty
-            try {
-                const response = await fetch(`/Reportes/GetMedicosPorEspecialidad?especialidadId=${especialidadId}`);
-                const medicos = await response.json();
-                
-                medicos.forEach(medico => {
-                    const option = document.createElement('option');
-                    option.value = medico.id;
-                    option.textContent = medico.nombre;
-                    medicoSelect.appendChild(option);
-                });
-            } catch (error) {
-                console.error('Error al cargar médicos:', error);
-            }
+        } catch (error) {
+            console.error('Error al cargar médicos:', error);
+            showClientError('Error al cargar los médicos. Por favor intente nuevamente.');
         }
     }
 

@@ -9,5 +9,9 @@ public class PersonaEditDTO
     public string Dni { get; set; }
     public string Telefono { get; set; }
     public string Legajo { get; set; }
-
+    public string Cargo {get;set;}
+    public List<int> EspecialidadesIds {get;set;} = new List<int>();
+    public string ClaveMedico {get;set;}
+    public string ClaveSecretaria{get;set;}
+    public string ClaveAdmin{get;set;}
 }
