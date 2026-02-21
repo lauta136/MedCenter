@@ -62,7 +62,7 @@ namespace MedCenter.Services.TurnoStates
         public bool PuedeAusentar(Turno turno)
         {
             var estado = GetEstadoActual(turno);
-            return estado.PuedeFinalizar();
+            return estado.PuedeMarcarAusente(turno);
         }
     }
 }

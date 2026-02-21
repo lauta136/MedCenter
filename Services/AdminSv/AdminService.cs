@@ -1058,5 +1058,51 @@ public class AdminService
         }
 
     }
+
+    // ─── Role Key Management ────────────────────────────────────────────────────
+
+    public async Task<List<object>> GetRoleKeysStatus()
+    {
+        var keys = await _context.role_keys.ToListAsync();
+        return keys
+            .Select(k => (object)new { role = k.Role, isSet = !string.IsNullOrEmpty(k.HashedKey) })
+            .ToList();
+    }
+
+    public async Task<AdminResult> UpdateRoleKey(string role, string newKey)
+    {
+        try
+        {
+            var key = await _context.role_keys.FirstOrDefaultAsync(k => k.Role == role);
+            if (key == null)
+                return new AdminResult { Success = false, ErrorMessage = $"No se encontró la clave para el rol '{role}'" };
+
+            key.HashedKey = _hashService.HashPassword(newKey);
+            await _context.SaveChangesAsync();
+            return new AdminResult { Success = true };
+        }
+        catch (Exception ex)
+        {
+            return new AdminResult { Success = false, ErrorMessage = ex.InnerException?.Message ?? ex.Message };
+        }
+    }
+
+    public async Task<AdminResult> AddRoleKey(string role, string newKey)
+    {
+        try
+        {
+            var exists = await _context.role_keys.AnyAsync(k => k.Role == role);
+            if (exists)
+                return new AdminResult { Success = false, ErrorMessage = $"Ya existe una clave para el rol '{role}'. Usa actualizar." };
+
+            _context.role_keys.Add(new RoleKey { Role = role, HashedKey = _hashService.HashPassword(newKey) });
+            await _context.SaveChangesAsync();
+            return new AdminResult { Success = true };
+        }
+        catch (Exception ex)
+        {
+            return new AdminResult { Success = false, ErrorMessage = ex.InnerException?.Message ?? ex.Message };
+        }
+    }
     
 }

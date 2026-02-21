@@ -95,6 +95,18 @@ public class AdminController : BaseController
     [HttpPost("DeactivateAccpunt")]
     public async Task<IActionResult> DeactivateAccount([FromBody] DeactivateAccount dto)
     {
+        string requiredPerm = dto.Role.ToRolUsuario() switch
+        {
+            RolUsuario.Paciente => "paciente:delete",
+            RolUsuario.Secretaria => "secretaria:delete",
+            RolUsuario.Medico => "medico:delete",
+            RolUsuario.Admin => "admin:delete",
+            _ => "persona:edit"
+        };
+        
+        if(!await _adminService.TienePermiso(UserId.Value, requiredPerm))
+            return StatusCode(403, new { success = false, message = "No tienes permiso para desactivar este usuario." });
+
         var result = await _adminService.DesactivarCuenta(dto.UserId, dto.Role);
         if (result.Success)
         {
@@ -108,6 +120,18 @@ public class AdminController : BaseController
     [HttpPost("ActivateAccount")]
     public async Task<IActionResult> ActivateAccount([FromBody] ActivateAccount dto)
     {
+        string requiredPerm = dto.Role.ToRolUsuario() switch
+        {
+            RolUsuario.Paciente => "paciente:activate",
+            RolUsuario.Secretaria => "secretaria:activate",
+            RolUsuario.Medico => "medico:activate",
+            RolUsuario.Admin => "admin:activate",
+            _ => "persona:activate"
+        };
+        
+        if(!await _adminService.TienePermiso(UserId.Value, requiredPerm))
+            return StatusCode(403, new { success = false, message = "No tienes permiso para activar este usuario." });
+
         var result = await _adminService.ReactivarCuenta(dto.UserId, dto.Role);
         if (result.Success)
         {
@@ -323,5 +347,34 @@ public class AdminController : BaseController
             return NotFound(new { success = false, message = "Grupo no encontrado" });
         }
         return Ok(group);
+    }
+
+    // ─── Role Key Management ────────────────────────────────────────────────────
+
+    // Returns which roles have a key set (never exposes the actual hash)
+    [HttpGet("GetRoleKeys")]
+    [RequiredPermission("role_key:update")]
+    public async Task<IActionResult> GetRoleKeys()
+    {
+        var status = await _adminService.GetRoleKeysStatus();
+        return Ok(status);
+    }
+
+    // Update the key for a specific role
+    [HttpPost("UpdateRoleKey")]
+    [RequiredPermission("role_key:update")]
+    public async Task<IActionResult> UpdateRoleKey([FromBody] UpdateRoleKeyDTO dto)
+    {
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+            return BadRequest(new { success = false, message = string.Join(" | ", errors) });
+        }
+
+        var result = await _adminService.UpdateRoleKey(dto.Role, dto.NewKey);
+        if (result.Success)
+            return Ok(new { success = true, message = $"Clave del rol '{dto.Role}' actualizada correctamente" });
+
+        return BadRequest(new { success = false, message = result.ErrorMessage });
     }
 }

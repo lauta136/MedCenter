@@ -94,3 +94,13 @@ public class ActivateAccount
     public int UserId{get;set;}
     public string Role{get;set;}
 }
+
+public class UpdateRoleKeyDTO
+{
+    [Required]
+    public string Role { get; set; } = string.Empty;
+
+    [Required]
+    [MinLength(6, ErrorMessage = "La clave debe tener al menos 6 caracteres.")]
+    public string NewKey { get; set; } = string.Empty;
+}

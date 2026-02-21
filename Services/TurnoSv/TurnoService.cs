@@ -80,8 +80,6 @@ public class TurnoService
             pacienteFinalId = currentUserId;
         }
 
-
-
         var turno = new Turno
         {
             slot_id = dto.SlotId,
@@ -97,11 +95,8 @@ public class TurnoService
 
         _context.turnos.Add(turno);
         _stateService.Reservar(turno);
-
-
+        
         slot.disponible = false;
-
-
 
         await _context.SaveChangesAsync(); //Para que se le asigne un valor al id de turno, no puedo hacerlo todo en un solo saveChanges ya que el turnoId no esta fijado como FK en la tabla auditoria
 

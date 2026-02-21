@@ -340,7 +340,43 @@ public static class DbInitializer
                     Descripcion = "Crear admin",                    
                     Recurso = MedCenter.Enums.Recurso.Admin,
                     Accion = MedCenter.Enums.AccionUsuario.Create
+                },
+                new Permiso
+                {
+                    Nombre = "paciente:activate",
+                    Descripcion = "Activar la cuenta de un paciente, otorgandole los permisos de su rol",                    
+                    Recurso = MedCenter.Enums.Recurso.Paciente,
+                    Accion = MedCenter.Enums.AccionUsuario.Activate
+                },
+                new Permiso
+                {
+                    Nombre = "medico:activate",
+                    Descripcion = "Activar la cuenta de un medico, otorgandole los permisos de su rol",                    
+                    Recurso = MedCenter.Enums.Recurso.Medico,
+                    Accion = MedCenter.Enums.AccionUsuario.Activate
+                },
+                new Permiso
+                {
+                    Nombre = "secretaria:activate",
+                    Descripcion = "Activar la cuenta de una secretaria, otorgandole los permisos de su rol",                    
+                    Recurso = MedCenter.Enums.Recurso.Secretaria,
+                    Accion = MedCenter.Enums.AccionUsuario.Activate
+                },
+                new Permiso
+                {
+                    Nombre = "admin:activate",
+                    Descripcion = "Activar la cuenta de un admin, otorgandole los permisos de su rol",                    
+                    Recurso = MedCenter.Enums.Recurso.Admin,
+                    Accion = MedCenter.Enums.AccionUsuario.Activate
+                },
+                new Permiso
+                {
+                    Nombre = "role_key:update",
+                    Descripcion = "Editar las llaves para crear cuentas de los roles",                    
+                    Recurso = MedCenter.Enums.Recurso.RoleKey,
+                    Accion = MedCenter.Enums.AccionUsuario.Update
                 }
+
             };
             await context.permisos.AddRangeAsync(permisos);
 
@@ -600,6 +636,31 @@ public static class DbInitializer
                     RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
                     PermisoId = permisos.Where(p => p.Nombre == "admin:create").Select(p => p.Id).FirstOrDefault(),
                 },
+                new RolPermiso
+                {
+                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
+                    PermisoId = permisos.Where(p => p.Nombre == "paciente:activate").Select(p => p.Id).FirstOrDefault(),
+                },
+                new RolPermiso
+                {
+                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
+                    PermisoId = permisos.Where(p => p.Nombre == "secretaria:activate").Select(p => p.Id).FirstOrDefault(),
+                },
+                new RolPermiso
+                {
+                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
+                    PermisoId = permisos.Where(p => p.Nombre == "medico:activate").Select(p => p.Id).FirstOrDefault(),
+                },
+                new RolPermiso
+                {
+                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
+                    PermisoId = permisos.Where(p => p.Nombre == "admin:activate").Select(p => p.Id).FirstOrDefault(),
+                },
+                new RolPermiso
+                {
+                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
+                    PermisoId = permisos.Where(p => p.Nombre == "role_key:update").Select(p => p.Id).FirstOrDefault(),
+                }
             };
 
             await context.rolPermisos.AddRangeAsync(rolespermiso);

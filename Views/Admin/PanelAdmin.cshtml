@@ -246,8 +246,8 @@
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAccountModal">
                             <i class="fas fa-user-plus me-2"></i>Crear Cuenta
                         </button>
-                        <button class="btn @(isAdmin ? "btn-danger" : "btn-success")" data-bs-toggle="modal" data-bs-target="#quickActionsModal">
-                            <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+                        <button class="btn @(isAdmin ? "btn-danger" : "btn-success")" data-bs-toggle="modal" data-bs-target="#roleKeysModal">
+                            <i class="fas fa-key me-2"></i>Claves de Rol
                         </button>
                     </div>
                 </div>
@@ -803,29 +803,67 @@
     </div>
 </div>
 
-<!-- Quick Actions Modal -->
-<div class="modal fade" id="quickActionsModal" tabindex="-1">
+<!-- Role Keys Modal -->
+<div class="modal fade" id="roleKeysModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header text-white" style="background-color: @primaryColor;">
                 <h5 class="modal-title">
-                    <i class="fas fa-bolt me-2" style="color: @primaryColor;"></i>
-                    Acciones Rápidas
+                    <i class="fas fa-key me-2"></i>Claves de Acceso por Rol
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="d-grid gap-2">
-                    <button class="btn btn-outline-primary" data-action="copy-permissions">
-                        <i class="fas fa-copy me-2"></i>Copiar Permisos entre Usuarios
-                    </button>
-                    <button class="btn @(isAdmin ? "btn-outline-danger" : "btn-outline-success")" data-action="assign-role">
-                        <i class="fas fa-user-tag me-2"></i>Asignar Rol a Usuario
-                    </button>
-                    <button class="btn btn-outline-danger" data-action="remove-all-permissions">
-                        <i class="fas fa-trash-alt me-2"></i>Remover Todos los Permisos de un Usuario
-                    </button>
+                <p class="text-muted small mb-4">
+                    Estas claves son requeridas al crear cuentas con roles privilegiados.
+                    Como se almacenan hasheadas, no se pueden mostrar; solo reemplazar.
+                </p>
+
+                @foreach (var roleEntry in new[] {
+                    new { Role = "Medico",     Label = "Médico",         Icon = "fa-user-md" },
+                    new { Role = "Secretaria", Label = "Secretaria",      Icon = "fa-user-tie" },
+                    new { Role = "Admin",      Label = "Administrador",   Icon = "fa-user-shield" }
+                })
+                {
+                <div class="mb-4">
+                    <h6 class="fw-semibold mb-2">
+                        <i class="fas @roleEntry.Icon me-2" style="color: #6b7280;"></i>@roleEntry.Label
+                    </h6>
+                    <div class="row g-2 align-items-end">
+                        <div class="col-sm-5">
+                            <label class="form-label small mb-1">Nueva clave</label>
+                            <div class="input-group input-group-sm">
+                                <input type="password" class="form-control"
+                                       id="rkNew_@roleEntry.Role" placeholder="Nueva clave"
+                                       autocomplete="new-password">
+                                <button class="btn btn-outline-secondary" type="button"
+                                        onclick="rkToggle('rkNew_@roleEntry.Role', this)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-sm-5">
+                            <label class="form-label small mb-1">Confirmar</label>
+                            <div class="input-group input-group-sm">
+                                <input type="password" class="form-control"
+                                       id="rkConfirm_@roleEntry.Role" placeholder="Repetir clave"
+                                       autocomplete="new-password">
+                                <button class="btn btn-outline-secondary" type="button"
+                                        onclick="rkToggle('rkConfirm_@roleEntry.Role', this)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-sm-2 d-grid">
+                            <button class="btn btn-sm btn-primary"
+                                    onclick="updateRoleKey('@roleEntry.Role')">
+                                <i class="fas fa-save"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="rkMsg_@roleEntry.Role" class="mt-1" style="min-height:1.25rem;"></div>
                 </div>
+                }
             </div>
         </div>
     </div>
@@ -2413,5 +2451,56 @@
             }
         }
         // ─────────────────────────────────────────────────────────────────────────
+
+        // ========== ROLE KEYS MANAGEMENT ==========
+
+        function rkToggle(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const hide = input.type === 'password';
+            input.type = hide ? 'text' : 'password';
+            btn.querySelector('i').classList.toggle('fa-eye',      !hide);
+            btn.querySelector('i').classList.toggle('fa-eye-slash', hide);
+        }
+
+        async function updateRoleKey(role) {
+            const newKey     = document.getElementById(`rkNew_${role}`).value.trim();
+            const confirmKey = document.getElementById(`rkConfirm_${role}`).value.trim();
+            const msgEl      = document.getElementById(`rkMsg_${role}`);
+
+            msgEl.innerHTML = '';
+
+            if (!newKey) {
+                msgEl.innerHTML = `<small class="text-danger"><i class="fas fa-times-circle me-1"></i>Ingresa una clave.</small>`;
+                return;
+            }
+            if (newKey.length < 6) {
+                msgEl.innerHTML = `<small class="text-danger"><i class="fas fa-times-circle me-1"></i>Mínimo 6 caracteres.</small>`;
+                return;
+            }
+            if (newKey !== confirmKey) {
+                msgEl.innerHTML = `<small class="text-danger"><i class="fas fa-times-circle me-1"></i>Las claves no coinciden.</small>`;
+                return;
+            }
+
+            try {
+                const res = await fetch('/Admin/UpdateRoleKey', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role, newKey })
+                });
+                const result = await res.json();
+
+                if (res.ok && result.success) {
+                    msgEl.innerHTML = `<small class="text-success"><i class="fas fa-check-circle me-1"></i>${result.message}</small>`;
+                    document.getElementById(`rkNew_${role}`).value     = '';
+                    document.getElementById(`rkConfirm_${role}`).value = '';
+                } else {
+                    msgEl.innerHTML = `<small class="text-danger"><i class="fas fa-times-circle me-1"></i>${result.message ?? 'Error al actualizar la clave.'}</small>`;
+                }
+            } catch (err) {
+                msgEl.innerHTML = `<small class="text-danger"><i class="fas fa-times-circle me-1"></i>Error de red: ${err.message}</small>`;
+            }
+        }
+        // ===================================================
     </script>
 }

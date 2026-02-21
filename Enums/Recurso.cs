@@ -16,5 +16,6 @@ public enum Recurso
     SlotsAgenda,
     GrupoPermisosPersonas,
     Persona,
-    Admin
+    Admin,
+    RoleKey
 }
