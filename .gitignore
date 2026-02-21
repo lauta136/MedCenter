@@ -13,3 +13,5 @@ obj/
 appsettings.Development.json
 backup_*.sql
 .DS_Store
+scripts/backup.sh
+scripts/restore.sh
