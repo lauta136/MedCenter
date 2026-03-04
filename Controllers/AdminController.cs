@@ -107,12 +107,12 @@ public class AdminController : BaseController
         if(!await _adminService.TienePermiso(UserId.Value, requiredPerm))
             return StatusCode(403, new { success = false, message = "No tienes permiso para desactivar este usuario." });
 
-        var result = await _adminService.DesactivarCuenta(dto.UserId, dto.Role);
+        var result = await _adminService.DesactivarCuenta(dto.UserId, dto.Role, dto.Force, UserId.Value, UserName ?? "Admin");
         if (result.Success)
         {
-            return Ok(new { success = true, message = "Cuenta desactivada correctamente" });
+            return Ok(new { success = true, message = dto.Force ? "Cuenta desactivada y turnos cancelados correctamente" : "Cuenta desactivada correctamente" });
         }
-        return BadRequest(new { success = false, message = result.ErrorMessage });
+        return BadRequest(new { success = false, message = result.ErrorMessage, hasActiveTurnos = result.HasActiveTurnos, activeTurnosCount = result.ActiveTurnosCount });
     }
 
     // API endpoint to deactivate an account

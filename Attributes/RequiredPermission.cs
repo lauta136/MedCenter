@@ -44,28 +44,30 @@ public class RequiredPermission : Attribute, IAsyncAuthorizationFilter
 
         // Get database context from DI
         var dbContext = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
-        
-        var persona = await dbContext.personas.AsNoTracking().FirstOrDefaultAsync(p => p.id == userId);
-        
-        if (persona == null || !persona.activo)
-        {
-            // Don't log out the user, just show a friendly message and redirect back
-            context.Result = new RedirectToActionResult("AccountDeactivated", "Access", null);
-            return;
-        }
-        
-        // Check if user has the required permission
+
+        // Check if user has the required permission first.
+        // If they do, allow them through even if their account is deactivated
+        // (e.g. a deactivated doctor who still has permission to generate reports).
         var hasPermission = await dbContext.personaPermisos
             .Include(pp => pp.Permiso)
             .AnyAsync(pp => pp.PersonaId == userId && pp.Permiso.Nombre == _permissionName);
 
-        if (!hasPermission)
+        if (hasPermission)
+            return;
+
+        // No permission — check whether the account is deactivated to show the right message.
+        var persona = await dbContext.personas.AsNoTracking().FirstOrDefaultAsync(p => p.id == userId);
+
+        if (persona == null || !persona.activo)
         {
-            context.Result = isApiRequest 
-                ? new JsonResult(new { success = false, message = $"No tienes permiso para realizar esta acción. Permiso requerido: {_permissionName}" }) 
-                  { StatusCode = 403 }
-                : new RedirectToActionResult("AccessDenied", "Access", null);
+            context.Result = new RedirectToActionResult("AccountDeactivated", "Access", null);
+            return;
         }
+
+        context.Result = isApiRequest
+            ? new JsonResult(new { success = false, message = $"No tienes permiso para realizar esta acción. Permiso requerido: {_permissionName}" })
+              { StatusCode = 403 }
+            : new RedirectToActionResult("AccessDenied", "Access", null);
     }
 
     private bool IsApiRequest(HttpContext context)

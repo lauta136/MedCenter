@@ -14,6 +14,8 @@ using MedCenter.Extensions;
 using MedCenter.Models;
 using MedCenter.Services.Authentication;
 using MedCenter.Services.TurnoSv;
+using MedCenter.Services.TurnoStates;
+using EmailSvc = MedCenter.Services.EmailService;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Org.BouncyCastle.Asn1.Pkcs;
@@ -26,13 +28,15 @@ public class AdminService
     private readonly TurnoService _turnoService;
     private readonly PersonaValidationService _validationService;
     private readonly PasswordHashService _hashService;
+    private readonly EmailSvc.EmailService _emailService;
 
-    public AdminService(AppDbContext appDbContext, TurnoService turnoService, PersonaValidationService personaValidationService, PasswordHashService passwordHashService)
+    public AdminService(AppDbContext appDbContext, TurnoService turnoService, PersonaValidationService personaValidationService, PasswordHashService passwordHashService, EmailSvc.EmailService emailService)
     {
         _context = appDbContext;
         _turnoService = turnoService;
         _validationService = personaValidationService;
         _hashService = passwordHashService;
+        _emailService = emailService;
     }
     
     public async Task<bool> AccesoAPanelAdmin(int id)
@@ -730,16 +734,38 @@ public class AdminService
         return group;
     }
 
-    public async Task<AdminResult> DesactivarCuenta(int userId, string rol)
+    public async Task<AdminResult> DesactivarCuenta(int userId, string rol, bool force = false, int? adminId = null, string? adminNombre = null)
     {
+        var tieneTurnos = await _turnoService.TieneTurnosActivos(userId, rol);
 
-        if(await _turnoService.TieneTurnosActivos(userId, rol))
-            return new AdminResult{Success = false, ErrorMessage = "El usuario esta registrado en turnos que aun estan activos"};
+        if(tieneTurnos && !force)
+            return new AdminResult{Success = false, ErrorMessage = "El usuario esta registrado en turnos que aun estan activos", HasActiveTurnos = true, ActiveTurnosCount = await GetTurnosActivosCount(userId, rol)};
 
         using var transaction = await _context.Database.BeginTransactionAsync();
 
         try 
         {
+            // If force deactivation, cancel all active appointments and notify patients
+            if(tieneTurnos && force)
+            {
+                await ForceCancelTurnosActivos(userId, rol, adminId, adminNombre ?? "Admin");
+            }
+
+            // If deactivating a doctor, disable all their availability blocks
+            if(rol == "Medico")
+            {
+                await _context.disponibilidad_medico
+                    .Where(d => d.medico_id == userId && d.activa == true)
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(d => d.activa, false)
+                        .SetProperty(d => d.vigencia_hasta, DateOnly.FromDateTime(DateTime.Now)));
+
+                // Delete unbooked future slots for this doctor
+                await _context.slotsagenda
+                    .Where(sa => sa.medico_id == userId && sa.disponible == true)
+                    .ExecuteDeleteAsync();
+            }
+
             var grupos = await _context.personasGrupos.Where(pg => pg.PersonaId == userId).Select(pg => pg.GrupoId).ToHashSetAsync();
             await _context.personasGrupos.Where(pg => pg.PersonaId == userId && grupos.Contains(pg.GrupoId)).ExecuteDeleteAsync();
 
@@ -754,9 +780,20 @@ public class AdminService
                 await _context.personaPermisos.Where(pp => pp.PersonaId == userId && !remainingPerm.Contains(pp.PermisoId)).ExecuteDeleteAsync();
             }
             
-            var persona = new Persona{id = userId, activo = false};
-            _context.Attach(persona);
-            _context.Entry(persona).Property(p => p.activo).IsModified = true;
+            // Check if Persona is already tracked (e.g. from Include chains in ForceCancelTurnosActivos)
+            var trackedPersona = _context.ChangeTracker.Entries<Persona>()
+                .FirstOrDefault(e => e.Entity.id == userId)?.Entity;
+
+            if(trackedPersona != null)
+            {
+                trackedPersona.activo = false;
+            }
+            else
+            {
+                var persona = new Persona{id = userId, activo = false};
+                _context.Attach(persona);
+                _context.Entry(persona).Property(p => p.activo).IsModified = true;
+            }
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
@@ -766,8 +803,123 @@ public class AdminService
 
         catch(Exception e)
         {
+            await transaction.RollbackAsync();
             return new AdminResult{Success = false, ErrorMessage = "Error inesperado al desactivar la cuenta"};
         }
+    }
+
+    /// <summary>
+    /// Force-cancels all active appointments for a user and sends email notifications to affected patients.
+    /// </summary>
+    private async Task ForceCancelTurnosActivos(int userId, string rol, int? adminId, string adminNombre)
+    {
+        var turnosActivos = await _context.turnos
+            .Include(t => t.medico).ThenInclude(m => m.idNavigation)
+            .Include(t => t.paciente).ThenInclude(p => p.idNavigation)
+            .Include(t => t.especialidad)
+            .Include(t => t.slot)
+            .Where(t => (t.estado == EstadosTurno.Reservado.ToString() || t.estado == EstadosTurno.Reprogramado.ToString())
+                        && (t.medico_id == userId || t.paciente_id == userId))
+            .ToListAsync();
+
+        var stateService = new TurnoStateService();
+        var motivoCancelacion = rol == "Medico" 
+            ? $"La cuenta del médico ha sido desactivada por el administrador {adminNombre}" 
+            : $"La cuenta del paciente ha sido desactivada por el administrador {adminNombre}";
+
+        foreach(var turno in turnosActivos)
+        {
+            // Record audit
+            _context.turnoAuditorias.Add(new TurnoAuditoria
+            {
+                TurnoId = turno.id,
+                UsuarioNombre = $"{adminNombre} (desactivación forzada)",
+                MomentoAccion = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
+                Accion = AccionesTurno.CANCEL,
+                FechaAnterior = turno.fecha,
+                FechaNueva = null,
+                HoraAnterior = turno.hora,
+                HoraNueva = null,
+                EstadoAnterior = stateService.GetEstadoActual(turno).GetNombreEstado().ToEstadoTurno(),
+                EstadoNuevo = EstadosTurno.Cancelado,
+                PacienteId = turno.paciente_id.Value,
+                PacienteNombre = turno.paciente?.idNavigation?.nombre ?? "Desconocido",
+                PacienteDNI = turno.paciente?.dni ?? "N/A",
+                MedicoId = turno.medico_id.Value,
+                MedicoNombre = turno.medico?.idNavigation?.nombre ?? "Desconocido",
+                EspecialidadId = turno.especialidad_id ?? 0,
+                EspecialidadNombre = turno.especialidad?.nombre ?? "N/A",
+                SlotIdAnterior = turno.slot_id,
+                SlotIdNuevo = null,
+                MotivoCancelacion = motivoCancelacion,
+                MedicoNuevoId = null,
+                MedicoNuevoNombre = null,
+                MedicoAnteriorId = turno.medico_id.Value,
+                MedicoAnteriorNombre = turno.medico?.idNavigation?.nombre ?? "Desconocido"
+            });
+
+            _context.trazabilidadTurnos.Add(new TrazabilidadTurno
+            {
+                TurnoId = turno.id,
+                UsuarioId = adminId,
+                UsuarioNombre = adminNombre,
+                MomentoAccion = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
+                Accion = AccionesTurno.CANCEL,
+                Descripcion = $"Turno cancelado automáticamente por desactivación forzada de cuenta ({rol}) por el administrador {adminNombre}",
+                UsuarioRol = RolUsuario.Admin
+            });
+
+            // Cancel the turno via state service
+            stateService.Cancelar(turno, motivoCancelacion);
+
+            // Free the slot (use already-tracked entity from Include)
+            if(turno.slot != null)
+            {
+                turno.slot.disponible = true;
+                turno.slot_id = null;
+            }
+
+            // Send email notification to the patient
+            if(turno.paciente?.idNavigation?.email != null && turno.fecha.HasValue && turno.hora.HasValue)
+            {
+                _ = _emailService.SendTurnoCanceladoEmailAsync(
+                    turno.paciente.idNavigation.email,
+                    turno.paciente.idNavigation.nombre ?? "Paciente",
+                    turno.medico?.idNavigation?.nombre ?? "Médico",
+                    turno.especialidad?.nombre ?? "Especialidad",
+                    turno.fecha.Value,
+                    turno.hora.Value,
+                    motivoCancelacion
+                );
+            }
+
+            // If it's the patient being deactivated, also notify the doctor
+            if(rol != "Medico" && turno.medico?.idNavigation?.email != null && turno.fecha.HasValue && turno.hora.HasValue)
+            {
+                _ = _emailService.SendTurnoCanceladoEmailAsync(
+                    turno.medico.idNavigation.email,
+                    turno.medico.idNavigation.nombre ?? "Médico",
+                    turno.medico.idNavigation.nombre ?? "Médico",
+                    turno.especialidad?.nombre ?? "Especialidad",
+                    turno.fecha.Value,
+                    turno.hora.Value,
+                    motivoCancelacion
+                );
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets the count of active appointments for a user (for the warning message).
+    /// </summary>
+    public async Task<int> GetTurnosActivosCount(int userId, string rol)
+    {
+        if(rol == RolUsuario.Secretaria.ToString() || rol == RolUsuario.Admin.ToString())
+            return 0;
+
+        return await _context.turnos.CountAsync(t => 
+            (t.estado == EstadosTurno.Reservado.ToString() || t.estado == EstadosTurno.Reprogramado.ToString())
+            && (t.medico_id == userId || t.paciente_id == userId));
     }
 
     public async Task<AdminResult> ReactivarCuenta(int userId, string rol)

@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using DocumentFormat.OpenXml.Office2016.Excel;
 using MedCenter.Attributes;
 using MedCenter.Services.AdminService;
+using System.Text.Json;
 
 namespace MedCenter.Controllers
 {
@@ -595,6 +596,172 @@ namespace MedCenter.Controllers
         {
             var medicos = await _especialidadService.GetMedicosPorEspecialidadReporte(especialidadId,mesesAtras);
             return Ok(medicos);
+        }
+
+        // ==== TRAZABILIDAD TURNOS REPORTS ====
+
+        //[Authorize(Roles = nameof(RolUsuario.Secretaria))]
+        [RequiredPermission("reporte:create_turnos_trazabilidad")]
+        [HttpGet]
+        public async Task<IActionResult> DescargarTrazabilidadTurnosPDF(
+            string fechaDesde,
+            string fechaHasta,
+            string? usuarioNombre = null,
+            AccionesTurno? accion = null)
+        {
+            if (!DateTime.TryParse(fechaDesde, out var desde) ||
+                !DateTime.TryParse(fechaHasta, out var hasta))
+            {
+                TempData["ErrorMessage"] = "Fechas inválidas";
+                return RedirectToAction("Index");
+            }
+
+            try
+            {
+                var builder = new ReporteTrazabilidadTurnosPDFConstructor(_reportesService);
+                await _reportDirector.ConstructTrazabilidadTurnos(builder, desde, hasta, usuarioNombre, accion);
+                var reporte = _reportDirector.GetReporte();
+                var pdfBytes = reporte.GetBytes();
+
+                return File(pdfBytes, "application/pdf", $"Trazabilidad_Turnos_{DateTime.Now:yyyyMMdd}.pdf");
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al generar reporte: {ex.Message}";
+                return RedirectToAction("Index");
+            }
+        }
+
+        //[Authorize(Roles = nameof(RolUsuario.Secretaria))]
+        [RequiredPermission("reporte:create_turnos_trazabilidad")]
+        [HttpGet]
+        public async Task<IActionResult> DescargarTrazabilidadTurnosExcel(
+            string fechaDesde,
+            string fechaHasta,
+            string? usuarioNombre = null,
+            AccionesTurno? accion = null)
+        {
+            if (!DateTime.TryParse(fechaDesde, out var desde) ||
+                !DateTime.TryParse(fechaHasta, out var hasta))
+            {
+                TempData["ErrorMessage"] = "Fechas inválidas";
+                return RedirectToAction("Index");
+            }
+
+            try
+            {
+                var builder = new ReporteTrazabilidadTurnosExcelConstructor(_reportesService);
+                await _reportDirector.ConstructTrazabilidadTurnos(builder, desde, hasta, usuarioNombre, accion);
+                var reporte = _reportDirector.GetReporte();
+                var excelBytes = reporte.GetBytes();
+
+                return File(
+                    excelBytes,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    $"Trazabilidad_Turnos_{DateTime.Now:yyyyMMdd}.xlsx"
+                );
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al generar reporte: {ex.Message}";
+                return RedirectToAction("Index");
+            }
+        }
+
+        // ==== INTERACTIVE DASHBOARD (Chart.js) ====
+
+        /// <summary>
+        /// Returns an interactive HTML dashboard with Chart.js graphs.
+        /// Uses the Builder pattern: ReporteDashboardConstructor + Director.ConstructDashboard()
+        /// </summary>
+        [Authorize(Roles = $"{nameof(RolUsuario.Secretaria)},{nameof(RolUsuario.Medico)}")]
+        [HttpGet]
+        public async Task<IActionResult> DashboardInteractivo(string fechaDesde, string fechaHasta, int? medicoId = null, int? especialidadId = null)
+        {
+            if (!DateTime.TryParse(fechaDesde, out var desde) ||
+                !DateTime.TryParse(fechaHasta, out var hasta))
+            {
+                TempData["ErrorMessage"] = "Fechas inválidas";
+                return RedirectToAction("Index");
+            }
+
+            // If medico role, use their own ID
+            if (User.IsInRole(RolUsuario.Medico.ToString()) && !medicoId.HasValue)
+                medicoId = UserId;
+
+            try
+            {
+                // Builder pattern: create dashboard builder
+                var builder = new ReporteDashboardConstructor(_reportesService);
+
+                // Director orchestrates the construction
+                await _reportDirector.ConstructDashboard(builder, desde, hasta, medicoId, especialidadId);
+
+                // Get the final product
+                var reporte = _reportDirector.GetReporte();
+                var stats = reporte[ParteReporte.Data] as EstadisticasAvanzadasDTO;
+
+                if (stats == null)
+                {
+                    TempData["ErrorMessage"] = "No se encontraron datos para el período seleccionado";
+                    return RedirectToAction("Index");
+                }
+
+                ViewBag.Header = reporte[ParteReporte.Header];
+                ViewBag.Footer = reporte[ParteReporte.Footer];
+                ViewBag.FechaDesde = desde;
+                ViewBag.FechaHasta = hasta;
+                ViewBag.UserName = UserName;
+                ViewBag.EsAdmin = await _adminService.AccesoAPanelAdmin(UserId.Value);
+                ViewBag.EsMedico = User.IsInRole(RolUsuario.Medico.ToString());
+
+                // Serialize data for Chart.js
+                ViewBag.StatsJson = JsonSerializer.Serialize(stats, new JsonSerializerOptions 
+                { 
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase 
+                });
+
+                if (User.IsInRole(RolUsuario.Medico.ToString()))
+                    return View("~/Views/Shared/DashboardReporte.cshtml", stats);
+                else
+                    return View("~/Views/Shared/DashboardReporte.cshtml", stats);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al generar dashboard: {ex.Message}";
+                return RedirectToAction("Index");
+            }
+        }
+
+        /// <summary>
+        /// Returns the dashboard data as JSON for AJAX requests
+        /// </summary>
+        [Authorize(Roles = $"{nameof(RolUsuario.Secretaria)},{nameof(RolUsuario.Medico)}")]
+        [HttpGet]
+        public async Task<IActionResult> DashboardData(string fechaDesde, string fechaHasta, int? medicoId = null, int? especialidadId = null)
+        {
+            if (!DateTime.TryParse(fechaDesde, out var desde) ||
+                !DateTime.TryParse(fechaHasta, out var hasta))
+            {
+                return BadRequest("Fechas inválidas");
+            }
+
+            if (User.IsInRole(RolUsuario.Medico.ToString()) && !medicoId.HasValue)
+                medicoId = UserId;
+
+            try
+            {
+                var builder = new ReporteDashboardConstructor(_reportesService);
+                await _reportDirector.ConstructDashboard(builder, desde, hasta, medicoId, especialidadId);
+                var reporte = _reportDirector.GetReporte();
+                var stats = reporte[ParteReporte.Data] as EstadisticasAvanzadasDTO;
+
+                return Json(stats);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 

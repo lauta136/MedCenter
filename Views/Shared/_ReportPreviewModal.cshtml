@@ -1,0 +1,115 @@
+<!-- Report Preview Modal - Allows users to view PDF reports in the browser without downloading -->
+<div class="modal fade" id="reportePreviewModal" tabindex="-1" aria-labelledby="reportePreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white py-2">
+                <h5 class="modal-title" id="reportePreviewModalLabel">
+                    <i class="fas fa-eye me-2"></i>
+                    Vista Previa del Reporte
+                </h5>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-light" onclick="descargarDesdePreview()" title="Descargar">
+                        <i class="fas fa-download me-1"></i> Descargar
+                    </button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+            </div>
+            <div class="modal-body p-0 position-relative">
+                <!-- Loading spinner -->
+                <div id="previewLoading" class="position-absolute top-50 start-50 translate-middle text-center" style="z-index: 10;">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-3 text-muted fw-semibold">Generando vista previa...</p>
+                </div>
+                <!-- PDF iframe -->
+                <iframe id="reportePreviewFrame" style="width: 100%; height: 100%; border: none; display: none;"></iframe>
+                <!-- Error message -->
+                <div id="previewError" class="position-absolute top-50 start-50 translate-middle text-center" style="display: none;">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <p class="text-muted fw-semibold">No se pudo cargar la vista previa del reporte.</p>
+                    <p class="text-muted small">Intente descargar el archivo directamente.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentPreviewUrl = null;
+    let currentPreviewBlobUrl = null;
+
+    /**
+     * Opens a PDF report preview in a fullscreen modal.
+     * Fetches the report, creates a blob URL, and displays it in an iframe.
+     */
+    async function previsualizarReporte(url) {
+        const modal = new bootstrap.Modal(document.getElementById('reportePreviewModal'));
+        const iframe = document.getElementById('reportePreviewFrame');
+        const loading = document.getElementById('previewLoading');
+        const errorDiv = document.getElementById('previewError');
+        
+        // Store URL for download button
+        currentPreviewUrl = url;
+        
+        // Reset state
+        iframe.style.display = 'none';
+        iframe.src = '';
+        loading.style.display = 'block';
+        errorDiv.style.display = 'none';
+        
+        // Revoke previous blob URL if exists
+        if (currentPreviewBlobUrl) {
+            URL.revokeObjectURL(currentPreviewBlobUrl);
+            currentPreviewBlobUrl = null;
+        }
+        
+        modal.show();
+        
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Error al obtener el reporte');
+            
+            const blob = await response.blob();
+            currentPreviewBlobUrl = URL.createObjectURL(blob);
+            
+            iframe.src = currentPreviewBlobUrl;
+            iframe.onload = function() {
+                loading.style.display = 'none';
+                iframe.style.display = 'block';
+            };
+            
+            // Fallback: show iframe after a timeout even if onload doesn't fire
+            setTimeout(() => {
+                if (loading.style.display !== 'none') {
+                    loading.style.display = 'none';
+                    iframe.style.display = 'block';
+                }
+            }, 5000);
+            
+        } catch (error) {
+            console.error('Error al previsualizar reporte:', error);
+            loading.style.display = 'none';
+            errorDiv.style.display = 'block';
+        }
+    }
+    
+    /**
+     * Downloads the currently previewed report
+     */
+    function descargarDesdePreview() {
+        if (currentPreviewUrl) {
+            window.location.href = currentPreviewUrl;
+        }
+    }
+    
+    // Cleanup blob URL when modal is closed
+    document.getElementById('reportePreviewModal')?.addEventListener('hidden.bs.modal', function () {
+        const iframe = document.getElementById('reportePreviewFrame');
+        iframe.src = '';
+        if (currentPreviewBlobUrl) {
+            URL.revokeObjectURL(currentPreviewBlobUrl);
+            currentPreviewBlobUrl = null;
+        }
+    });
+</script>

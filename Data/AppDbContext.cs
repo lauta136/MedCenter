@@ -381,6 +381,16 @@ public partial class AppDbContext : DbContext
             e.Property(e => e.SlotIdNuevo).HasColumnName("slot_id_nuevo");
             e.Property(e => e.Accion).HasColumnName("accion").IsRequired().HasConversion<string>();
             e.Property(e => e.MotivoCancelacion).HasColumnName("motivo_cancelacion");
+            e.Property(e => e.MedicoAnteriorId).HasColumnName("medico_anterior_id");
+            e.Property(e => e.MedicoAnteriorNombre).HasColumnName("medico_anterior_nombre");
+            e.Property(e => e.MedicoNuevoId).HasColumnName("medico_nuevo_id");
+            e.Property(e => e.MedicoNuevoNombre).HasColumnName("medico_nuevo_nombre");
+            e.Property(e => e.PacienteId).HasColumnName("paciente_id");
+            e.Property(e => e.MedicoId).HasColumnName("medico_id");
+            e.Property(e => e.EspecialidadId).HasColumnName("especialidad_id");
+            e.Property(e => e.EspecialidadNombre).HasColumnName("especialidad_nombre");
+            e.Property(e => e.PacienteObraSocialId).HasColumnName("paciente_obra_social_id");
+            e.Property(e => e.ObraSocialNombre).HasColumnName("obra_social_nombre");
 
         });
 

@@ -375,6 +375,13 @@ public static class DbInitializer
                     Descripcion = "Editar las llaves para crear cuentas de los roles",                    
                     Recurso = MedCenter.Enums.Recurso.RoleKey,
                     Accion = MedCenter.Enums.AccionUsuario.Update
+                },
+                new Permiso
+                {
+                    Nombre = "reporte:create_turnos_trazabilidad",
+                    Descripcion = "Crear reporte de la trazabilidad de los turnos",                    
+                    Recurso = MedCenter.Enums.Recurso.Reporte,
+                    Accion = MedCenter.Enums.AccionUsuario.Create
                 }
 
             };
@@ -660,6 +667,11 @@ public static class DbInitializer
                 {
                     RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Admin,
                     PermisoId = permisos.Where(p => p.Nombre == "role_key:update").Select(p => p.Id).FirstOrDefault(),
+                },
+                new RolPermiso
+                {
+                    RolNombre = MedCenter.Services.TurnoSv.RolUsuario.Secretaria,
+                    PermisoId = permisos.Where(p => p.Nombre == "reporte:create_turnos_trazabilidad").Select(p => p.Id).FirstOrDefault(),
                 }
             };
 

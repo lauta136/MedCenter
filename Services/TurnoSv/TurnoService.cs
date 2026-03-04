@@ -13,6 +13,7 @@ using MedCenter.Migrations;
 using DocumentFormat.OpenXml.Office.CustomUI;
 using MedCenter.Extensions;
 using System.Security.Claims;
+using EmailSvc = MedCenter.Services.EmailService;
 
 namespace MedCenter.Services.TurnoSv;
 
@@ -21,14 +22,16 @@ public class TurnoService
     private readonly AppDbContext _context;
     private readonly TurnoStateService _stateService;
     private readonly DisponibilidadService _dispoService;
+    private readonly EmailSvc.EmailService _emailService;
 
     private readonly IHttpContextAccessor _httpContext;
-    public TurnoService(AppDbContext appDbContext, TurnoStateService turnoStateService, DisponibilidadService disponibilidadService,IHttpContextAccessor httpContextAccessor)
+    public TurnoService(AppDbContext appDbContext, TurnoStateService turnoStateService, DisponibilidadService disponibilidadService,IHttpContextAccessor httpContextAccessor, EmailSvc.EmailService emailService)
     {
         _context = appDbContext;
         _stateService = turnoStateService;
         _dispoService = disponibilidadService;
         _httpContext = httpContextAccessor;
+        _emailService = emailService;
     }
 
     public int? GetCurrentUserId()
@@ -95,7 +98,7 @@ public class TurnoService
 
         _context.turnos.Add(turno);
         _stateService.Reservar(turno);
-        
+
         slot.disponible = false;
 
         await _context.SaveChangesAsync(); //Para que se le asigne un valor al id de turno, no puedo hacerlo todo en un solo saveChanges ya que el turnoId no esta fijado como FK en la tabla auditoria
@@ -122,6 +125,10 @@ public class TurnoService
             EspecialidadId = turno.especialidad_id.Value,
             EspecialidadNombre = espNombre.nombre,
             SlotIdNuevo = turno.slot_id,
+            MedicoAnteriorId = null,
+            MedicoAnteriorNombre = null,
+            MedicoNuevoId = turno.medico_id.Value,
+            MedicoNuevoNombre = medNombre.nombre
         });
 
         _context.trazabilidadTurnos.Add(new TrazabilidadTurno
@@ -137,6 +144,19 @@ public class TurnoService
 
         await _context.SaveChangesAsync();
 
+        // Send reservation confirmation email to the patient
+        var pacienteEmail = await _context.personas.Where(p => p.id == pacienteFinalId).Select(p => p.email).FirstOrDefaultAsync();
+        if(!string.IsNullOrEmpty(pacienteEmail) && turno.fecha.HasValue && turno.hora.HasValue)
+        {
+            _ = _emailService.SendTurnoReservadoEmailAsync(
+                pacienteEmail,
+                pacInfo.nombre ?? "Paciente",
+                medNombre.nombre ?? "Médico",
+                espNombre.nombre ?? "Especialidad",
+                turno.fecha.Value,
+                turno.hora.Value
+            );
+        }
 
         return (true, "Turno creado exitosamente");
     }
@@ -237,6 +257,13 @@ public class TurnoService
         await _context.turnos.Entry(turno).Reference(t => t.medico).Query().Include(m => m.idNavigation).LoadAsync();
         await _context.turnos.Entry(turno).Reference(t => t.especialidad).LoadAsync();
 
+        // Load the new medico's info (may be the same or a different doctor)
+        var nuevoMedico = await _context.medicos
+            .Include(m => m.idNavigation)
+            .FirstOrDefaultAsync(m => m.id == nuevoSlot.medico_id);
+
+        bool cambioDeMedico = nuevoSlot.medico_id != turno.medico_id;
+
         //var slotViejo = await _context.slotsagenda.FirstOrDefaultAsync(sa => sa.id == turno.slot_id);
 
         _context.turnoAuditorias.Add(new TurnoAuditoria
@@ -254,12 +281,17 @@ public class TurnoService
             PacienteId = turno.paciente_id.Value,
             PacienteNombre = turno.paciente.idNavigation.nombre,
             PacienteDNI = turno.paciente.dni,
-            MedicoId = turno.medico_id.Value,
-            MedicoNombre = turno.medico.idNavigation.nombre,
+            MedicoAnteriorId = turno.medico_id.Value,
+            MedicoAnteriorNombre = turno.medico.idNavigation.nombre,
+            MedicoNuevoId = nuevoSlot.medico_id.Value,
+            MedicoNuevoNombre = nuevoMedico?.idNavigation?.nombre,
             EspecialidadId = turno.especialidad_id.Value,
             EspecialidadNombre = turno.especialidad.nombre,
             SlotIdNuevo = nuevoSlotId,
-            SlotIdAnterior = turno.slot_id
+            SlotIdAnterior = turno.slot_id,
+            MedicoId = nuevoSlot.medico_id.Value,
+            MedicoNombre = nuevoMedico?.idNavigation?.nombre,
+
         });
 
         _context.trazabilidadTurnos.Add(new TrazabilidadTurno
@@ -270,7 +302,9 @@ public class TurnoService
             UsuarioRol = currentUserRole,
             MomentoAccion = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
             Accion = AccionesTurno.UPDATE,
-            Descripcion = currentUserRole == RolUsuario.Secretaria ? $"La secretaria {currentUserName} reprogramo un turno" : $"El paciente {currentUserName} reprogramo un turno"
+            Descripcion = currentUserRole == RolUsuario.Secretaria
+                ? $"La secretaria {currentUserName} reprogramo un turno{(cambioDeMedico ? $" (cambio de medico: {turno.medico.idNavigation.nombre} → {nuevoMedico?.idNavigation?.nombre})" : "")}"
+                : $"El paciente {currentUserName} reprogramo un turno{(cambioDeMedico ? $" (cambio de medico: {turno.medico.idNavigation.nombre} → {nuevoMedico?.idNavigation?.nombre})" : "")}"
         });
 
         // Guardar el ID del slot viejo ANTES de cambiarlo
@@ -330,9 +364,9 @@ public class TurnoService
             MomentoAccion = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
             Accion = AccionesTurno.CANCEL,
             FechaAnterior = turno.fecha,
-            FechaNueva = turno.fecha,
+            FechaNueva = null,
             HoraAnterior = turno.hora,
-            HoraNueva = turno.hora,
+            HoraNueva = null,
             EstadoAnterior = _stateService.GetEstadoActual(turno).GetNombreEstado().ToEstadoTurno(),
             EstadoNuevo = EstadosTurno.Cancelado,
             PacienteId = turno.paciente_id.Value,
@@ -344,7 +378,11 @@ public class TurnoService
             EspecialidadNombre = turno.especialidad.nombre,
             SlotIdAnterior = turno.slot_id,
             SlotIdNuevo = null,
-            MotivoCancelacion = dto.MotivoCancelacion
+            MotivoCancelacion = dto.MotivoCancelacion,
+            MedicoNuevoId = null,
+            MedicoNuevoNombre = null,
+            MedicoAnteriorId = turno.medico_id.Value,
+            MedicoAnteriorNombre = turno.medico.idNavigation.nombre
         });
 
         _context.trazabilidadTurnos.Add(new TrazabilidadTurno
@@ -369,6 +407,22 @@ public class TurnoService
 
 
         await _context.SaveChangesAsync();
+
+        // Send email to patient when canceled by secretaria
+        if(currentUserRole == RolUsuario.Secretaria 
+            && turno.paciente?.idNavigation?.email != null 
+            && turno.fecha.HasValue && turno.hora.HasValue)
+        {
+            _ = _emailService.SendTurnoCanceladoEmailAsync(
+                turno.paciente.idNavigation.email,
+                turno.paciente.idNavigation.nombre ?? "Paciente",
+                turno.medico?.idNavigation?.nombre ?? "Médico",
+                turno.especialidad?.nombre ?? "Especialidad",
+                turno.fecha.Value,
+                turno.hora.Value,
+                dto.MotivoCancelacion ?? "Cancelado por la secretaría"
+            );
+        }
 
         return true;
     }

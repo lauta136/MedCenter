@@ -1494,7 +1494,7 @@
                 const response = await fetch('/Admin/DeactivateAccpunt', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId, role })
+                    body: JSON.stringify({ userId, role, force: false })
                 });
                 
                 const result = await response.json();
@@ -1502,11 +1502,94 @@
                 if (result.success) {
                     showNotification('success', result.message);
                     setTimeout(() => location.reload(), 1000);
+                } else if (result.hasActiveTurnos) {
+                    // Show warning modal with force-deactivate option
+                    showForceDeactivateModal(userId, userName, role, result.activeTurnosCount);
                 } else {
                     showNotification('error', result.message);
                 }
             } catch (error) {
                 showNotification('error', 'Error al desactivar la cuenta');
+            }
+        }
+
+        // Show force deactivate confirmation modal
+        function showForceDeactivateModal(userId, userName, role, turnosCount) {
+            // Remove existing modal if any
+            const existing = document.getElementById('forceDeactivateModal');
+            if (existing) existing.remove();
+
+            const rolLabel = role === 'Medico' ? 'médico' : (role === 'Paciente' ? 'paciente' : role.toLowerCase());
+            const extraInfo = role === 'Medico' 
+                ? '<p class="mb-1">• Se desactivarán todos los bloques de disponibilidad del médico</p><p class="mb-1">• Se eliminarán los horarios libres futuros</p>'
+                : '';
+
+            const modalHtml = `
+                <div class="modal fade" id="forceDeactivateModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header" style="background: linear-gradient(135deg, #ef4444, #b91c1c); color: white;">
+                                <h5 class="modal-title" style="color: white !important;">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Atención: Turnos Activos
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-warning d-flex align-items-start">
+                                    <i class="bi bi-exclamation-triangle-fill me-3 fs-4 text-warning"></i>
+                                    <div>
+                                        <strong>${userName}</strong> tiene <strong>${turnosCount} turno(s) activo(s)</strong>.
+                                    </div>
+                                </div>
+                                <p>Al forzar la desactivación:</p>
+                                <div class="ps-3">
+                                    <p class="mb-1">• Se cancelarán automáticamente <strong>todos los turnos activos</strong></p>
+                                    <p class="mb-1">• Se enviará un email de notificación a los pacientes afectados</p>
+                                    ${extraInfo}
+                                    <p class="mb-1">• La cuenta del ${rolLabel} será desactivada</p>
+                                </div>
+                                <div class="alert alert-danger mt-3 mb-0">
+                                    <strong>Esta acción no se puede deshacer.</strong>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="button" class="btn btn-danger" onclick="forceDeactivateAccount(${userId}, '${role}')">
+                                    <i class="bi bi-exclamation-octagon-fill me-1"></i>Forzar Desactivación
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            const modal = new bootstrap.Modal(document.getElementById('forceDeactivateModal'));
+            modal.show();
+        }
+
+        // Force deactivate account (cancels all active appointments)
+        async function forceDeactivateAccount(userId, role) {
+            try {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('forceDeactivateModal'));
+                if (modal) modal.hide();
+
+                const response = await fetch('/Admin/DeactivateAccpunt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, role, force: true })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('success', result.message);
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showNotification('error', result.message);
+                }
+            } catch (error) {
+                showNotification('error', 'Error al forzar la desactivación de la cuenta');
             }
         }
 

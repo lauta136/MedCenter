@@ -8,5 +8,8 @@ public enum TipoReporte
     HistoriasMedico,
     AuditoriaTurnos,
     TurnosPorMedico,
-    AuditoriaLogins
+    AuditoriaLogins,
+    Ejecutivo,
+    TrazabilidadTurnos,
+    DashboardInteractivo
 }

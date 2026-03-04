@@ -3,6 +3,7 @@ using System;
 using MedCenter.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MedCenter.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260222204350_AgregarMedicoCambioEnAuditoria")]
+    partial class AgregarMedicoCambioEnAuditoria
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -801,13 +804,11 @@ namespace MedCenter.Migrations
                         .HasColumnName("accion");
 
                     b.Property<int>("EspecialidadId")
-                        .HasColumnType("integer")
-                        .HasColumnName("especialidad_id");
+                        .HasColumnType("integer");
 
                     b.Property<string>("EspecialidadNombre")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("especialidad_nombre");
+                        .HasColumnType("text");
 
                     b.Property<string>("EstadoAnterior")
                         .HasColumnType("text")
@@ -834,16 +835,13 @@ namespace MedCenter.Migrations
                         .HasColumnName("hora_nueva");
 
                     b.Property<int?>("MedicoAnteriorId")
-                        .HasColumnType("integer")
-                        .HasColumnName("medico_anterior_id");
+                        .HasColumnType("integer");
 
                     b.Property<string>("MedicoAnteriorNombre")
-                        .HasColumnType("text")
-                        .HasColumnName("medico_anterior_nombre");
+                        .HasColumnType("text");
 
                     b.Property<int>("MedicoId")
-                        .HasColumnType("integer")
-                        .HasColumnName("medico_id");
+                        .HasColumnType("integer");
 
                     b.Property<string>("MedicoNombre")
                         .IsRequired()
@@ -851,12 +849,10 @@ namespace MedCenter.Migrations
                         .HasColumnName("medico_nombre");
 
                     b.Property<int?>("MedicoNuevoId")
-                        .HasColumnType("integer")
-                        .HasColumnName("medico_nuevo_id");
+                        .HasColumnType("integer");
 
                     b.Property<string>("MedicoNuevoNombre")
-                        .HasColumnType("text")
-                        .HasColumnName("medico_nuevo_nombre");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("MomentoAccion")
                         .HasColumnType("timestamp with time zone")
@@ -867,8 +863,7 @@ namespace MedCenter.Migrations
                         .HasColumnName("motivo_cancelacion");
 
                     b.Property<string>("ObraSocialNombre")
-                        .HasColumnType("text")
-                        .HasColumnName("obra_social_nombre");
+                        .HasColumnType("text");
 
                     b.Property<string>("PacienteDNI")
                         .IsRequired()
@@ -876,8 +871,7 @@ namespace MedCenter.Migrations
                         .HasColumnName("paciente_dni");
 
                     b.Property<int>("PacienteId")
-                        .HasColumnType("integer")
-                        .HasColumnName("paciente_id");
+                        .HasColumnType("integer");
 
                     b.Property<string>("PacienteNombre")
                         .IsRequired()
@@ -885,8 +879,7 @@ namespace MedCenter.Migrations
                         .HasColumnName("paciente_nombre");
 
                     b.Property<int?>("PacienteObraSocialId")
-                        .HasColumnType("integer")
-                        .HasColumnName("paciente_obra_social_id");
+                        .HasColumnType("integer");
 
                     b.Property<int?>("SlotIdAnterior")
                         .HasColumnType("integer")

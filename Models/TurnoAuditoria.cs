@@ -19,6 +19,12 @@ public class TurnoAuditoria
     
     public EstadosTurno? EstadoAnterior { get; set; }
     public EstadosTurno? EstadoNuevo { get; set; }
+
+    public int? MedicoAnteriorId { get; set; }
+    public string? MedicoAnteriorNombre { get; set; }
+
+    public int? MedicoNuevoId { get; set; }
+    public string? MedicoNuevoNombre { get; set; }
     
     
     // ========================================

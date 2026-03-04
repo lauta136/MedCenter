@@ -376,11 +376,14 @@
         tarjeta.classList.add('seleccionada');
         
         medicoSeleccionado = medicoId;
+        fechaSeleccionada = null;
+        slotSeleccionado = null;
         
-        // Limpiar pasos siguientes
+        // Limpiar y ocultar pasos siguientes
+        document.getElementById('paso2').style.display = 'none';
         document.getElementById('calendarioDisponible').innerHTML = '';
-        document.getElementById('horariosDisponibles').innerHTML = '';
         document.getElementById('paso3').style.display = 'none';
+        document.getElementById('horariosDisponibles').innerHTML = '';
         document.getElementById('btnConfirmar').style.display = 'none';
         
         await cargarDiasDisponibles(medicoId);

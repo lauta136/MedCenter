@@ -68,33 +68,6 @@ namespace MedCenter.Services.DisponibilidadMedico
 
         }
 
-
-        /*public async Task<DisponibilidadResult> EditarBloqueDisponibilidad(ManipularDisponibilidadDTO dto, int dispo_id, int medico_id)
-        {
-
-            if (await NuevaDisponibilidadCoherente(dto, medico_id))
-            {
-                var dispo = await _context.disponibilidad_medico.FirstOrDefaultAsync(dm => dm.id == dispo_id);
-
-                if (dispo == null) return new DisponibilidadResult { success = false, message = "El bloque de disponibilidad no fue encontrado" };
-
-                dispo.dia_semana = dto.Dia_semana;
-                dispo.hora_inicio = dto.Hora_inicio;
-                dispo.hora_fin = dto.Hora_fin;
-                dispo.duracion_turno_minutos = dto.Duracion_turno_minutos;
-
-                _context.Update(dispo);
-                await _context.SaveChangesAsync();
-
-                return new DisponibilidadResult { success = true, message = "El bloque fue actualizado exitosamente" };
-            }
-            else
-            {
-                return new DisponibilidadResult { success = false, message = "El nuevo horario ingresado se superpone con uno ya activo" };
-            }
-
-        }
-        */
         public async Task<DisponibilidadResult> CancelarBloqueDisponibilidad(int medico_id, ManipularDisponibilidadDTO dto, int dispo_id)
         {
         
@@ -216,7 +189,7 @@ namespace MedCenter.Services.DisponibilidadMedico
 
             if (bloques == null) return new DisponibilidadResult{ success = false, message = "El medico no tiene bloques de disponibilidad activos" };
 
-            if(! await _context.personas.AnyAsync(p => p.id == medico_id && p.activo == false))
+            if(! await _context.personas.AnyAsync(p => p.id == medico_id && p.activo == true))
             return new DisponibilidadResult{success = false, message = "La cuenta del medico fue desactivada"};
             
             List<SlotAgenda> slotsAAgregar = new List<SlotAgenda>();

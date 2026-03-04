@@ -40,31 +40,23 @@ public class ReportePDFConstructor : ReporteConstructor
     
     public override async Task BuildStatistics()
     {
-        // For summary reports, generate a standalone statistics PDF
-        // For detailed reports, statistics are appended to existing data PDF
-        
+        // Always produces a standalone statistics PDF.
+        // Reporte.GetBytes() returns Data when present, Statistics otherwise —
+        // so this serves as the sole output for Summary reports and as supplemental
+        // metadata for Detailed reports, without inspecting sibling build steps.
         var stats = await _reportesService.ObtenerEstadisticasMes(
             FechaDesde.Month,
             FechaDesde.Year,
             MedicoId
         );
-        
-        // If Data part is empty, create standalone statistics PDF (Summary Report)
-        if (Reporte[ParteReporte.Data] == null)
-        {
-            var statsPdfBytes = _reportesService.GenerarPDFEstadisticasSimples(
-                stats,
-                $"Resumen Estadístico de Turnos - {FechaDesde:MMMM yyyy}",
-                FechaDesde,
-                FechaHasta
-            );
-            Reporte[ParteReporte.Statistics] = statsPdfBytes;
-        }
-        else
-        {
-            // Statistics already included in detailed PDF
-            Reporte[ParteReporte.Statistics] = $"Total: {stats.TurnosMes} turnos, Cancelados: {stats.TurnosCancelados}";
-        }
+
+        var statsPdfBytes = _reportesService.GenerarPDFEstadisticasSimples(
+            stats,
+            $"Resumen Estadístico de Turnos - {FechaDesde:MMMM yyyy}",
+            FechaDesde,
+            FechaHasta
+        );
+        Reporte[ParteReporte.Statistics] = statsPdfBytes;
     }
     
     public override void BuildFooter()

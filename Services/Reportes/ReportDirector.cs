@@ -10,8 +10,8 @@ namespace MedCenter.Services.Reportes;
 /// </summary>
 public class ReportDirector
 {
-    private ReporteConstructor? _constructor;
-    
+    private Reporte? _lastReporte;
+
     /// <summary>
     /// DETAILED REPORT Configuration - Full data with all statistics
     /// Like constructSportsCar() in the Car example - a specific configuration
@@ -23,16 +23,17 @@ public class ReportDirector
         int? medicoId = null,
         int? especialidadId = null)
     {
-        _constructor = constructor;
-        _constructor.SetDateRange(fechaDesde, fechaHasta);
-        _constructor.SetFilters(medicoId, especialidadId);
+        constructor.Reset();
+        constructor.SetDateRange(fechaDesde, fechaHasta);
+        constructor.SetFilters(medicoId, especialidadId);
         
         // Full report: all components included
-        _constructor.BuildHeader();
-        await _constructor.BuildData();        // ✅ Detailed data
-        await _constructor.BuildStatistics();  // ✅ Statistics
-        _constructor.BuildFooter();
-        _constructor.BuildFormat();
+        constructor.BuildHeader();
+        await constructor.BuildData();        // ✅ Detailed data
+        await constructor.BuildStatistics();  // ✅ Statistics
+        constructor.BuildFooter();
+        constructor.BuildFormat();
+        _lastReporte = constructor.Reporte;
     }
     
     /// <summary>
@@ -46,16 +47,17 @@ public class ReportDirector
         int? medicoId = null,
         int? especialidadId = null)
     {
-        _constructor = constructor;
-        _constructor.SetDateRange(fechaDesde, fechaHasta);
-        _constructor.SetFilters(medicoId, especialidadId);
+        constructor.Reset();
+        constructor.SetDateRange(fechaDesde, fechaHasta);
+        constructor.SetFilters(medicoId, especialidadId);
         
         // Summary report: skip detailed data, show only totals
-        _constructor.BuildHeader();
+        constructor.BuildHeader();
         // SKIP BuildData() - no detailed rows!
-        await _constructor.BuildStatistics();  // ✅ Only aggregates
-        _constructor.BuildFooter();
-        _constructor.BuildFormat();
+        await constructor.BuildStatistics();  // ✅ Only aggregates
+        constructor.BuildFooter();
+        constructor.BuildFormat();
+        _lastReporte = constructor.Reporte;
     }
     
     /// <summary>
@@ -69,16 +71,17 @@ public class ReportDirector
         int? medicoId = null,
         int? especialidadId = null)
     {
-        _constructor = constructor;
-        _constructor.SetDateRange(fechaDesde, fechaHasta);
-        _constructor.SetFilters(medicoId, especialidadId);
+        constructor.Reset();
+        constructor.SetDateRange(fechaDesde, fechaHasta);
+        constructor.SetFilters(medicoId, especialidadId);
         
         // Executive report: metrics first, data second
-        _constructor.BuildHeader();
-        await _constructor.BuildStatistics();  // ✅ Key metrics first
-        await _constructor.BuildData();        // ✅ Supporting data after
-        _constructor.BuildFooter();
-        _constructor.BuildFormat();
+        constructor.BuildHeader();
+        await constructor.BuildStatistics();  // ✅ Key metrics first
+        await constructor.BuildData();        // ✅ Supporting data after
+        constructor.BuildFooter();
+        constructor.BuildFormat();
+        _lastReporte = constructor.Reporte;
     }
     
     /// <summary>
@@ -93,16 +96,17 @@ public class ReportDirector
         int? pacienteId = null,
         int? medicoId = null)
     {
-        _constructor = constructor;
-        _constructor.SetDateRange(fechaDesde, fechaHasta);
-        _constructor.SetFilters(medicoId: medicoId);
-        _constructor.SetAuditFilters(usuarioNombre, accion, pacienteId);
+        constructor.Reset();
+        constructor.SetDateRange(fechaDesde, fechaHasta);
+        constructor.SetFilters(medicoId: medicoId);
+        constructor.SetAuditFilters(usuarioNombre, accion, pacienteId);
         
-        _constructor.BuildHeader();
-        await _constructor.BuildData();
-        await _constructor.BuildStatistics();
-        _constructor.BuildFooter();
-        _constructor.BuildFormat();
+        constructor.BuildHeader();
+        await constructor.BuildData();
+        await constructor.BuildStatistics();
+        constructor.BuildFooter();
+        constructor.BuildFormat();
+        _lastReporte = constructor.Reporte;
     }
     
     /// <summary>
@@ -115,15 +119,16 @@ public class ReportDirector
         int? medicoId = null,
         int? especialidadId = null)
     {
-        _constructor = constructor;
-        _constructor.SetDateRange(fechaDesde, fechaHasta);
-        _constructor.SetFilters(medicoId, especialidadId);
+        constructor.Reset();
+        constructor.SetDateRange(fechaDesde, fechaHasta);
+        constructor.SetFilters(medicoId, especialidadId);
         
-        _constructor.BuildHeader();
-        await _constructor.BuildData();
-        await _constructor.BuildStatistics();
-        _constructor.BuildFooter();
-        _constructor.BuildFormat();
+        constructor.BuildHeader();
+        await constructor.BuildData();
+        await constructor.BuildStatistics();
+        constructor.BuildFooter();
+        constructor.BuildFormat();
+        _lastReporte = constructor.Reporte;
     }
     
     /// <summary>
@@ -137,27 +142,72 @@ public class ReportDirector
         string? tipoLogout = null,
         string? rol = null)
     {
-        _constructor = constructor;
-        _constructor.SetDateRange(fechaDesde, fechaHasta);
-        _constructor.SetLoginAuditFilters(usuarioNombre, tipoLogout, rol);
+        constructor.Reset();
+        constructor.SetDateRange(fechaDesde, fechaHasta);
+        constructor.SetLoginAuditFilters(usuarioNombre, tipoLogout, rol);
         
-        _constructor.BuildHeader();
-        await _constructor.BuildData();
-        await _constructor.BuildStatistics();
-        _constructor.BuildFooter();
-        _constructor.BuildFormat();
+        constructor.BuildHeader();
+        await constructor.BuildData();
+        await constructor.BuildStatistics();
+        constructor.BuildFooter();
+        constructor.BuildFormat();
+        _lastReporte = constructor.Reporte;
     }
     
+    /// <summary>
+    /// TRAZABILIDAD TURNOS Configuration - Shows the full traceability log of turn actions
+    /// </summary>
+    public async Task ConstructTrazabilidadTurnos(
+        ReporteConstructor constructor,
+        DateTime fechaDesde,
+        DateTime fechaHasta,
+        string? usuarioNombre = null,
+        AccionesTurno? accion = null)
+    {
+        constructor.Reset();
+        constructor.SetDateRange(fechaDesde, fechaHasta);
+        constructor.SetAuditFilters(usuarioNombre, accion);
+
+        constructor.BuildHeader();
+        await constructor.BuildData();
+        await constructor.BuildStatistics();
+        constructor.BuildFooter();
+        constructor.BuildFormat();
+        _lastReporte = constructor.Reporte;
+    }
+
+    /// <summary>
+    /// INTERACTIVE DASHBOARD Configuration - Produces data for Chart.js rendering
+    /// </summary>
+    public async Task ConstructDashboard(
+        ReporteConstructor constructor,
+        DateTime fechaDesde,
+        DateTime fechaHasta,
+        int? medicoId = null,
+        int? especialidadId = null)
+    {
+        constructor.Reset();
+        constructor.SetDateRange(fechaDesde, fechaHasta);
+        constructor.SetFilters(medicoId, especialidadId);
+
+        constructor.BuildHeader();
+        await constructor.BuildData();
+        await constructor.BuildStatistics();
+        constructor.BuildFooter();
+        constructor.BuildFormat();
+        _lastReporte = constructor.Reporte;
+    }
+
     /// <summary>
     /// Get the final constructed report
     /// </summary>
     public Reporte GetReporte()
     {
-        if (_constructor == null)
+        if (_lastReporte == null)
         {
             throw new InvalidOperationException("No se ha construido ningún reporte. Llame a Construct() primero.");
         }
         
-        return _constructor.Reporte;
+        return _lastReporte;
     }
 }

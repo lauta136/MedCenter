@@ -616,6 +616,8 @@ namespace MedCenter.Services.Reportes
                     Especialidad = e.EspecialidadNombre,
                     EstadoAnterior = e.EstadoAnterior,
                     EstadoActual = e.EstadoNuevo,
+                    MedicoAnteriorNombre = e.MedicoAnteriorNombre,
+                    MedicoNuevoNombre = e.MedicoNuevoNombre,
                     MotivoCancelacion = string.IsNullOrEmpty(e.MotivoCancelacion) ? "" : e.MotivoCancelacion
                 };
             }).ToList();
@@ -802,14 +804,14 @@ namespace MedCenter.Services.Reportes
                 subtitle.SpacingAfter = 15f;
                 document.Add(subtitle);
 
-                // Table with 10 columns (combined some columns)
-                PdfPTable table = new PdfPTable(10);
+                // Table with 12 columns
+                PdfPTable table = new PdfPTable(12);
                 table.WidthPercentage = 100;
-                table.SetWidths(new float[] { 12f, 8f, 12f, 14f, 10f, 10f, 10f, 10f, 8f, 8f });
+                table.SetWidths(new float[] { 10f, 7f, 10f, 11f, 9f, 9f, 8f, 7f, 8f, 7f, 7f, 7f });
 
                 // Headers
                 Font headerFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 7, new BaseColor(255, 255, 255));
-                string[] headers = { "Paciente", "DNI", "Médico", "Especialidad", "Fecha Ant.", "Hora Ant.", "Fecha Act.", "Hora Act.", "Est. Ant.", "Est. Act." };
+                string[] headers = { "Paciente", "DNI", "Médico", "Especialidad", "Méd. Ant.", "Méd. Act.", "Fecha Ant.", "Hora Ant.", "Fecha Act.", "Hora Act.", "Est. Ant.", "Est. Act." };
                 
                 foreach (string header in headers)
                 {
@@ -840,7 +842,11 @@ namespace MedCenter.Services.Reportes
                     
                     // Especialidad
                     table.AddCell(new Phrase(turno.Especialidad ?? "N/A", cellFont));
-                    
+
+                    // Médico Anterior / Nuevo
+                    table.AddCell(new Phrase(turno.MedicoAnteriorNombre ?? "-", cellFont));
+                    table.AddCell(new Phrase(turno.MedicoNuevoNombre ?? "-", cellFont));
+
                     // Fecha/Hora Anterior
                     table.AddCell(new Phrase(turno.FechaAnterior?.ToString("dd/MM/yy") ?? "-", cellFont));
                     table.AddCell(new Phrase(turno.HoraAnterior?.ToString(@"hh\:mm") ?? "-", cellFont));
@@ -1023,10 +1029,12 @@ namespace MedCenter.Services.Reportes
                 worksheet.Cell(1, 10).Value = "Hora Actual";
                 worksheet.Cell(1, 11).Value = "Estado Anterior";
                 worksheet.Cell(1, 12).Value = "Estado Actual";
-                worksheet.Cell(1, 13).Value = "Motivo Cancelación";
+                worksheet.Cell(1, 13).Value = "Médico Anterior";
+                worksheet.Cell(1, 14).Value = "Médico Nuevo";
+                worksheet.Cell(1, 15).Value = "Motivo Cancelación";
 
                 // Style headers
-                var headerRange = worksheet.Range(1, 1, 1, 13);
+                var headerRange = worksheet.Range(1, 1, 1, 15);
                 headerRange.Style.Font.Bold = true;
                 headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#10B981");
                 headerRange.Style.Font.FontColor = XLColor.White;
@@ -1048,7 +1056,9 @@ namespace MedCenter.Services.Reportes
                     worksheet.Cell(row, 10).Value = turno.HoraActual?.ToString(@"hh\:mm") ?? "N/A";
                     worksheet.Cell(row, 11).Value = turno.EstadoAnterior?.ToString() ?? "N/A";
                     worksheet.Cell(row, 12).Value = turno.EstadoActual?.ToString() ?? "N/A";
-                    worksheet.Cell(row, 13).Value = turno.MotivoCancelacion ?? "N/A";
+                    worksheet.Cell(row, 13).Value = turno.MedicoAnteriorNombre ?? "N/A";
+                    worksheet.Cell(row, 14).Value = turno.MedicoNuevoNombre ?? "N/A";
+                    worksheet.Cell(row, 15).Value = turno.MotivoCancelacion ?? "N/A";
 
                     row++;
                 }
@@ -1390,6 +1400,196 @@ namespace MedCenter.Services.Reportes
                 }
 
                 // Auto-fit columns
+                worksheet.Columns().AdjustToContents();
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    return stream.ToArray();
+                }
+            }
+        }
+
+        // ===== TRAZABILIDAD TURNOS METHODS =====
+
+        public async Task<List<TrazabilidadTurnoReporteDTO>> ObtenerTrazabilidadTurnos(
+            DateTime fechaDesde,
+            DateTime fechaHasta,
+            string? usuarioNombre = null,
+            AccionesTurno? accion = null)
+        {
+            var fechaDesdeUtc = DateTime.SpecifyKind(fechaDesde, DateTimeKind.Utc);
+            var fechaHastaUtc = DateTime.SpecifyKind(fechaHasta.AddHours(23).AddMinutes(59).AddSeconds(59), DateTimeKind.Utc);
+
+            var query = _context.trazabilidadTurnos.AsQueryable();
+
+            query = query.Where(t => t.MomentoAccion >= fechaDesdeUtc && t.MomentoAccion <= fechaHastaUtc);
+
+            if (!string.IsNullOrEmpty(usuarioNombre))
+                query = query.Where(t => t.UsuarioNombre.Contains(usuarioNombre));
+
+            if (accion.HasValue)
+                query = query.Where(t => t.Accion == accion.Value);
+
+            var dataUtc = await query
+                .OrderByDescending(t => t.MomentoAccion)
+                .Select(t => new TrazabilidadTurnoReporteDTO
+                {
+                    TurnoId = t.TurnoId,
+                    UsuarioNombre = t.UsuarioNombre,
+                    UsuarioRol = t.UsuarioRol.ToString(),
+                    MomentoAccion = t.MomentoAccion,
+                    Accion = t.Accion.ToString(),
+                    Descripcion = t.Descripcion
+                })
+                .ToListAsync();
+
+            // Convert UTC to local time
+            return dataUtc.Select(d => new TrazabilidadTurnoReporteDTO
+            {
+                TurnoId = d.TurnoId,
+                UsuarioNombre = d.UsuarioNombre,
+                UsuarioRol = d.UsuarioRol,
+                MomentoAccion = DateTime.SpecifyKind(d.MomentoAccion, DateTimeKind.Utc).ToLocalTime(),
+                Accion = d.Accion,
+                Descripcion = d.Descripcion
+            }).ToList();
+        }
+
+        public byte[] GenerarPDFTrazabilidadTurnos(List<TrazabilidadTurnoReporteDTO> data)
+        {
+            using (var ms = new MemoryStream())
+            {
+                var document = new Document(PageSize.A4.Rotate(), 25, 25, 30, 30);
+                PdfWriter.GetInstance(document, ms);
+                document.Open();
+
+                // Title
+                var titleFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 16, BaseColor.Black);
+                var title = new Paragraph("Reporte de Trazabilidad de Turnos\n\n", titleFont);
+                title.Alignment = Element.ALIGN_CENTER;
+                document.Add(title);
+
+                // Summary
+                var summaryFont = FontFactory.GetFont(FontFactory.HELVETICA, 10, BaseColor.Black);
+                var summary = new Paragraph(
+                    $"Total de registros: {data.Count}\n" +
+                    $"Generado el: {DateTime.Now:dd/MM/yyyy HH:mm}\n\n",
+                    summaryFont);
+                document.Add(summary);
+
+                // Table: TurnoId | Fecha/Hora | Acción | Usuario | Rol | Descripción
+                var table = new PdfPTable(6) { WidthPercentage = 100 };
+                table.SetWidths(new float[] { 8f, 18f, 12f, 18f, 12f, 32f });
+
+                var headerFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 10, BaseColor.White);
+                var headerBg = new BaseColor(16, 185, 129);
+                foreach (var hdr in new[] { "Turno ID", "Fecha/Hora", "Acción", "Usuario", "Rol", "Descripción" })
+                {
+                    table.AddCell(new PdfPCell(new Phrase(hdr, headerFont))
+                    {
+                        BackgroundColor = headerBg,
+                        HorizontalAlignment = Element.ALIGN_CENTER,
+                        VerticalAlignment = Element.ALIGN_MIDDLE,
+                        Padding = 8
+                    });
+                }
+
+                var cellFont = FontFactory.GetFont(FontFactory.HELVETICA, 9, BaseColor.Black);
+                bool alternate = false;
+                var altBg = new BaseColor(240, 255, 248);
+                foreach (var row in data)
+                {
+                    var bg = alternate ? altBg : BaseColor.White;
+                    alternate = !alternate;
+
+                    table.AddCell(new PdfPCell(new Phrase(row.TurnoId.ToString(), cellFont)) { Padding = 5, BackgroundColor = bg, HorizontalAlignment = Element.ALIGN_CENTER });
+                    table.AddCell(new PdfPCell(new Phrase(row.MomentoAccion.ToString("dd/MM/yyyy HH:mm:ss"), cellFont)) { Padding = 5, BackgroundColor = bg });
+                    
+                    var accionColor = row.Accion switch
+                    {
+                        "INSERT" => new BaseColor(0, 128, 0),
+                        "CANCEL" => new BaseColor(200, 0, 0),
+                        "FINALIZE" => new BaseColor(0, 100, 200),
+                        "NOSHOW" => new BaseColor(180, 80, 0),
+                        _ => BaseColor.Black
+                    };
+                    var accionFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 9, accionColor);
+                    table.AddCell(new PdfPCell(new Phrase(row.Accion, accionFont)) { Padding = 5, BackgroundColor = bg, HorizontalAlignment = Element.ALIGN_CENTER });
+
+                    table.AddCell(new PdfPCell(new Phrase(row.UsuarioNombre, cellFont)) { Padding = 5, BackgroundColor = bg });
+                    table.AddCell(new PdfPCell(new Phrase(row.UsuarioRol, cellFont)) { Padding = 5, BackgroundColor = bg });
+                    table.AddCell(new PdfPCell(new Phrase(row.Descripcion, cellFont)) { Padding = 5, BackgroundColor = bg });
+                }
+
+                document.Add(table);
+
+                // Footer statistics
+                document.Add(new Paragraph("\n"));
+                var statsFont = FontFactory.GetFont(FontFactory.HELVETICA, 9, BaseColor.Black);
+                var porAccion = data.GroupBy(d => d.Accion).ToDictionary(g => g.Key, g => g.Count());
+                var porRol = data.GroupBy(d => d.UsuarioRol).ToDictionary(g => g.Key, g => g.Count());
+
+                var stats = new Paragraph("Estadísticas:\n", FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 10, BaseColor.Black));
+                stats.Add(new Phrase($"• Por acción: {string.Join(", ", porAccion.Select(p => $"{p.Key} ({p.Value})"))}\n", statsFont));
+                stats.Add(new Phrase($"• Por rol: {string.Join(", ", porRol.Select(p => $"{p.Key} ({p.Value})"))}\n", statsFont));
+                document.Add(stats);
+
+                document.Close();
+                return ms.ToArray();
+            }
+        }
+
+        public byte[] GenerarExcelTrazabilidadTurnos(List<TrazabilidadTurnoReporteDTO> data)
+        {
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("Trazabilidad Turnos");
+
+                // Title
+                worksheet.Cell(1, 1).Value = "Reporte de Trazabilidad de Turnos";
+                worksheet.Cell(1, 1).Style.Font.Bold = true;
+                worksheet.Cell(1, 1).Style.Font.FontSize = 14;
+                worksheet.Range(1, 1, 1, 6).Merge();
+
+                // Headers
+                var headers = new[] { "Turno ID", "Fecha/Hora", "Acción", "Usuario", "Rol", "Descripción" };
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    var cell = worksheet.Cell(3, i + 1);
+                    cell.Value = headers[i];
+                    cell.Style.Font.Bold = true;
+                    cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#10B981");
+                    cell.Style.Font.FontColor = XLColor.White;
+                    cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                }
+
+                // Data
+                int row = 4;
+                foreach (var item in data)
+                {
+                    worksheet.Cell(row, 1).Value = item.TurnoId;
+                    worksheet.Cell(row, 2).Value = item.MomentoAccion.ToString("dd/MM/yyyy HH:mm:ss");
+                    worksheet.Cell(row, 3).Value = item.Accion;
+                    worksheet.Cell(row, 4).Value = item.UsuarioNombre;
+                    worksheet.Cell(row, 5).Value = item.UsuarioRol;
+                    worksheet.Cell(row, 6).Value = item.Descripcion;
+
+                    // Color-code action column
+                    var accionCell = worksheet.Cell(row, 3);
+                    accionCell.Style.Font.Bold = true;
+                    accionCell.Style.Font.FontColor = item.Accion switch
+                    {
+                        "INSERT" => XLColor.DarkGreen,
+                        "CANCEL" => XLColor.DarkRed,
+                        "FINALIZE" => XLColor.DarkBlue,
+                        "NOSHOW" => XLColor.DarkOrange,
+                        _ => XLColor.Black
+                    };
+
+                    row++;
+                }
+
                 worksheet.Columns().AdjustToContents();
 
                 using (var stream = new MemoryStream())

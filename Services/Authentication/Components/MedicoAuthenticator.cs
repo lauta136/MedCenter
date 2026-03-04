@@ -42,10 +42,11 @@ namespace MedCenter.Services.Authentication.Components
                     ErrorMessage = "El usuario no es un médico"
                 };
 
-            
-
+           /* if (!persona.activo)
+                return new AuthResult { Success = false, IsDefinitive = true, ErrorMessage = "La cuenta ha sido desactivada" };
+            */
             if (!_hashService.VerifyPassword(password, persona.contraseña))
-                return new AuthResult { Success = false, ErrorMessage = "La contraseña es incorrecta" };
+                return new AuthResult { Success = false, IsDefinitive = true, ErrorMessage = "La contraseña es incorrecta" };
 
             return new AuthResult
             {

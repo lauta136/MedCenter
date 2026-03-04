@@ -1,0 +1,975 @@
+@model MedCenter.DTOs.EstadisticasAvanzadasDTO
+@{
+    ViewData["Title"] = "Dashboard Interactivo";
+    Layout = null; // Standalone page with its own layout
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard Interactivo - MedCenter</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --danger-gradient: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            --warning-gradient: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+            --info-gradient: linear-gradient(135deg, #2196f3 0%, #21cbf3 100%);
+        }
+
+        body {
+            background: #0f0f23;
+            color: #e2e8f0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+        }
+
+        .dashboard-header {
+            background: linear-gradient(135deg, #1a1a3e 0%, #2d1b69 50%, #1a1a3e 100%);
+            padding: 2rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .dashboard-header .subtitle {
+            color: #a0aec0;
+            font-size: 0.95rem;
+        }
+
+        .kpi-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .kpi-card.primary::before { background: var(--primary-gradient); }
+        .kpi-card.success::before { background: var(--success-gradient); }
+        .kpi-card.danger::before { background: var(--danger-gradient); }
+        .kpi-card.warning::before { background: var(--warning-gradient); }
+        .kpi-card.info::before { background: var(--info-gradient); }
+
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+
+        .kpi-value.text-gradient-primary {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .kpi-value.text-gradient-success {
+            background: var(--success-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .kpi-value.text-gradient-danger {
+            background: var(--danger-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .kpi-value.text-gradient-warning {
+            background: var(--warning-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .kpi-value.text-gradient-info {
+            background: var(--info-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .kpi-label {
+            color: #a0aec0;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        .kpi-icon {
+            font-size: 2rem;
+            opacity: 0.3;
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+        }
+
+        .chart-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .chart-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .chart-card h5 {
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #e2e8f0;
+            font-size: 1.1rem;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .chart-container.doughnut-container {
+            max-width: 320px;
+            margin: 0 auto;
+        }
+
+        .insight-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .insight-card i {
+            color: #667eea;
+            margin-right: 0.5rem;
+        }
+
+        .insight-card .insight-label {
+            color: #a0aec0;
+            font-size: 0.85rem;
+        }
+
+        .insight-card .insight-value {
+            color: #e2e8f0;
+            font-weight: 600;
+        }
+
+        .btn-back {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            transition: all 0.2s;
+        }
+
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .btn-print {
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            border-radius: 8px;
+            padding: 0.5rem 1.25rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-print:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .progress-bar-custom {
+            height: 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-bar-custom .fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1.5s ease-out;
+        }
+
+        @@media print {
+            body { background: white; color: #333; }
+            .btn-back, .btn-print { display: none !important; }
+            .kpi-card, .chart-card { border: 1px solid #ddd; }
+            .kpi-value { -webkit-text-fill-color: #333 !important; }
+            .dashboard-header { background: #f8f9fa; }
+            .dashboard-header h1 { -webkit-text-fill-color: #333 !important; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="container-fluid px-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-1">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Dashboard Interactivo de Gestión
+                    </h1>
+                    <p class="subtitle mb-0">
+                        <i class="far fa-calendar-alt me-1"></i>
+                        @(((DateTime)ViewBag.FechaDesde).ToString("dd/MM/yyyy")) — @(((DateTime)ViewBag.FechaHasta).ToString("dd/MM/yyyy"))
+                        <span class="ms-3">
+                            <i class="far fa-clock me-1"></i>
+                            @ViewBag.Footer
+                        </span>
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button onclick="window.print()" class="btn btn-print">
+                        <i class="fas fa-print me-1"></i> Imprimir
+                    </button>
+                    <a href="@Url.Action("Index", "Reportes")" class="btn btn-back">
+                        <i class="fas fa-arrow-left me-1"></i> Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid px-4">
+        <!-- KPI Cards Row -->
+        <div class="row g-3 mb-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="kpi-card primary">
+                    <i class="fas fa-calendar-check kpi-icon"></i>
+                    <div class="kpi-value text-gradient-primary">@Model.TotalTurnos</div>
+                    <div class="kpi-label">Total de Turnos</div>
+                    <div class="progress-bar-custom">
+                        <div class="fill" style="width: 100%; background: var(--primary-gradient);"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="kpi-card success">
+                    <i class="fas fa-check-circle kpi-icon"></i>
+                    <div class="kpi-value text-gradient-success">@Model.TasaAsistencia%</div>
+                    <div class="kpi-label">Tasa de Asistencia</div>
+                    <div class="progress-bar-custom">
+                        <div class="fill" style="width: @Model.TasaAsistencia%; background: var(--success-gradient);"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="kpi-card danger">
+                    <i class="fas fa-times-circle kpi-icon"></i>
+                    <div class="kpi-value text-gradient-danger">@Model.TasaCancelacion%</div>
+                    <div class="kpi-label">Tasa de Cancelación</div>
+                    <div class="progress-bar-custom">
+                        <div class="fill" style="width: @Model.TasaCancelacion%; background: var(--danger-gradient);"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="kpi-card warning">
+                    <i class="fas fa-user-slash kpi-icon"></i>
+                    <div class="kpi-value text-gradient-warning">@Model.TasaNoShow%</div>
+                    <div class="kpi-label">Tasa de Inasistencia</div>
+                    <div class="progress-bar-custom">
+                        <div class="fill" style="width: @Model.TasaNoShow%; background: var(--warning-gradient);"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Secondary KPIs -->
+        <div class="row g-3 mb-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="kpi-card info">
+                    <i class="fas fa-users kpi-icon"></i>
+                    <div class="kpi-value text-gradient-info">@Model.PacientesUnicos</div>
+                    <div class="kpi-label">Pacientes Únicos</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="kpi-card primary">
+                    <i class="fas fa-redo kpi-icon"></i>
+                    <div class="kpi-value text-gradient-primary">@Model.PromedioTurnosPorPaciente</div>
+                    <div class="kpi-label">Turnos/Paciente Promedio</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="kpi-card success">
+                    <i class="fas fa-percentage kpi-icon"></i>
+                    <div class="kpi-value text-gradient-success">@Model.TasaOcupacion%</div>
+                    <div class="kpi-label">Tasa de Ocupación</div>
+                    <div class="progress-bar-custom">
+                        <div class="fill" style="width: @Model.TasaOcupacion%; background: var(--success-gradient);"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="kpi-card danger">
+                    <i class="fas fa-ban kpi-icon"></i>
+                    <div class="kpi-value text-gradient-danger">@Model.TurnosCancelados</div>
+                    <div class="kpi-label">Turnos Cancelados</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 1 -->
+        <div class="row g-3 mb-4">
+            <!-- Doughnut Chart: Distribution by Estado -->
+            <div class="col-lg-4">
+                <div class="chart-card" style="height: 100%;">
+                    <h5><i class="fas fa-chart-pie me-2" style="color: #667eea;"></i>Distribución por Estado</h5>
+                    <div class="chart-container doughnut-container">
+                        <canvas id="chartEstados"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bar Chart: Turnos by Especialidad -->
+            <div class="col-lg-8">
+                <div class="chart-card" style="height: 100%;">
+                    <h5><i class="fas fa-chart-bar me-2" style="color: #38ef7d;"></i>Turnos por Especialidad</h5>
+                    <div class="chart-container">
+                        <canvas id="chartEspecialidades" height="280"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 2 -->
+        <div class="row g-3 mb-4">
+            <!-- Polar Area: Turnos by Day of Week -->
+            <div class="col-lg-5">
+                <div class="chart-card" style="height: 100%;">
+                    <h5><i class="fas fa-calendar-week me-2" style="color: #f7971e;"></i>Distribución por Día de la Semana</h5>
+                    <div class="chart-container" style="max-width: 380px; margin: 0 auto;">
+                        <canvas id="chartDias"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Horizontal Bar: Doctor Effectiveness / Personal Performance -->
+            <div class="col-lg-7">
+                <div class="chart-card" style="height: 100%;">
+                    @if ((bool)(ViewBag.EsMedico ?? false))
+                    {
+                        <h5><i class="fas fa-chart-pie me-2" style="color: #eb3349;"></i>Mi Rendimiento</h5>
+                        <div class="chart-container">
+                            <canvas id="chartMedicos" height="280"></canvas>
+                        </div>
+                    }
+                    else
+                    {
+                        <h5><i class="fas fa-user-md me-2" style="color: #eb3349;"></i>Efectividad por Médico (%)</h5>
+                        <div class="chart-container">
+                            <canvas id="chartMedicos" height="280"></canvas>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 3 -->
+        <div class="row g-3 mb-4">
+            <!-- Bar Chart: Turnos by Horario -->
+            <div class="col-lg-6">
+                <div class="chart-card" style="height: 100%;">
+                    <h5><i class="fas fa-clock me-2" style="color: #21cbf3;"></i>Distribución por Horario</h5>
+                    <div class="chart-container">
+                        <canvas id="chartHorarios"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insights Panel -->
+            <div class="col-lg-6">
+                <div class="chart-card" style="height: 100%;">
+                    <h5><i class="fas fa-lightbulb me-2" style="color: #ffd200;"></i>Insights Clave</h5>
+                    
+                    @if (!string.IsNullOrEmpty(Model.EspecialidadMasDemandada))
+                    {
+                        <div class="insight-card">
+                            <div class="insight-label"><i class="fas fa-star"></i>Especialidad Más Demandada</div>
+                            <div class="insight-value">@Model.EspecialidadMasDemandada</div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.MedicoMasEfectivo) && !((bool)(ViewBag.EsMedico ?? false)))
+                    {
+                        <div class="insight-card">
+                            <div class="insight-label"><i class="fas fa-trophy"></i>Médico Más Efectivo</div>
+                            <div class="insight-value">@Model.MedicoMasEfectivo</div>
+                        </div>
+                    }
+                    @if ((bool)(ViewBag.EsMedico ?? false))
+                    {
+                        <div class="insight-card">
+                            <div class="insight-label"><i class="fas fa-chart-line"></i>Tu Efectividad</div>
+                            <div class="insight-value">@Model.TasaAsistencia%</div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.DiaConMasTurnos))
+                    {
+                        <div class="insight-card">
+                            <div class="insight-label"><i class="fas fa-calendar-day"></i>Día con Más Turnos</div>
+                            <div class="insight-value">@Model.DiaConMasTurnos</div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.HorarioMasDemandado))
+                    {
+                        <div class="insight-card">
+                            <div class="insight-label"><i class="fas fa-clock"></i>Horario Más Demandado</div>
+                            <div class="insight-value">@Model.HorarioMasDemandado</div>
+                        </div>
+                    }
+
+                    <!-- Cancelation Rate Alert -->
+                    @if (Model.TasaCancelacion > 15)
+                    {
+                        <div class="insight-card" style="border-color: rgba(235, 51, 73, 0.3); background: linear-gradient(135deg, rgba(235, 51, 73, 0.1) 0%, rgba(244, 92, 67, 0.1) 100%);">
+                            <div class="insight-label" style="color: #f45c43;"><i class="fas fa-exclamation-triangle" style="color: #f45c43;"></i>Alerta</div>
+                            <div class="insight-value" style="color: #f45c43;">Tasa de cancelación alta (@Model.TasaCancelacion%)</div>
+                        </div>
+                    }
+                    @if (Model.TasaNoShow > 10)
+                    {
+                        <div class="insight-card" style="border-color: rgba(247, 151, 30, 0.3); background: linear-gradient(135deg, rgba(247, 151, 30, 0.1) 0%, rgba(255, 210, 0, 0.1) 100%);">
+                            <div class="insight-label" style="color: #f7971e;"><i class="fas fa-exclamation-circle" style="color: #f7971e;"></i>Alerta</div>
+                            <div class="insight-value" style="color: #f7971e;">Tasa de inasistencia alta (@Model.TasaNoShow%)</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Cancellation Rate by Specialty -->
+        @if (Model.TasaCancelacionPorEspecialidad.Any())
+        {
+            <div class="row g-3 mb-4">
+                <div class="col-12">
+                    <div class="chart-card">
+                        <h5><i class="fas fa-exclamation-triangle me-2" style="color: #eb3349;"></i>Tasa de Cancelación por Especialidad (%)</h5>
+                        <div class="chart-container">
+                            <canvas id="chartCancelacionEsp" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Parse stats from server
+        const stats = @Html.Raw(ViewBag.StatsJson);
+
+        // Color palettes
+        const gradientColors = [
+            { bg: 'rgba(102, 126, 234, 0.8)', border: '#667eea' },
+            { bg: 'rgba(17, 153, 142, 0.8)', border: '#11998e' },
+            { bg: 'rgba(235, 51, 73, 0.8)', border: '#eb3349' },
+            { bg: 'rgba(247, 151, 30, 0.8)', border: '#f7971e' },
+            { bg: 'rgba(33, 150, 243, 0.8)', border: '#2196f3' },
+            { bg: 'rgba(240, 147, 251, 0.8)', border: '#f093fb' },
+            { bg: 'rgba(56, 239, 125, 0.8)', border: '#38ef7d' },
+            { bg: 'rgba(255, 210, 0, 0.8)', border: '#ffd200' },
+        ];
+
+        const chartDefaults = {
+            color: '#a0aec0',
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+        };
+
+        Chart.defaults.color = chartDefaults.color;
+        Chart.defaults.borderColor = chartDefaults.borderColor;
+
+        // Helper function to create gradient
+        function createGradient(ctx, color1, color2, vertical = true) {
+            const gradient = vertical
+                ? ctx.createLinearGradient(0, 0, 0, 400)
+                : ctx.createLinearGradient(0, 0, 400, 0);
+            gradient.addColorStop(0, color1);
+            gradient.addColorStop(1, color2);
+            return gradient;
+        }
+
+        // ========== 1. DOUGHNUT CHART: Distribution by Estado ==========
+        (function() {
+            const ctx = document.getElementById('chartEstados').getContext('2d');
+            const data = {
+                labels: ['Finalizados', 'Cancelados', 'Pendientes', 'Ausentados'],
+                datasets: [{
+                    data: [
+                        stats.turnosCompletados,
+                        stats.turnosCancelados,
+                        stats.turnosPendientes,
+                        stats.turnosNoShow
+                    ],
+                    backgroundColor: [
+                        createGradient(ctx, '#11998e', '#38ef7d'),
+                        createGradient(ctx, '#eb3349', '#f45c43'),
+                        createGradient(ctx, '#667eea', '#764ba2'),
+                        createGradient(ctx, '#f7971e', '#ffd200'),
+                    ],
+                    borderColor: 'rgba(15, 15, 35, 0.8)',
+                    borderWidth: 3,
+                    hoverBorderWidth: 0,
+                    hoverOffset: 10,
+                }]
+            };
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: data,
+                options: {
+                    responsive: true,
+                    cutout: '65%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true,
+                                pointStyleWidth: 15,
+                                font: { size: 12, weight: '600' }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 15, 35, 0.95)',
+                            titleFont: { size: 14, weight: '700' },
+                            bodyFont: { size: 13 },
+                            padding: 12,
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const pct = total > 0 ? ((context.raw / total) * 100).toFixed(1) : 0;
+                                    return ` ${context.label}: ${context.raw} (${pct}%)`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        duration: 1500,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        })();
+
+        // ========== 2. BAR CHART: Turnos by Especialidad ==========
+        (function() {
+            const ctx = document.getElementById('chartEspecialidades').getContext('2d');
+            const labels = Object.keys(stats.turnosPorEspecialidad || {});
+            const values = Object.values(stats.turnosPorEspecialidad || {});
+
+            const backgroundColors = labels.map((_, i) => {
+                const c = gradientColors[i % gradientColors.length];
+                return createGradient(ctx, c.bg, c.bg.replace('0.8', '0.3'));
+            });
+            const borderColors = labels.map((_, i) => gradientColors[i % gradientColors.length].border);
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Turnos',
+                        data: values,
+                        backgroundColor: backgroundColors,
+                        borderColor: borderColors,
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    indexAxis: 'x',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 15, 35, 0.95)',
+                            padding: 12,
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { font: { weight: '600' } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { weight: '600' }, maxRotation: 45 }
+                        }
+                    },
+                    animation: {
+                        duration: 1200,
+                        easing: 'easeOutQuart',
+                        delay: (context) => context.dataIndex * 100
+                    }
+                }
+            });
+        })();
+
+        // ========== 3. POLAR AREA: Turnos by Day of Week ==========
+        (function() {
+            const dayOrder = { 'Monday': 'Lunes', 'Tuesday': 'Martes', 'Wednesday': 'Miércoles', 'Thursday': 'Jueves', 'Friday': 'Viernes', 'Saturday': 'Sábado', 'Sunday': 'Domingo' };
+            const raw = stats.turnosPorDia || {};
+            const labels = Object.keys(raw).map(d => dayOrder[d] || d);
+            const values = Object.values(raw);
+
+            const polarColors = [
+                'rgba(102, 126, 234, 0.7)',
+                'rgba(56, 239, 125, 0.7)',
+                'rgba(240, 147, 251, 0.7)',
+                'rgba(255, 210, 0, 0.7)',
+                'rgba(33, 203, 243, 0.7)',
+                'rgba(235, 51, 73, 0.7)',
+                'rgba(247, 151, 30, 0.7)',
+            ];
+
+            new Chart(document.getElementById('chartDias'), {
+                type: 'polarArea',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: polarColors.slice(0, labels.length),
+                        borderColor: polarColors.slice(0, labels.length).map(c => c.replace('0.7', '1')),
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 12,
+                                usePointStyle: true,
+                                font: { size: 11, weight: '600' }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 15, 35, 0.95)',
+                            padding: 12,
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                        }
+                    },
+                    scales: {
+                        r: {
+                            grid: { color: 'rgba(255, 255, 255, 0.08)' },
+                            ticks: { display: false },
+                        }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true,
+                        duration: 1500,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        })();
+
+        // ========== 4. DOCTOR EFFECTIVENESS / PERSONAL PERFORMANCE ==========
+        @if ((bool)(ViewBag.EsMedico ?? false))
+        {
+            <text>
+            // Medico view: show personal performance doughnut
+            (function() {
+                const ctx = document.getElementById('chartMedicos').getContext('2d');
+                const completados = stats.turnosCompletados || 0;
+                const cancelados = stats.turnosCancelados || 0;
+                const noShow = stats.turnosNoShow || 0;
+                const pendientes = stats.turnosPendientes || 0;
+
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Completados', 'Cancelados', 'Inasistencias', 'Pendientes'],
+                        datasets: [{
+                            data: [completados, cancelados, noShow, pendientes],
+                            backgroundColor: [
+                                'rgba(56, 239, 125, 0.85)',
+                                'rgba(235, 51, 73, 0.85)',
+                                'rgba(247, 151, 30, 0.85)',
+                                'rgba(33, 203, 243, 0.85)'
+                            ],
+                            borderColor: 'rgba(15, 15, 35, 0.8)',
+                            borderWidth: 3,
+                            hoverOffset: 10,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        cutout: '60%',
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 15,
+                                    usePointStyle: true,
+                                    font: { size: 12, weight: '600' }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 15, 35, 0.95)',
+                                padding: 12,
+                                callbacks: {
+                                    label: function(context) {
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const pct = total > 0 ? ((context.raw / total) * 100).toFixed(1) : 0;
+                                        return ` ${context.label}: ${context.raw} (${pct}%)`;
+                                    }
+                                }
+                            }
+                        },
+                        animation: { duration: 1200, easing: 'easeOutQuart' }
+                    }
+                });
+            })();
+            </text>
+        }
+        else
+        {
+            <text>
+            // Secretaria view: show effectiveness comparison across doctors
+            (function() {
+                const ctx = document.getElementById('chartMedicos').getContext('2d');
+                const efectividad = stats.tasaEfectividadPorMedico || {};
+                const turnos = stats.turnosPorMedico || {};
+                const labels = Object.keys(efectividad);
+                const effValues = Object.values(efectividad);
+                const turnoValues = labels.map(l => turnos[l] || 0);
+
+                const bgColors = effValues.map(v => {
+                    if (v >= 80) return createGradient(ctx, 'rgba(17, 153, 142, 0.8)', 'rgba(56, 239, 125, 0.5)', false);
+                    if (v >= 60) return createGradient(ctx, 'rgba(247, 151, 30, 0.8)', 'rgba(255, 210, 0, 0.5)', false);
+                    return createGradient(ctx, 'rgba(235, 51, 73, 0.8)', 'rgba(244, 92, 67, 0.5)', false);
+                });
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Efectividad (%)',
+                            data: effValues,
+                            backgroundColor: bgColors,
+                            borderColor: effValues.map(v => v >= 80 ? '#38ef7d' : v >= 60 ? '#ffd200' : '#f45c43'),
+                            borderWidth: 2,
+                            borderRadius: 6,
+                            borderSkipped: false,
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 15, 35, 0.95)',
+                                padding: 12,
+                                callbacks: {
+                                    afterLabel: function(context) {
+                                        return `Turnos totales: ${turnoValues[context.dataIndex]}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                max: 100,
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { callback: v => v + '%', font: { weight: '600' } }
+                            },
+                            y: {
+                                grid: { display: false },
+                                ticks: { font: { weight: '600' } }
+                            }
+                        },
+                        animation: {
+                            duration: 1200,
+                            easing: 'easeOutQuart',
+                            delay: (context) => context.dataIndex * 150
+                        }
+                    }
+                });
+            })();
+            </text>
+        }
+
+        // ========== 5. BAR CHART: Turnos by Horario ==========
+        (function() {
+            const ctx = document.getElementById('chartHorarios').getContext('2d');
+            const horarios = stats.turnosPorHorario || {};
+            const labels = Object.keys(horarios);
+            const values = Object.values(horarios);
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Turnos',
+                        data: values,
+                        backgroundColor: [
+                            createGradient(ctx, 'rgba(33, 150, 243, 0.8)', 'rgba(33, 203, 243, 0.4)'),
+                            createGradient(ctx, 'rgba(240, 147, 251, 0.8)', 'rgba(240, 147, 251, 0.4)'),
+                        ],
+                        borderColor: ['#2196f3', '#f093fb'],
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 15, 35, 0.95)',
+                            padding: 12,
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        },
+                        x: { grid: { display: false } }
+                    },
+                    animation: { duration: 1000, easing: 'easeOutQuart' }
+                }
+            });
+        })();
+
+        // ========== 6. BAR CHART: Cancellation Rate by Especialidad ==========
+
+        @if (Model.TasaCancelacionPorEspecialidad.Any())
+        {
+            <text>
+            (function() {
+                const ctx = document.getElementById('chartCancelacionEsp').getContext('2d');
+                const data = stats.tasaCancelacionPorEspecialidad || {};
+                const labels = Object.keys(data);
+                const values = Object.values(data);
+
+                const bgColors = values.map(v => {
+                    if (v > 20) return 'rgba(235, 51, 73, 0.8)';
+                    if (v > 10) return 'rgba(247, 151, 30, 0.8)';
+                    return 'rgba(56, 239, 125, 0.8)';
+                });
+                const borderColors = values.map(v => {
+                    if (v > 20) return '#eb3349';
+                    if (v > 10) return '#f7971e';
+                    return '#38ef7d';
+                });
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Tasa Cancelación (%)',
+                            data: values,
+                            backgroundColor: bgColors,
+                            borderColor: borderColors,
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            borderSkipped: false,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 15, 35, 0.95)',
+                                padding: 12,
+                                callbacks: {
+                                    label: function(context) {
+                                        return ` Tasa: ${context.raw.toFixed(1)}%`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { callback: v => v + '%' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { maxRotation: 45 }
+                            }
+                        },
+                        animation: { duration: 1200, easing: 'easeOutQuart' }
+                    }
+                });
+            })();
+            </text>
+        }
+    </script>
+</body>
+</html>

@@ -20,7 +20,7 @@ namespace MedCenter.Services.Authentication.Components
             foreach (var authenticator in _authenticators)
             {
                 var result = await authenticator.AuthenticateAsync(username, password);
-                if (result.Success) 
+                if (result.Success || result.IsDefinitive)
                     return result;
             }
             return new AuthResult { Success = false, ErrorMessage = "Usuario o contraseña incorrectos" };

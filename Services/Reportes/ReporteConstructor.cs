@@ -9,6 +9,8 @@ namespace MedCenter.Services.Reportes;
 /// </summary>
 public abstract class ReporteConstructor
 {
+    private readonly TipoReporte _tipoReporte;
+
     // Filter properties that can be set before construction
     protected DateTime FechaDesde { get; private set; }
     protected DateTime FechaHasta { get; private set; }
@@ -33,7 +35,17 @@ public abstract class ReporteConstructor
     
     protected ReporteConstructor(TipoReporte tipoReporte)
     {
+        _tipoReporte = tipoReporte;
         Reporte = new Reporte(tipoReporte);
+    }
+
+    /// <summary>
+    /// Resets the builder so it can be reused to produce a fresh Reporte.
+    /// The Director calls this at the start of every construction.
+    /// </summary>
+    public void Reset()
+    {
+        Reporte = new Reporte(_tipoReporte);
     }
     
     /// <summary>

@@ -9,4 +9,9 @@ public class AuthResult
     public int? UserId { get; set; }
     public string? UserName { get; set; }
     public string? UserMail{ get; set; }
+    /// <summary>
+    /// True when the account was found but access was denied (deactivated, wrong password).
+    /// The composite should stop trying other authenticators and surface this error directly.
+    /// </summary>
+    public bool IsDefinitive { get; set; }
 }

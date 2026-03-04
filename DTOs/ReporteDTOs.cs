@@ -32,6 +32,9 @@ namespace MedCenter.DTOs
         public EstadosTurno? EstadoAnterior { get; set; }
         public EstadosTurno? EstadoActual { get; set; }
 
+        public string? MedicoAnteriorNombre { get; set; }
+        public string? MedicoNuevoNombre { get; set; }
+
         public string? MotivoCancelacion { get; set; }
     }
 
@@ -106,5 +109,15 @@ namespace MedCenter.DTOs
         public string? Diagnostico { get; set; }
         public string? Tratamiento { get; set; }
         public string? Observaciones { get; set; }
+    }
+
+    public class TrazabilidadTurnoReporteDTO
+    {
+        public int TurnoId { get; set; }
+        public string UsuarioNombre { get; set; } = string.Empty;
+        public string UsuarioRol { get; set; } = string.Empty;
+        public DateTime MomentoAccion { get; set; }
+        public string Accion { get; set; } = string.Empty;
+        public string Descripcion { get; set; } = string.Empty;
     }
 }

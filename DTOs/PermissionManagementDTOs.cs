@@ -88,6 +88,7 @@ public class DeactivateAccount
 {
     public int UserId{get;set;}
     public string Role{get;set;}
+    public bool Force{get;set;}
 }
 public class ActivateAccount
 {

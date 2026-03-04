@@ -95,6 +95,10 @@
                                 <i class="fas fa-file-pdf me-2"></i>
                                 Descargar PDF Detallado
                             </button>
+                            <button type="button" onclick="previsualizarTurnosPDF()" class="btn btn-outline-danger w-100 mb-2">
+                                <i class="fas fa-eye me-2"></i>
+                                Vista Previa PDF
+                            </button>
                             <button type="button" onclick="descargarTurnosExcel()" class="btn btn-success w-100">
                                 <i class="fas fa-file-excel me-2"></i>
                                 Descargar Excel Detallado
@@ -128,6 +132,10 @@
                             <button type="button" onclick="descargarResumenPDF()" class="btn btn-warning w-100 mb-2">
                                 <i class="fas fa-chart-bar me-2"></i>
                                 Descargar Resumen
+                            </button>
+                            <button type="button" onclick="previsualizarResumenPDF()" class="btn btn-outline-warning w-100 mb-2">
+                                <i class="fas fa-eye me-2"></i>
+                                Vista Previa Resumen
                             </button>
                         </form>
                     </div>
@@ -163,7 +171,11 @@
                             </div>
                             <button type="button" onclick="descargarEjecutivoPDF()" class="btn btn-info w-100 mb-2 text-white">
                                 <i class="fas fa-chart-line me-2"></i>
-                                Generar Dashboard Ejecutivo
+                                Descargar PDF Ejecutivo
+                            </button>
+                            <button type="button" onclick="previsualizarEjecutivoPDF()" class="btn btn-outline-info w-100 mb-2">
+                                <i class="fas fa-eye me-2"></i>
+                                Vista Previa Ejecutivo
                             </button>
                         </form>
                     </div>
@@ -182,6 +194,10 @@
                             <button onclick="descargarPacientesPDF()" class="btn btn-danger w-100 mb-2">
                                 <i class="fas fa-file-pdf me-2"></i>
                                 Descargar Listado PDF
+                            </button>
+                            <button onclick="previsualizarPacientesPDF()" class="btn btn-outline-danger w-100 mb-2">
+                                <i class="fas fa-eye me-2"></i>
+                                Vista Previa PDF
                             </button>
                             <button onclick="descargarPacientesExcel()" class="btn btn-success w-100">
                                 <i class="fas fa-file-excel me-2"></i>
@@ -230,6 +246,10 @@
                             <button type="button" onclick="descargarTurnosPDFPorMedico()" class="btn btn-danger w-100 mb-2">
                                 <i class="fas fa-file-pdf me-2"></i>
                                 Descargar PDF
+                            </button>
+                            <button type="button" onclick="previsualizarTurnosPDFPorMedico()" class="btn btn-outline-danger w-100 mb-2">
+                                <i class="fas fa-eye me-2"></i>
+                                Vista Previa PDF
                             </button>
                             <button type="button" onclick="descargarTurnosExcelPorMedico()" class="btn btn-success w-100">
                                 <i class="fas fa-file-excel me-2"></i>
@@ -292,6 +312,10 @@
                                 <i class="fas fa-file-pdf me-2"></i>
                                 Descargar PDF
                             </button>
+                            <button type="button" onclick="previsualizarAuditoriaTurnosPDF()" class="btn btn-outline-danger w-100 mb-2">
+                                <i class="fas fa-eye me-2"></i>
+                                Vista Previa PDF
+                            </button>
                             <button type="button" onclick="descargarAuditoriaTurnosExcel()" class="btn btn-success w-100">
                                 <i class="fas fa-file-excel me-2"></i>
                                 Descargar Excel
@@ -350,6 +374,10 @@
                                 <i class="fas fa-file-pdf me-2"></i>
                                 Descargar PDF
                             </button>
+                            <button type="button" onclick="previsualizarAuditoriaLoginsPDF()" class="btn btn-outline-danger w-100 mb-2">
+                                <i class="fas fa-eye me-2"></i>
+                                Vista Previa PDF
+                            </button>
                             <button type="button" onclick="descargarAuditoriaLoginsExcel()" class="btn btn-success w-100">
                                 <i class="fas fa-file-excel me-2"></i>
                                 Descargar Excel
@@ -359,7 +387,101 @@
                 </div>
             </div>
 
-            
+
+            <!-- TRAZABILIDAD TURNOS REPORT -->
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm h-100 border-start border-warning border-3">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-history me-2 text-warning"></i>
+                            Trazabilidad de Turnos
+                        </h5>
+                        <p class="text-muted">Historial completo de acciones realizadas sobre los turnos</p>
+                        <form id="formTrazabilidadTurnos" class="mt-3">
+                            <div class="mb-3">
+                                <label class="form-label">Fecha Desde</label>
+                                <input type="date" id="fechaDesdeTrazabilidad" class="form-control" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Fecha Hasta</label>
+                                <input type="date" id="fechaHastaTrazabilidad" class="form-control" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Usuario (opcional)</label>
+                                <select class="form-select" id="usuarioTrazabilidad">
+                                    <option value="">Todos los usuarios</option>
+                                    @foreach (var usuario in ViewBag.usuarios)
+                                    {
+                                        <option value="@usuario.Nombre">@usuario.Nombre</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Acción (opcional)</label>
+                                <select class="form-select" id="accionTrazabilidad">
+                                    <option value="">Todas las acciones</option>
+                                    <option value="INSERT">INSERT – Reserva</option>
+                                    <option value="UPDATE">UPDATE – Modificación</option>
+                                    <option value="CANCEL">CANCEL – Cancelación</option>
+                                    <option value="FINALIZE">FINALIZE – Finalización</option>
+                                    <option value="NOSHOW">NOSHOW – Inasistencia</option>
+                                </select>
+                            </div>
+                            <button type="button" onclick="descargarTrazabilidadTurnosPDF()" class="btn btn-danger w-100 mb-2">
+                                <i class="fas fa-file-pdf me-2"></i>
+                                Descargar PDF
+                            </button>
+                            <button type="button" onclick="previsualizarTrazabilidadTurnosPDF()" class="btn btn-outline-danger w-100 mb-2">
+                                <i class="fas fa-eye me-2"></i>
+                                Vista Previa PDF
+                            </button>
+                            <button type="button" onclick="descargarTrazabilidadTurnosExcel()" class="btn btn-success w-100">
+                                <i class="fas fa-file-excel me-2"></i>
+                                Descargar Excel
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DASHBOARD INTERACTIVO (New - Chart.js) -->
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm h-100 border-start border-3" style="border-color: #764ba2 !important;">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-tachometer-alt me-2" style="color: #764ba2;"></i>
+                            Dashboard Interactivo
+                        </h5>
+                        <p class="text-muted">
+                            <strong>📊 Gráficos interactivos en el navegador</strong><br>
+                            Visualizá las estadísticas con gráficos animados de Chart.js directamente en el sistema, sin descargar archivos.
+                        </p>
+                        <ul class="small text-muted mb-3">
+                            <li>Gráfico de torta con distribución por estado</li>
+                            <li>Barras con turnos por especialidad</li>
+                            <li>Área polar por día de la semana</li>
+                            <li>Efectividad por médico con colores por rendimiento</li>
+                            <li>Distribución por obra social y horarios</li>
+                            <li>Insights y alertas automáticas</li>
+                        </ul>
+                        <form id="formDashboard" class="mt-3">
+                            <div class="mb-3">
+                                <label class="form-label">Fecha Desde</label>
+                                <input type="date" id="fechaDesdeDashboard" class="form-control" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Fecha Hasta</label>
+                                <input type="date" id="fechaHastaDashboard" class="form-control" required />
+                            </div>
+                            <button type="button" onclick="abrirDashboard()" class="btn w-100 mb-2 text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Ver Dashboard Interactivo
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -763,4 +885,136 @@
         
         window.location.href = url;
     }
+
+    function descargarTrazabilidadTurnosPDF() {
+        const fechaDesde = document.getElementById('fechaDesdeTrazabilidad').value;
+        const fechaHasta = document.getElementById('fechaHastaTrazabilidad').value;
+
+        if (!validarFechas(fechaDesde, fechaHasta)) return;
+
+        const usuarioNombre = document.getElementById('usuarioTrazabilidad').value;
+        const accion = document.getElementById('accionTrazabilidad').value;
+
+        let url = `/Reportes/DescargarTrazabilidadTurnosPDF?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`;
+        if (usuarioNombre && usuarioNombre !== '') url += `&usuarioNombre=${encodeURIComponent(usuarioNombre)}`;
+        if (accion && accion !== '') url += `&accion=${accion}`;
+
+        window.location.href = url;
+    }
+
+    function descargarTrazabilidadTurnosExcel() {
+        const fechaDesde = document.getElementById('fechaDesdeTrazabilidad').value;
+        const fechaHasta = document.getElementById('fechaHastaTrazabilidad').value;
+
+        if (!validarFechas(fechaDesde, fechaHasta)) return;
+
+        const usuarioNombre = document.getElementById('usuarioTrazabilidad').value;
+        const accion = document.getElementById('accionTrazabilidad').value;
+
+        let url = `/Reportes/DescargarTrazabilidadTurnosExcel?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`;
+        if (usuarioNombre && usuarioNombre !== '') url += `&usuarioNombre=${encodeURIComponent(usuarioNombre)}`;
+        if (accion && accion !== '') url += `&accion=${accion}`;
+
+        window.location.href = url;
+    }
+
+    // ==== PREVIEW FUNCTIONS ====
+
+    function previsualizarTurnosPDF() {
+        const fechaDesde = document.getElementById('fechaDesde').value;
+        const fechaHasta = document.getElementById('fechaHasta').value;
+        if (!validarFechas(fechaDesde, fechaHasta)) return;
+        previsualizarReporte(`/Reportes/DescargarReporteTurnosPDF?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`);
+    }
+
+    function previsualizarResumenPDF() {
+        const fechaDesde = document.getElementById('fechaDesdeResumen').value;
+        const fechaHasta = document.getElementById('fechaHastaResumen').value;
+        if (!validarFechas(fechaDesde, fechaHasta)) return;
+        previsualizarReporte(`/Reportes/DescargarResumenTurnosPDF?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`);
+    }
+
+    function previsualizarEjecutivoPDF() {
+        const fechaDesde = document.getElementById('fechaDesdeEjecutivo').value;
+        const fechaHasta = document.getElementById('fechaHastaEjecutivo').value;
+        if (!validarFechas(fechaDesde, fechaHasta)) return;
+        previsualizarReporte(`/Reportes/DescargarReporteEjecutivoPDF?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`);
+    }
+
+    function previsualizarPacientesPDF() {
+        previsualizarReporte('/Reportes/DescargarPacientesPDF');
+    }
+
+    function previsualizarTurnosPDFPorMedico() {
+        const periodoSelect = document.getElementById('periodo');
+        const mesesAtras = parseInt(periodoSelect.value);
+        if (!periodoSelect.value || periodoSelect.value === "") {
+            showClientError('Por favor seleccione primero un período');
+            return;
+        }
+        const medicoId = document.getElementById('medicoId').value;
+        const especialidadId = document.getElementById('especialidadId').value;
+        const fechaHasta = new Date();
+        const fechaDesde = new Date();
+        fechaDesde.setMonth(fechaDesde.getMonth() - mesesAtras);
+        const desde = fechaDesde.toISOString().split('T')[0];
+        const hasta = fechaHasta.toISOString().split('T')[0];
+        let url = `/Reportes/DescargarReporteMedicoPDF?fechaDesde=${desde}&fechaHasta=${hasta}`;
+        if (medicoId && medicoId !== "" && medicoId !== "0") url += `&medicoId=${medicoId}`;
+        if (especialidadId && especialidadId !== "" && especialidadId !== "0") url += `&especialidadId=${especialidadId}`;
+        previsualizarReporte(url);
+    }
+
+    function previsualizarAuditoriaTurnosPDF() {
+        const fechaDesde = document.getElementById('fechaDesdeAuditTurno').value;
+        const fechaHasta = document.getElementById('fechaHastaAuditTurno').value;
+        if (!validarFechas(fechaDesde, fechaHasta)) return;
+        const usuarioSelect = document.getElementById('usuarioAcciones');
+        const usuarioNombre = usuarioSelect.options[usuarioSelect.selectedIndex].text;
+        const accion = document.getElementById('accionAudit').value;
+        const medicoId = document.getElementById('medicoIdAudit').value;
+        let url = `/Reportes/DescargarAuditoriaTurnosPDF?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`;
+        if (usuarioNombre && usuarioNombre !== "" && usuarioNombre !== "Todos los Usuarios") url += `&usuarioNombre=${encodeURIComponent(usuarioNombre)}`;
+        if (accion && accion !== "") url += `&accion=${accion}`;
+        if (medicoId && medicoId !== "" && medicoId !== "0") url += `&medicoId=${medicoId}`;
+        previsualizarReporte(url);
+    }
+
+    function previsualizarAuditoriaLoginsPDF() {
+        const fechaDesde = document.getElementById('fechaDesdeAuditLogin').value;
+        const fechaHasta = document.getElementById('fechaHastaAuditLogin').value;
+        if (!validarFechas(fechaDesde, fechaHasta)) return;
+        const usuarioNombre = document.getElementById('usuarioNombreLogin').value;
+        const tipoLogout = document.getElementById('tipoLogoutLogin').value;
+        const rol = document.getElementById('rolLogin').value;
+        let url = `/Reportes/DescargarAuditoriaLoginsPDF?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`;
+        if (usuarioNombre && usuarioNombre !== "" && usuarioNombre !== "Todos los Usuarios") url += `&usuarioNombre=${encodeURIComponent(usuarioNombre)}`;
+        if (tipoLogout && tipoLogout !== "") url += `&tipoLogout=${tipoLogout}`;
+        if (rol && rol !== "") url += `&rol=${rol}`;
+        previsualizarReporte(url);
+    }
+
+    function previsualizarTrazabilidadTurnosPDF() {
+        const fechaDesde = document.getElementById('fechaDesdeTrazabilidad').value;
+        const fechaHasta = document.getElementById('fechaHastaTrazabilidad').value;
+        if (!validarFechas(fechaDesde, fechaHasta)) return;
+        const usuarioNombre = document.getElementById('usuarioTrazabilidad').value;
+        const accion = document.getElementById('accionTrazabilidad').value;
+        let url = `/Reportes/DescargarTrazabilidadTurnosPDF?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`;
+        if (usuarioNombre && usuarioNombre !== '') url += `&usuarioNombre=${encodeURIComponent(usuarioNombre)}`;
+        if (accion && accion !== '') url += `&accion=${accion}`;
+        previsualizarReporte(url);
+    }
+
+    // ==== DASHBOARD INTERACTIVO ====
+
+    function abrirDashboard() {
+        const fechaDesde = document.getElementById('fechaDesdeDashboard').value;
+        const fechaHasta = document.getElementById('fechaHastaDashboard').value;
+        if (!validarFechas(fechaDesde, fechaHasta)) return;
+        window.open(`/Reportes/DashboardInteractivo?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`, '_blank');
+    }
 </script>
+
+<!-- Report Preview Modal -->
+@await Html.PartialAsync("_ReportPreviewModal")

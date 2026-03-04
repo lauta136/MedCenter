@@ -29,13 +29,13 @@ namespace MedCenter.Services.Authentication.Components
             return new AuthResult { Success = false, ErrorMessage = "No se ha encontrado una cuenta de secretaria con el mail proporcionado" };
             
             if(secretaria.idNavigation.activo == false)
-            return new AuthResult{Success = false, ErrorMessage = "La cuenta ha sido desactivada"};
+            return new AuthResult{Success = false, IsDefinitive = true, ErrorMessage = "La cuenta ha sido desactivada"};
 
             if (_hashService.VerifyPassword(password, secretaria.idNavigation.contraseña))
             return new AuthResult { Success = true, Role = RolUsuario.Secretaria, UserName = secretaria.idNavigation.nombre, UserId = secretaria.idNavigation.id, UserMail = secretaria.idNavigation.email };
             
             else
-            return new AuthResult { Success = false, ErrorMessage = "La contraseña es incorrecta" };
+            return new AuthResult { Success = false, IsDefinitive = true, ErrorMessage = "La contraseña es incorrecta" };
            
                 
         }

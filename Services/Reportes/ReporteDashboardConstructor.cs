@@ -3,28 +3,28 @@ using MedCenter.DTOs;
 namespace MedCenter.Services.Reportes;
 
 /// <summary>
-/// Concrete Builder for Executive Report with Advanced Statistics and Charts
-/// Cumple requisito: genera gráficos y estadísticas que asisten en toma de decisiones
+/// Concrete Builder for Interactive Dashboard Report
+/// Produces a Reporte whose Data part holds an EstadisticasAvanzadasDTO
+/// for rendering as an interactive Chart.js page in the browser.
 /// </summary>
-public class ReporteEjecutivoPDFConstructor : ReporteConstructor
+public class ReporteDashboardConstructor : ReporteConstructor
 {
     private readonly ReportesService _reportesService;
     private EstadisticasAvanzadasDTO? _stats;
 
-    public ReporteEjecutivoPDFConstructor(ReportesService reportesService) 
-        : base(TipoReporte.Ejecutivo)
+    public ReporteDashboardConstructor(ReportesService reportesService) 
+        : base(TipoReporte.DashboardInteractivo)
     {
         _reportesService = reportesService;
     }
 
     public override void BuildHeader()
     {
-        Reporte[ParteReporte.Header] = $"Reporte Ejecutivo - {FechaDesde:dd/MM/yyyy} a {FechaHasta:dd/MM/yyyy}";
+        Reporte[ParteReporte.Header] = $"Dashboard Interactivo - {FechaDesde:dd/MM/yyyy} a {FechaHasta:dd/MM/yyyy}";
     }
 
     public override async Task BuildData()
     {
-        // Fetch stats if BuildStatistics() hasn't run yet (order-independent)
         _stats ??= await _reportesService.CalcularEstadisticasAvanzadas(
             FechaDesde,
             FechaHasta,
@@ -32,20 +32,12 @@ public class ReporteEjecutivoPDFConstructor : ReporteConstructor
             EspecialidadId
         );
 
-        // Generate executive PDF with statistics and charts
-        var pdfBytes = _reportesService.GenerarPDFEstadisticasAvanzadas(
-            _stats,
-            "Reporte Ejecutivo de Gestión",
-            FechaDesde,
-            FechaHasta
-        );
-
-        Reporte[ParteReporte.Data] = pdfBytes;
+        // Store the DTO directly — the controller will pass it to a Razor view
+        Reporte[ParteReporte.Data] = _stats;
     }
 
     public override async Task BuildStatistics()
     {
-        // Fetch and cache stats — runs independently of BuildData()
         _stats ??= await _reportesService.CalcularEstadisticasAvanzadas(
             FechaDesde,
             FechaHasta,
@@ -62,6 +54,6 @@ public class ReporteEjecutivoPDFConstructor : ReporteConstructor
 
     public override void BuildFormat()
     {
-        Reporte[ParteReporte.Format] = "PDF con Gráficos y KPIs";
+        Reporte[ParteReporte.Format] = "HTML Interactivo (Chart.js)";
     }
 }
